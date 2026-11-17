@@ -84,6 +84,7 @@ private class AndroidSfArcadeStore(
             difficulty = session.difficulty,
             baseDifficulty = session.baseDifficulty,
             paused = session.paused,
+            printerBonusPending = session.printerBonusPending,
         ),
     )
 
@@ -99,6 +100,7 @@ private class AndroidSfArcadeStore(
             difficulty = it.difficulty,
             baseDifficulty = it.baseDifficulty,
             paused = it.paused,
+            printerBonusPending = it.printerBonusPending,
         )
     }
 }

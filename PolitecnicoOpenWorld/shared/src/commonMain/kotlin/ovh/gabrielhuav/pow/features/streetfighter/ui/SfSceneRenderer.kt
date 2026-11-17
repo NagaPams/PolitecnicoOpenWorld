@@ -180,7 +180,8 @@ fun DrawScope.drawScene(
 
     // ---- Sombras ----
     drawShadow(ctx, theme, images.getValue(theme.shadowImage), state.player, bgFile)
-    drawShadow(ctx, theme, images.getValue(theme.shadowImage), state.cpu, bgFile)
+    if (state.printerBonus == null) drawShadow(ctx, theme, images.getValue(theme.shadowImage), state.cpu, bgFile)
+    state.printerBonus?.let { drawPrinterBonus(ctx, it, images, t) }
 
     // ---- Peleadores (sheet según el personaje del snapshot) ----
     // 🆕 (2026-07-21) PLACEHOLDER ALPHA: si al peleador le falta la hoja del movimiento en
@@ -190,6 +191,7 @@ fun DrawScope.drawScene(
         Triple(state.player, playerData, playerContentH),
         Triple(state.cpu, cpuData, cpuContentH),
     ).forEachIndexed { side, (fighter, data, contentH) ->
+        if (side == 1 && state.printerBonus != null) return@forEachIndexed
         val alpha = alphaFallback?.takeIf { data.animations[fighter.state.jsKey].isNullOrEmpty() }
         if (alpha != null && alpha.bitmap != null) {
             drawFighter(
@@ -281,7 +283,7 @@ fun DrawScope.drawScene(
     }
 
     // ---- HUD ----
-    drawHud(ctx, theme, images.getValue(theme.hudImage), state)
+    if (state.printerBonus == null) drawHud(ctx, theme, images.getValue(theme.hudImage), state)
 
     // ---- Texto de ganador: "<PERSONAJE> WINS" con la FUENTE arcade del HUD ----
     // (funciona para CUALQUIER peleador; ya no depende de winnerText.png por filas)
@@ -298,6 +300,7 @@ fun DrawScope.drawScene(
     // ---- 🆕 (2026-07-21) MEDIDOR DE SÚPER (3rd Strike): barra bajo cada nombre ----
     // Solo se pinta si el peleador tiene el moveset nuevo (si no, nunca carga y estorbaría).
     listOf(0 to state.player, 1 to state.cpu).forEach { (side, fighter) ->
+        if (side == 1 && state.printerBonus != null) return@forEach
         val data = if (side == 0) playerData else cpuData
         if (data.animations["superArt"].isNullOrEmpty()) return@forEach
         val frac = (fighter.superMeter / SfConstants.SUPER_METER_MAX.toFloat()).coerceIn(0f, 1f)
@@ -812,6 +815,17 @@ fun measureFrameContentHeights(
     return out
 }
 
+/** Evita interpretar una postura baja como un cambio de zoom en atlas calibrados. */
+internal fun fighterContentScale(
+    id: SfFighterId,
+    state: SfFighterState,
+    contentHeight: Int,
+    isFxPose: Boolean,
+): Float = when {
+    id.preserveSpriteScale || isFxPose || state.keepsNaturalHeight() || contentHeight <= 0 -> 1f
+    else -> (TARGET_BODY_CONTENT_H / contentHeight.toFloat()).coerceIn(0.70f, 1.25f)
+}
+
 internal fun DrawScope.drawFighter(
     ctx: SceneCtx,
     images: Map<String, ImageBitmap>,
@@ -853,10 +867,7 @@ internal fun DrawScope.drawFighter(
         f.state == SfFighterState.SPECIAL_1_HEAVY ||
         f.metamorphosing
     val contentH = contentHeights[frameKey]?.takeIf { it > 0 } ?: frame.src.getOrElse(3) { 100 }
-    val bodyMul = when {
-        isFxPose || f.state.keepsNaturalHeight() || contentH <= 0 -> 1f
-        else -> (TARGET_BODY_CONTENT_H / contentH.toFloat()).coerceIn(0.70f, 1.25f)
-    }
+    val bodyMul = fighterContentScale(f.id, f.state, contentH, isFxPose)
     val spriteScale = (hurtMul * bodyMul).coerceIn(0.70f, 1.35f)
     val drawDirection = if (frame.flipX) f.direction.opposite() else f.direction
     // Origen seguro (pies): si el JSON trae basura, anclar al centro-bajo de la celda
@@ -1028,14 +1039,14 @@ internal fun DrawScope.drawHud(ctx: SceneCtx, theme: SfTheme, hud: ImageBitmap, 
 
     // 🆕 RONDAS GANADAS (mejor de 3): cuadritos dorados bajo el nombre de cada lado
     val roundMark = Color(0xFFD4AF37)
-    for (i in 0 until state.playerRoundWins.coerceAtMost(2)) {
+    for (i in 0 until state.playerRoundWins.coerceAtMost(if (state.teamBattle != null) 3 else 2)) {
         drawRect(
             color = roundMark,
             topLeft = Offset(ctx.ox + (32f + i * 11f) * ctx.scale, ctx.oy + 45f * ctx.scale),
             size = Size(7f * ctx.scale, 7f * ctx.scale),
         )
     }
-    for (i in 0 until state.cpuRoundWins.coerceAtMost(2)) {
+    for (i in 0 until state.cpuRoundWins.coerceAtMost(if (state.teamBattle != null) 3 else 2)) {
         drawRect(
             color = roundMark,
             topLeft = Offset(ctx.ox + (346f - i * 11f) * ctx.scale, ctx.oy + 45f * ctx.scale),

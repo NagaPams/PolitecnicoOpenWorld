@@ -26,6 +26,7 @@ import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.resumeArcadeSession
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.skipShowcaseFighter
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.skipToNextShowcaseAnimation
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.startAiVsAi
+import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.startTeamBattle
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.startArcade
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.startBtHost
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.startBtScan
@@ -80,6 +81,9 @@ class AndroidStreetFighterController(
     override fun exitTutorial() = viewModel.exitTutorial()
     override fun startTutorial(id: SfFighterId) = viewModel.startTutorial(id)
     override fun comboSheet(id: SfFighterId) = viewModel.comboSheet(id)
+
+    override fun startTeamBattle(playerTeam: List<SfFighterId>, cpuTeam: List<SfFighterId>, difficulty: SfCpuDifficulty) =
+        viewModel.startTeamBattle(playerTeam, cpuTeam, difficulty)
 
     override fun backToCharacterSelect() = viewModel.backToCharacterSelect()
     override fun stopGauntlet() = viewModel.stopGauntlet()

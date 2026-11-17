@@ -597,3 +597,14 @@ El checklist detallado está en **`plan.artifact.md` §11**. En resumen, en cada
 - Un dato que viva en ambos archivos debe cambiarse en ambos — una contradicción entre ellos es un bug.
 
 **Definición de terminado:** el código compila/valida *y* ambos archivos describen la nueva realidad. Si la documentación no se actualizó, la tarea no está terminada.
+
+
+Titan del Bienestar: nuevo peleador invitado disponible desde el inicio en Titulación por Combate. Detalles en `PolitecnicoOpenWorld/README for IAS/SF/TITAN_BIENESTAR.md`.
+
+Rendimiento de combate: atlas del Titan compactado y ritmo de actualización ajustado. Configuración mínima Android 6 (API 23); la prueba en dispositivo Android 6 sigue pendiente.
+
+
+Bonus de la impresora: tras el segundo rival del arcade, 30 s para destruirla y continuar al tercero. Printer bonus: after arcade opponent two, smash the printer in 30 seconds and continue to opponent three. Detalles: `PolitecnicoOpenWorld/README for IAS/SF/BONUS_IMPRESORA.md`.
+
+
+**3 golpes y a dormir:** nuevo modo de equipos 3 contra 3, selección manual o aleatoria, con los sprites originales. New offline 3-vs-3 team mode with manual/random selection and original sprites. Ver `PolitecnicoOpenWorld/README for IAS/SF/TRES_GOLPES_Y_A_DORMIR.md`.

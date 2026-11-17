@@ -41,10 +41,11 @@ data class SfArcadeSession(
     val difficulty: String,
     val baseDifficulty: String = "",
     val paused: Boolean = true,
+    val printerBonusPending: Boolean = false,
 )
 
 private object EmptySfArcadeStore : SfArcadeStore {
-    override fun unlockedFighters() = setOf("ESCOMBOY", "ESCOMGIRL", "ROBOT", "ALEXIS_SYNTAXIS")
+    override fun unlockedFighters() = setOf("ESCOMBOY", "ESCOMGIRL", "ROBOT", "ALEXIS_SYNTAXIS", "TITAN_BIENESTAR")
     override fun unlockFighter(id: String) = false
     override fun unlockedMaps() = setOf("fondo_escom_anim.webp")
     override fun unlockMap(file: String) = false

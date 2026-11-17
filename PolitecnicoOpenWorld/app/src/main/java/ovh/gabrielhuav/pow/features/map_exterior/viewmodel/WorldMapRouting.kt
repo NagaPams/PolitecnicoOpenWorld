@@ -177,7 +177,7 @@ internal fun WorldMapViewModel.findRoadRoute(from: GeoPoint, to: GeoPoint): List
     val cameFrom = HashMap<Long, Long>()
     val closed = HashSet<Long>()
     // Cola por fScore = gScore + heurística (distancia euclídea al goal).
-    val open = java.util.PriorityQueue<Pair<Long, Double>>(compareBy { it.second })
+    val open = java.util.PriorityQueue<Pair<Long, Double>>(11, compareBy { it.second })
     open.add(start to distance(roadNodePos[start]!!, goalPos))
 
     var expansions = 0

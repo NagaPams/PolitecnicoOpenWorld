@@ -57,6 +57,17 @@ class SfArcadeCampaignAuditTest {
         assertTrue(SfStageCatalog.allBackgroundFiles().all { it.endsWith(".webp") })
     }
 
+    @Test
+    fun `el Titan se puede seleccionar desde una partida nueva y tiene recursos propios`() {
+        val titan = SfFighterId.TITAN_BIENESTAR
+        assertTrue(titan in SfArcadeLadder.ALL_PARTICIPANTS)
+        assertTrue(titan.name in ovh.gabrielhuav.pow.data.repository.SfArcadeRepository.DEFAULT_FIGHTERS)
+        assertEquals(SfStageCatalog.MICTLÁN, SfStageCatalog.homeStage(titan))
+        assertAsset(titan.jsonAsset, "datos del Titan")
+        assertAsset(titan.spriteAsset, "atlas del Titan")
+        assertFalse(SfArcadeLadder.build(titan).any { it.rival == titan })
+    }
+
     private fun auditCampaign(player: SfFighterId, difficulty: SfCpuDifficulty, seed: Int) {
         val ladder = SfArcadeLadder.build(player, difficulty, Random(seed))
         assertEquals(SfArcadeLadder.TOTAL_FIGHTS, ladder.size)
@@ -165,6 +176,7 @@ class SfArcadeCampaignAuditTest {
                 "special_pol_h_intro.ogg", "special_pol_h_attack.ogg", "special_granadero_win.ogg"
             )
             SfFighterId.PARAMEDICO -> emptyList()
+            SfFighterId.TITAN_BIENESTAR -> emptyList()
             SfFighterId.ALEXIS_SYNTAXIS -> emptyList()
         }.map { it.removeSuffix(".ogg") + ".m4a" }
     }

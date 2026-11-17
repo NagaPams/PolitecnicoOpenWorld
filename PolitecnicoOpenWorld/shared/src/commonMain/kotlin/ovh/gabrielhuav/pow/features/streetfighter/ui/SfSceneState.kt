@@ -10,6 +10,8 @@ import ovh.gabrielhuav.pow.domain.models.streetfighter.SfHitSplash
  * Evita que el Canvas multiplataforma dependa de los campos online/Android del ViewModel.
  */
 interface SfSceneState {
+    val printerBonus: ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus? get() = null
+    val teamBattle: ovh.gabrielhuav.pow.domain.models.streetfighter.SfTeamBattle? get() = null
     val player: SfFighter
     val cpu: SfFighter
     val fireballs: List<SfFireball>

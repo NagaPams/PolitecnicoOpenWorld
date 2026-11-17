@@ -239,3 +239,12 @@ Arcade/VS/IA-vs-IA/Autoplay; se corrigió el aterrizaje eterno en `JUMP_*`, la o
 cruces, hitboxes BODY/LEGS, variedad/defensa/cooldowns y el bucle de hit-stun. El auditor ahora
 falla por pasividad o timeout y valida 306 cruces everyone-vs-everyone; detalle en `07` y
 `SF/DISENO_ARCADE_SF_POW.md`.
+
+
+Titan del Bienestar: nuevo peleador invitado disponible desde el inicio en Titulación por Combate. Ver [integración y límites](SF/TITAN_BIENESTAR.md).
+
+
+Bonus de la impresora: tras el segundo rival del arcade, 30 s para destruirla y continuar al tercero. Printer bonus: after arcade opponent two, smash the printer in 30 seconds and continue to opponent three. Detalles: `SF/BONUS_IMPRESORA.md`.
+
+
+**3 golpes y a dormir:** nuevo modo de equipos 3 contra 3, selección manual o aleatoria, con los sprites originales. New offline 3-vs-3 team mode with manual/random selection and original sprites. Ver `SF/TRES_GOLPES_Y_A_DORMIR.md`.

@@ -219,3 +219,9 @@ al pasar de una animación a otra.
     que la fila de verdad tiene UN blob de más de lo esperado** (mira el `--list`) **y que el par
     más cercano es el fragmento y no dos poses reales** — fusionar dos poses reales por error las
     convierte en un cuadro Frankenstein con dos personajes encimados.
+
+
+Bonus de la impresora: tras el segundo rival del arcade, 30 s para destruirla y continuar al tercero. Printer bonus: after arcade opponent two, smash the printer in 30 seconds and continue to opponent three. Detalles: `BONUS_IMPRESORA.md`.
+
+
+**3 golpes y a dormir:** nuevo modo de equipos 3 contra 3, selección manual o aleatoria, con los sprites originales. New offline 3-vs-3 team mode with manual/random selection and original sprites. Ver `TRES_GOLPES_Y_A_DORMIR.md`.

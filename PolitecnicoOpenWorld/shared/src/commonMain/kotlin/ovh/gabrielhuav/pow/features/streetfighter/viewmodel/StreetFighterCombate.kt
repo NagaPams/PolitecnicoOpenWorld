@@ -50,6 +50,15 @@ internal fun StreetFighterViewModel.pushBoxWorld(f: SfFighter): SfBox = SfBox.fr
  * `SfPushboxesTest`.
  */
 internal fun StreetFighterViewModel.updateStageConstraints(sim: StreetFighterViewModel.Sim, idx: Int, dt: Float) {
+    if (_state.value.printerBonus != null) {
+        var fighter = SfPhysics.clampToViewport(sim.fighter(idx), sim.camX)
+        val printerX = ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus.X
+        if (fighter.y >= SfConstants.STAGE_FLOOR - 8f && kotlin.math.abs(fighter.x - printerX) < 58f) {
+            fighter = fighter.copy(x = if (fighter.x <= printerX) printerX - 58f else printerX + 58f)
+        }
+        sim.setFighter(idx, fighter)
+        return
+    }
     val self = sim.fighter(idx)
     val opp = sim.fighter(1 - idx)
     val r = SfPhysics.resolvePushboxes(
@@ -75,6 +84,16 @@ internal fun StreetFighterViewModel.updateAttackBoxCollided(sim: StreetFighterVi
     if (attacker.attackStruck) return
     val hit = frameDef(attacker).hit
     val defender = sim.fighter(1 - idx)
+    if (_state.value.printerBonus != null) {
+        val connects = if (hit == null) SfSuperArt.canAutoConnect(attacker, defender, animOf(attacker).size)
+            else hit[2] > 0 && hit[3] > 0 && SfBox.fromList(hit)
+                .toWorld(attacker.x, attacker.y, attacker.direction)
+                .overlaps(ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus.TARGET)
+        if (idx == 0 && connects) {
+            hitPrinter(sim, meta.strength, meta.type, now)
+        }
+        return
+    }
     if (hit == null && SfSuperArt.canAutoConnect(attacker, defender, animOf(attacker).size)) {
         applyAttackHit(
             sim = sim,
@@ -126,6 +145,7 @@ internal fun StreetFighterViewModel.chargeSuper(f: SfFighter, amount: Int): Int 
  * lanzamiento tiene su propia animación de recibirlo.
  */
 internal fun StreetFighterViewModel.applyThrow(sim: StreetFighterViewModel.Sim, attackerIdx: Int, defenderIdx: Int, now: Long) {
+    if (_state.value.printerBonus != null) return
     val attacker = sim.fighter(attackerIdx)
     var defender = sim.fighter(defenderIdx)
     _soundEvents.tryEmit("heavy-punch-hit")
@@ -209,6 +229,7 @@ internal fun StreetFighterViewModel.applyCounterThrow(
  * ([SfFighterState.POWER_THROW]) en vez de THROW.
  */
 internal fun StreetFighterViewModel.applyPowerThrow(sim: StreetFighterViewModel.Sim, attackerIdx: Int, defenderIdx: Int, now: Long) {
+    if (_state.value.printerBonus != null) return
     val attacker = sim.fighter(attackerIdx)
     var defender = sim.fighter(defenderIdx)
     _soundEvents.tryEmit("heavy-punch-hit")
@@ -249,6 +270,10 @@ internal fun StreetFighterViewModel.applyAttackHit(
     hitPos: Pair<Float, Float>?,
     now: Long,
 ) {
+    if (_state.value.printerBonus != null) {
+        if (attackerIdx == 0) hitPrinter(sim, strength, type, now)
+        return
+    }
     val defenderIdx = 1 - attackerIdx
     var attacker = sim.fighter(attackerIdx)
     var defender = sim.fighter(defenderIdx)

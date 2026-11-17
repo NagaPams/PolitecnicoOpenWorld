@@ -6,6 +6,19 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class SfArcadeRepositoryTest {
+    @Test
+    fun `el checkpoint Android conserva el bonus pendiente antes del tercer rival`() {
+        val session = SfArcadeRepository.ArcadeSession(
+            playerId = "ROBOT", step = 3, total = 15,
+            ladderRivals = listOf("PRANKEDY", "PAPARAZZI_1", "SENOR_TIENDA"),
+            mapFile = null, playerRoundWins = 0, cpuRoundWins = 0,
+            difficulty = "NORMAL", printerBonusPending = true,
+        )
+        assertEquals(session, SfArcadeRepository.decodeSession(SfArcadeRepository.encodeSession(session)))
+        val old = SfArcadeRepository.encodeSession(session).replace(",\"printerBonusPending\":true", "")
+        assertFalse(requireNotNull(SfArcadeRepository.decodeSession(old)).printerBonusPending)
+    }
+
 
     @Test
     fun `un snapshot V1 escrito por la version vieja se lee sin perder datos`() {

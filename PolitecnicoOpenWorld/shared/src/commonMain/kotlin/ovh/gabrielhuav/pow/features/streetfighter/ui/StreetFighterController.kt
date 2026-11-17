@@ -83,6 +83,9 @@ interface StreetFighterController {
         difficulty: SfCpuDifficulty = SfCpuDifficulty.NORMAL,
     )
 
+    fun startTeamBattle(playerTeam: List<SfFighterId>, cpuTeam: List<SfFighterId>,
+        difficulty: SfCpuDifficulty = SfCpuDifficulty.NORMAL)
+
     fun startOnline(create: Boolean, code: String? = null)
     fun startOnlineQuick()
     fun cancelOnline()
