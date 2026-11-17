@@ -1,0 +1,25 @@
+{
+  "shared": {
+    "tests": 249,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "app": {
+    "tests": 129,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "build": {
+    "status": "PASS",
+    "tasks": [
+      ":shared:testAndroidHostTest",
+      ":app:testDebugUnitTest",
+      ":app:assembleDebug"
+    ],
+    "note": "Test tasks were UP-TO-DATE: Gradle reused results for unchanged inputs. APK assembly completed in this run.",
+    "apk_bytes": 409487587,
+    "apk_sha256": "aba61c63507fccbaa288f977ff3115f8da1549de800f63e3a44206c36ea70d21"
+  }
+}
