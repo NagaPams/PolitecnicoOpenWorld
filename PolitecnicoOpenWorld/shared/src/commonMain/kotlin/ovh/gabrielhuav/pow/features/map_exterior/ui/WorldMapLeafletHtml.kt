@@ -33,13 +33,9 @@ fun buildHtml(
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { margin: 0; padding: 0; background: #0D0D11; overflow: hidden; }
-        /* OPT FPS (gama baja): el mapa Leaflet ocupa el tamaño del wrapper. Antes era
-           300vw×300vh (≈9× el área de pantalla) SIEMPRE, así que el WebView renderizaba y
-           RE-COMPONÍA ~9× las teselas — el costo dominante al moverse/conducir en web. Ahora a
-           pie es del tamaño EXACTO de la pantalla (100vw×100vh) y solo al CONDUCIR se agranda a
-           un cuadrado 150vmax (cuyo círculo inscrito cubre la diagonal en cualquier rotación),
-           vía setMapOversize(). transform-origin centrado para que rotate() gire sobre el centro. */
-        #map-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; transform-origin: center center; }
+        /* Cámara fija norte-arriba (estilo GTA Chinatown Wars): el wrapper SIEMPRE mide 100vw×100vh
+           (≈45 teselas). Ya no gira ni se sobredimensiona: eso solo hacía falta al rotar el mapa. */
+        #map-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; }
         #map { width: 100%; height: 100%; background: transparent; }
         .leaflet-marker-icon { background: none !important; border: none !important; }
         .leaflet-div-icon { background: transparent !important; border: none !important; }
@@ -64,7 +60,7 @@ fun buildHtml(
 
         var map = L.map('map', {
             zoomControl: false,
-            attributionControl: false,
+            attributionControl: true,
             dragging: true,   // arrastre SIEMPRE disponible: paridad con los mapas nativos
             touchZoom: true,  // pinch (dos dedos) SIEMPRE disponible: paridad con nativo
             doubleClickZoom: false,
@@ -77,7 +73,7 @@ fun buildHtml(
         //   cargado → menos teselas grises al moverte). updateWhenIdle:false → cargar teselas
         //   MIENTRAS te mueves (no solo al detenerte, que es el default en móvil y causaba el
         //   tirón al parar). updateWhenZooming:false evita churn de teselas a mitad de zoom.
-        var currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom: 22, maxNativeZoom: 18, keepBuffer: 3, updateWhenIdle: false, updateWhenZooming: false }).addTo(map);
+        var currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom: 22, maxNativeZoom: 19, keepBuffer: 3, updateWhenIdle: false, updateWhenZooming: false, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
         map.createPane('landmarkPane');
         map.getPane('landmarkPane').style.zIndex = 300;
         map.createPane('doorPane');
@@ -267,45 +263,34 @@ fun buildHtml(
             map.setZoom(z, { animate: false });
         }
 
-        function setMapRotation(deg) { var wrapper = document.getElementById('map-wrapper'); if (wrapper) wrapper.style.transform = 'rotate(' + deg + 'deg)'; }
-        // OPT FPS (gama baja): a pie el wrapper es del tamaño de la pantalla (≈45 teselas en vez
-        // de ~350). Solo al CONDUCIR se agranda a un cuadrado del tamaño de la DIAGONAL de la
-        // pantalla (en px), centrado, cuyo círculo inscrito cubre las esquinas en cualquier
-        // rotación. invalidateSize() recalcula el mapa al cambiar de tamaño (poco frecuente: solo
-        // al subir/bajar del vehículo). _driving evita trabajo redundante en llamadas repetidas.
-        function setMapOversize(driving) {
-            var w = document.getElementById('map-wrapper'); if (!w) return;
-            if (w._driving === driving) return; w._driving = driving;
-            if (driving) {
-                // Cuadrado del tamaño de la DIAGONAL de la pantalla, en PÍXELES (no vmax/calc, que
-                // no son fiables en WebViews viejas de Android 7-9 → de ahí los bordes negros al
-                // rotar). Centrado: su círculo inscrito (lado/2 = diagonal/2) cubre las esquinas
-                // de la pantalla en CUALQUIER ángulo de rotación, sin huecos.
-                var vw = window.innerWidth, vh = window.innerHeight;
-                var d = Math.ceil(Math.sqrt(vw * vw + vh * vh)) + 8;
-                w.style.width = d + 'px'; w.style.height = d + 'px';
-                w.style.top = Math.round((vh - d) / 2) + 'px';
-                w.style.left = Math.round((vw - d) / 2) + 'px';
-            } else {
-                w.style.width = '100vw'; w.style.height = '100vh';
-                w.style.top = '0'; w.style.left = '0';
-            }
-            if (typeof map !== 'undefined' && map) map.invalidateSize(false);
-        }
         // Cambia el proveedor de teselas. maxNative = zoom máximo REAL del proveedor
         // (CARTO sirve hasta z20 → más nitidez; OSM solo z19). Si cambia, hay que
         // recrear la capa (Leaflet no permite cambiar maxNativeZoom en caliente).
         // Guard por URL: antes setUrl corría CADA frame y redibujaba la capa entera.
+        var requestedTileUrl = null, requestedMaxNative = null;
         function changeTileUrl(url, maxNative) {
             if (!currentTileLayer) return;
-            maxNative = maxNative || 18;
-            if (currentTileLayer._url === url && currentTileLayer.options.maxNativeZoom === maxNative) return;
-            if (currentTileLayer.options.maxNativeZoom !== maxNative) {
-                map.removeLayer(currentTileLayer);
-                currentTileLayer = L.tileLayer(url, { maxZoom: 22, maxNativeZoom: maxNative, keepBuffer: 3, updateWhenIdle: false, updateWhenZooming: false }).addTo(map);
-            } else {
-                currentTileLayer.setUrl(url);
-            }
+            maxNative = maxNative || 19;
+            // A failed provider must not be retried every UI frame.
+            if (requestedTileUrl === url && requestedMaxNative === maxNative) return;
+            requestedTileUrl = url; requestedMaxNative = maxNative;
+            map.removeLayer(currentTileLayer);
+            var layer = L.tileLayer(url, {
+                maxZoom: 22, maxNativeZoom: maxNative, keepBuffer: 3,
+                updateWhenIdle: false, updateWhenZooming: false,
+                attribution: '&copy; OpenStreetMap contributors' + (url.indexOf('arcgisonline') >= 0 ? ', Esri' : '') +
+                    (url.indexOf('opentopomap') >= 0 ? ', OpenTopoMap (CC-BY-SA)' : '')
+            });
+            layer.on('tileerror', function() {
+                if (currentTileLayer !== layer || url.indexOf('tile.openstreetmap.org') >= 0) return;
+                map.removeLayer(layer);
+                currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 22, maxNativeZoom: 19, keepBuffer: 3,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+            });
+            currentTileLayer = layer;
+            layer.addTo(map);
         }
         function setRoadNetworkReady(ready) { window.roadNetworkReady = ready; }
         function exitExplorationMode() { isExplorationMode = false; }
@@ -917,7 +902,8 @@ fun buildHtml(
         }
 
         // 🔧 DEBUG INTERIORES: caminos del navGraph (verde=peatonal, naranja=autos), zonas NO
-        // caminables (polígonos rojos, p. ej. el edificio ESCOM) y bardas (líneas rojas). Recibe
+        // caminables (polígonos rojos, p. ej. el edificio ESCOM), bardas (líneas rojas) y
+        // guías de navegación (líneas azules, no físicas). Recibe
         // un objeto {paths, blocks, walls} con coords lat/lng global; '{}' limpia todo.
         var interiorPathLayers = {};
         function updateInteriorPaths(jsonStr) {
@@ -925,7 +911,7 @@ fun buildHtml(
             var items = [];
             (data.paths || []).forEach(function(w){ items.push({ id:'p_'+w.id, kind:'path', walk:w.walk, nodes:w.nodes }); });
             (data.blocks || []).forEach(function(b){ items.push({ id:'b_'+b.id, kind:'block', nodes:b.nodes }); });
-            (data.walls || []).forEach(function(wl){ items.push({ id:'w_'+wl.id, kind:'wall', nodes:wl.nodes }); });
+            (data.walls || []).forEach(function(wl){ items.push({ id:'w_'+wl.id, kind:'wall', guide: wl.guide, nodes:wl.nodes }); });
             var currentIds = new Set(items.map(function(x){ return String(x.id); }));
             for (var id in interiorPathLayers) {
                 if (!currentIds.has(id)) { map.removeLayer(interiorPathLayers[id]); delete interiorPathLayers[id]; }
@@ -941,7 +927,7 @@ fun buildHtml(
                 if (x.kind === 'block') {
                     layer = L.polygon(latlngs, { color:'#C80000', weight:3, fillColor:'#DC2828', fillOpacity:0.35, interactive:false });
                 } else if (x.kind === 'wall') {
-                    layer = L.polyline(latlngs, { color:'#DC0000', weight:7, opacity:0.9, lineCap:'round', interactive:false });
+                    layer = L.polyline(latlngs, { color:x.guide ? '#1683D8' : '#DC0000', weight:x.guide ? 4 : 7, opacity:0.9, lineCap:'round', interactive:false });
                 } else {
                     var color = x.walk ? '#4CC850' : '#FF8C00';
                     var weight = x.walk ? 5 : 7;

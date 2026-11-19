@@ -30,6 +30,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapState
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapViewModel
 import kotlin.math.roundToInt
 
+
 /**
  * CAPA 1 (MAPA) — rama **WEB** (Leaflet en `WebView`) extraída de `WorldMapScreen.kt` para reducir
  * el tamaño del composable gigante (mismo paquete `ui`). Es la rama `else ->` del `when(mapProvider)`
@@ -100,12 +101,13 @@ internal fun WebMapLayer(
                     update = { wv ->
                         webViewRef.value = wv
                         val timeMs = System.currentTimeMillis()
+                        val location = uiState.currentLocation
                         if (!uiState.isUserPanningMap) {
                             // Zoom SIN truncar (.toInt() peleaba con syncZoom cuando el estado
                             // queda en medios pasos tras un pinch, p. ej. 21.5 vs 21).
-                            uiState.currentLocation?.let { wv.evaluateJavascript("if(typeof updateMapView==='function')updateMapView(${it.latitude}, ${it.longitude}, ${uiState.zoomLevel});", null) }
+                            location?.let { wv.evaluateJavascript("if(typeof updateMapView==='function')updateMapView(${it.latitude}, ${it.longitude}, ${uiState.zoomLevel});", null) }
                         }
-                        uiState.currentLocation?.let { wv.evaluateJavascript("if(typeof updatePlayerMarker==='function')updatePlayerMarker(${it.latitude}, ${it.longitude}, ${uiState.isUserPanningMap});", null) }
+                        location?.let { wv.evaluateJavascript("if(typeof updatePlayerMarker==='function')updatePlayerMarker(${it.latitude}, ${it.longitude}, ${uiState.isUserPanningMap});", null) }
                         // Zoom automático por estado: sync explícito e incondicional (el JS
                         // decide si aplica; respeta el pinch reciente del usuario).
                         wv.evaluateJavascript("if(typeof syncZoom==='function')syncZoom(${uiState.zoomLevel});", null)
@@ -115,33 +117,8 @@ internal fun WebMapLayer(
                         // Lápiz seleccionado (Modo Diseñador web): tinta el ✏️ del landmark activo.
                         val selLmJs = uiState.selectedLandmarkId?.let { "'$it'" } ?: "null"
                         wv.evaluateJavascript("if(typeof setSelectedLandmark==='function')setSelectedLandmark($selLmJs);", null)
-                        // OPT FPS web: el contenedor solo se agranda (para rotación) al CONDUCIR; a
-                        // pie es del tamaño de la pantalla. El JS ignora llamadas repetidas (guard
-                        // _driving), así que llamarlo cada frame es barato y robusto (se auto-corrige
-                        // aunque se pierda una transición a pie↔conducir).
-                        wv.evaluateJavascript("if(typeof setMapOversize==='function')setMapOversize(${uiState.isDriving});", null)
-                        val mapRot = if (uiState.isDriving) -uiState.vehicleRotation else 0f
-                        wv.evaluateJavascript("if(typeof setMapRotation==='function')setMapRotation(${mapRot});", null)
-                        val tileUrl = when (uiState.mapProvider) {
-                            MapProvider.CARTO_VOYAGER  -> "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                            MapProvider.CARTO_DB_DARK  -> "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                            MapProvider.CARTO_DB_LIGHT -> "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                            MapProvider.ESRI           -> "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-                            MapProvider.ESRI_SATELLITE -> "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                            MapProvider.OPEN_TOPO      -> "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-                            MapProvider.OSM_WEB        -> "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            else -> "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-                        }
-                        // Zoom máximo REAL de cada proveedor: a partir de ahí Leaflet escala
-                        // (over-zoom). CARTO sirve z20 → más detalle de calles que OSM (z19).
-                        val tileMaxNative = when (uiState.mapProvider) {
-                            MapProvider.CARTO_VOYAGER, MapProvider.CARTO_DB_DARK,
-                            MapProvider.CARTO_DB_LIGHT -> 20
-                            MapProvider.OSM_WEB        -> 19
-                            MapProvider.ESRI, MapProvider.ESRI_SATELLITE -> 19
-                            MapProvider.OPEN_TOPO      -> 17
-                            else -> 20 // Google Web
-                        }
+                        val tileUrl = uiState.mapProvider.webTileTemplate
+                        val tileMaxNative = uiState.mapProvider.tileMaxNativeZoom
                         wv.evaluateJavascript("if(typeof changeTileUrl==='function')changeTileUrl('$tileUrl', $tileMaxNative);", null)
                         wv.evaluateJavascript("if(typeof setRoadNetworkReady==='function')setRoadNetworkReady(${uiState.isRoadNetworkReady});", null)
 
@@ -466,7 +443,7 @@ internal fun WebMapLayer(
                                     mapOf("id" to "blk_$i", "nodes" to poly.nodes.map { mapOf("lat" to it.lat, "lng" to it.lon) })
                                 } ?: emptyList()
                                 val walls = cfg?.walls?.mapIndexed { i, wl ->
-                                    mapOf("id" to "wl_$i", "nodes" to listOf(
+                                    mapOf("id" to "wl_$i", "guide" to (wl.effectiveRole == ovh.gabrielhuav.pow.domain.models.map.CollisionRole.NAV_GUIDE), "nodes" to listOf(
                                         mapOf("lat" to wl.lat1, "lng" to wl.lon1),
                                         mapOf("lat" to wl.lat2, "lng" to wl.lon2)
                                     ))

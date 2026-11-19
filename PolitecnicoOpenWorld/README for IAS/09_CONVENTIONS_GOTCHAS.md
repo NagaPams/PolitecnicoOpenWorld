@@ -9,22 +9,44 @@ low-end performance) or doc drift.
 
 ## 0. Archivos GRANDES (>1000 líneas) — plan de separación
 
-> ## ✅ ESTADO REAL (2026-07-27, tras el refactor de la Fase 5) — esto MANDA
+> ## ✅ ESTADO REAL (2026-09-23, re-medido) — esto MANDA
 >
 > Los dos monstruos del modo pelea se partieron por DOMINIO. `StreetFighterViewModel` pasó de
-> **6220 a 2299** líneas y `StreetFighterScreen` de **4029 a 1902**.
+> **6220 a 2299** líneas y `StreetFighterScreen` de **4029 a 1902** (cifras de la Fase 5; los
+> tamaños VIGENTES son los de la tabla).
 >
-> | Archivo | Líneas |
-> |---|---:|
-> | `features/streetfighter/viewmodel/StreetFighterViewModel.kt` | 2299 |
-> | `features/streetfighter/ui/StreetFighterScreen.kt` | 1902 |
-> | `features/map_exterior/viewmodel/WorldMapViewModel.kt` | 1596 |
-> | `features/map_exterior/ui/WorldMapScreen.kt` | 1463 |
-> | `features/map_exterior/ui/NativeOsmMap.kt` | 1458 |
-> | `features/interiores/zombies/ui/ZombieGameScreen.kt` | 1343 |
-> | `features/streetfighter/ui/SfSceneRenderer.kt` | 1225 |
-> | `AppNavGraph.kt` | 1175 |
-> | `features/interiores/zombies/viewmodel/ZombieInteriorViewModel.kt` | 1165 |
+> ⚠️ **Las cifras de abajo se re-midieron con `wc -l` el 2026-10-17 (rama `features`, tras restaurar lo revertido en #177).** Las anteriores eran de
+> 2026-07-27 y **siete de las nueve filas habían quedado desfasadas** (hasta 136 líneas de
+> diferencia), lo que hacía tomar decisiones de "¿hay que partir esto?" con datos falsos. Si
+> tocas uno de estos archivos, vuelve a medir y actualiza aquí: es la regla de "MEDIR, no
+> suponer".
+>
+> | Archivo | Líneas | Antes decía |
+> |---|---:|---:|
+> | `features/streetfighter/viewmodel/StreetFighterViewModel.kt` | 2466 | 2422 |
+> | `features/streetfighter/ui/StreetFighterScreen.kt` | 1999 | 1801 |
+> | `features/map_exterior/viewmodel/WorldMapViewModel.kt` | 1612 | 1603 |
+> | `features/map_exterior/ui/WorldMapScreen.kt` | 1463 | 1463 |
+> | `features/map_exterior/ui/NativeOsmMap.kt` | 1472 | 1458 |
+> | `features/interiores/zombies/ui/ZombieGameScreen.kt` | 1350 | 1343 |
+> | `AppNavGraph.kt` | 1174 (re-medido 2026-11-05, integración de Multimedia en Coleccionables) | 1182 |
+> | `features/interiores/zombies/viewmodel/ZombieInteriorViewModel.kt` | 1165 | 1165 |
+> | `features/streetfighter/ui/SfSceneRenderer.kt` | 1230 | 1089 |
+> | `domain/models/ai/NpcAiManager.kt` | 1048 | (no estaba en la tabla) |
+>
+> **🆕 (2026-09-23) `StreetFighterCpuAi.kt` se partió en cuatro.** Había llegado a **1094 líneas**
+> sin estar en esta tabla — o sea, cruzó el umbral sin que nadie lo evaluara. Se cortó por dominio,
+> moviendo líneas sin tocar ni una función, y ninguno de los cuatro llega ya a 1000:
+>
+> | Archivo | Líneas | Qué vive ahí |
+> |---|---:|---|
+> | `features/streetfighter/viewmodel/StreetFighterCpuAi.kt` | 200 | el orquestador `buildCpuInput` |
+> | `features/streetfighter/viewmodel/StreetFighterCpuAiDecision.kt` | 593 | decisión por tick, espaciado, perfil por personaje |
+> | `features/streetfighter/viewmodel/StreetFighterCpuAiCombos.kt` | 229 | acción→input del catálogo, validación, cola de rutas |
+> | `features/streetfighter/viewmodel/StreetFighterCpuAiPolitica.kt` | 148 | reglas puras de dificultad y defensa contra la súper |
+>
+> Los cuatro están en el MISMO paquete, así que `buildCpuInput` sigue viendo a sus ayudantes sin
+> un solo import nuevo y `StreetFighterViewModel.kt` no se tocó.
 >
 > **➡️ El mapa de qué hay en cada archivo está en `10_ARQUITECTURA_SEPARACION.md`**, con la receta
 > de extracción y las 3 trampas que costaron tiempo (finales de línea LF/CRLF, KDoc partido por
@@ -120,8 +142,8 @@ composables top-level); las extensiones del VM usadas se importan en el archivo 
 
 **🆕 Progreso (2026-06-20, 5ª pasada):** `WorldMapViewModel.kt` ~2584→**~2503** extrayendo dos parciales
 nuevos (extensiones, sin gemelo): `WorldMapCameraUi.kt` (zoom automático/manual, pinch `onMapZoomChanged`,
-`centerOnPlayer`/`zoomToPlayer`, pan, y toggles de widgets; campos `autoZoomMode`/`targetZoomLevel`
-pasados a `internal`) y `WorldMapSettings.kt` (densidad/LOD de NPCs + skin). Call-sites externos importan
+`centerOnPlayer`/`zoomToPlayer`, pan, y toggles de widgets; campos `lastAutoZoomTarget`/`targetZoomLevel`
+pasados a `internal`; `autoZoomMode` ya no existe) y `WorldMapSettings.kt` (densidad/LOD de NPCs + skin). Call-sites externos importan
 las extensiones (MainActivity, WorldMapScreen, NativeOsmMap, MapJsBridge). **Tope práctico de extracción
 fácil alcanzado:** lo que queda grande en el VM (startGameLoop ~440, handleMultiplayerMessage,
 addRemoteEntity, updateVisibleRoads, updateDestinationRoute, triggerWastedSequence) son **pares con
@@ -268,9 +290,9 @@ comprometido. / Control edits stay in `temp*`, commit only on SAVE.
 
 ## 4. Fog de guerra anclado al jugador / Player-anchored fog (por renderer)
 
-- **OSM nativo:** `FogOverlay` proyectado al jugador cada frame; rect = pantalla a pie, diagonal solo al
-  conducir (rotación). No rellenar ~10× el área cada frame.
-- **Web:** div `#fog` dentro de `#map-wrapper` (rota con el mapa); `drawFog` **cachea el gradiente** y no
+- **OSM nativo:** `FogOverlay` proyectado al jugador cada frame; rect = pantalla siempre (la cámara es
+  norte-arriba y el mapa ya no rota, así que no hace falta sobredimensionar). No rellenar ~10× el área cada frame.
+- **Web:** div `#fog` dentro de `#map-wrapper` (que ya no rota); `drawFog` **cachea el gradiente** y no
   re-rasteriza si no cambia.
 - **Compose `Canvas` fog:** **solo** para Google nativo.
 
@@ -366,11 +388,12 @@ px-por-metro), `PlayerCharacter` (jugador a pie/conduciendo). El sprite nativo u
 
 ## 7. Mapa web `#map-wrapper` / web map wrapper
 
-**Dinámico:** `100vw×100vh` a pie; al conducir crece a un cuadrado del tamaño de la **diagonal en
-PÍXELES** (NO `vmax`/`calc` — daban **esquinas negras** en WebViews viejas). Cambia vía
-`setMapOversize(driving)` (llama `map.invalidateSize`), invocado cada frame (JS no-opea repetidos vía
-`_driving`). **No** dejarlo permanentemente sobredimensionado: a `300vw×300vh` renderizaba ~9× los tiles
-(el costo dominante de FPS al moverse). Follow-camera con `map.panBy` (no `setView`).
+**Fijo:** `100vw×100vh` SIEMPRE (≈45 tiles). La cámara es **norte-arriba** (estilo GTA Chinatown Wars):
+el mapa no gira, solo gira el sprite del coche (`vehicleSpriteHeading`). Por eso ya no existen
+`setMapOversize`, `setMapRotation` ni `applyVehicleViewport`; sobredimensionar el wrapper solo hacía falta al
+rotar el mapa (con la diagonal en PÍXELES para evitar **esquinas negras** en WebViews viejas). **No** volver a
+agrandarlo: a `300vw×300vh` renderizaba ~9× los tiles (el costo dominante de FPS al moverse).
+Follow-camera con `map.panBy` (no `setView`).
 
 ## 8. Render web NPC types / web renderer NPC types
 
@@ -750,11 +773,12 @@ matrices por defecto son **border-only** hasta reemplazarse.
   Implementado en **OSM nativo** (`NativeOsmMap`: `Polygon`/`Polyline` cacheados, rebuild solo si cambian
   landmarks o colisiones) y **web** (`updateInteriorPaths` recibe `{paths, blocks, walls}`; el VM convierte
   `localX/localY → global` con `toGlobalGeoPoint`). Google nativo = pendiente (como el resto del overlay).
-- **Zoom automático por estado + SUAVIZADO:** `updateAutoZoom()` (miembro del VM, llamado cada tick del game
-  loop miembro) cambia `targetZoomLevel` SOLO en transiciones: a pie `ZOOM_ON_FOOT=22`, conduciendo
-  `ZOOM_DRIVING=21`, ≥85% MAX_SPEED `ZOOM_DRIVING_FAST=20` (vuelve a 21 bajo el 65%). El pinch del
-  usuario se respeta entre transiciones. **NO cambies `zoomLevel` directamente en transiciones;**
-  el game loop interpola `zoomLevel` hacia `targetZoomLevel` (~1 nivel por tick) para evitar el
+- **Zoom automático por estado + SUAVIZADO:** `updateAutoZoom()` (extensión del VM, llamada cada tick del game
+  loop) cambia `targetZoomLevel` SOLO cuando cambia `autoZoomTarget(isDriving)` (`WorldMapState.kt`): a pie
+  `ZOOM_ON_FOOT=22`, conduciendo `ZOOM_DRIVING=21`. Ya NO depende de la velocidad (no hay zoom 20 a alta
+  velocidad: la cámara es fija). El pinch del usuario se respeta entre transiciones (el VM guarda
+  `lastAutoZoomTarget`). **NO cambies `zoomLevel` directamente en transiciones;**
+  el game loop interpola `zoomLevel` hacia `targetZoomLevel` (10 % de la distancia restante por tick) para evitar el
   "shock" visual brusco al robar/salir de un auto. **GOTCHA:** cualquier acción que fije `zoomLevel`
   a mano (`zoomIn/zoomOut/onMapZoomChanged/zoomToPlayer`) DEBE fijar TAMBIÉN `targetZoomLevel`, o el
   `updateAutoZoom()` del siguiente tick arrastra el zoom de vuelta y "rebota" (era el bug de "Hacer

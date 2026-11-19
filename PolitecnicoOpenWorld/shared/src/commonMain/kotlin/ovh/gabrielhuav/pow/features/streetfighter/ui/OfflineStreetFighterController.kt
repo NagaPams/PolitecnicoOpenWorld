@@ -12,6 +12,8 @@ import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.comboSheet
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.cycleShowcaseSpeed
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.dismissGauntletReport
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.exitTutorial
+import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.extraordinarioFighters
+import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.startExtraordinario
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.goToPreviousShowcaseAnimation
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.replayCurrentShowcaseAudio
 import ovh.gabrielhuav.pow.features.streetfighter.viewmodel.resumeArcadeSession
@@ -62,6 +64,9 @@ class OfflineStreetFighterController(
     override fun tutorialRestartLesson() = viewModel.tutorialRestartLesson()
     override fun exitTutorial() = viewModel.exitTutorial()
     override fun startTutorial(id: SfFighterId) = viewModel.startTutorial(id)
+    override fun extraordinarioFighters(): List<SfFighterId> = viewModel.extraordinarioFighters()
+    override fun startExtraordinario(playerId: SfFighterId, rivalId: SfFighterId) =
+        viewModel.startExtraordinario(playerId, rivalId)
     override fun comboSheet(id: SfFighterId) = viewModel.comboSheet(id)
     override fun startTeamBattle(playerTeam: List<SfFighterId>, cpuTeam: List<SfFighterId>, difficulty: SfCpuDifficulty) =
         viewModel.startTeamBattle(playerTeam, cpuTeam, difficulty)

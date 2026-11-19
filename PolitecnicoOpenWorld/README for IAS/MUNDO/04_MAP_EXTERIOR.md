@@ -21,6 +21,20 @@ extension partials** (`WorldMap*.kt`) grouping logic by topic. State is `WorldMa
 > nueva NO la dupliques como miembro+extensión. / The member-vs-extension twin pattern: member wins,
 > extension dies. The 8 twins that existed were all de-duplicated on 2026-06-21 (see `09 §12`).
 
+## Proveedores sin credenciales (2026-11-05)
+
+La configuración de teselas y zoom nativo vive en el modelo compartido `MapProvider`.
+El default es OSM_WEB. CARTO sirve marcas de agua sin una clave desde septiembre de 2026
+([documentación oficial](https://carto.com/basemaps/apikey/index.html)); no tratar HTTP 200
+como prueba de que ese mapa sea válido. Los valores antiguos CARTO y Google se conservan
+para compatibilidad, pero `keyFreeProvider` los migra a OSM_WEB. Ajustes solo ofrece OSM,
+OSM Web, Esri (calles/satélite) y OpenTopoMap en esta distribución sin credenciales.
+Precarga y WebView usan la misma URL y límite de zoom; OpenTopo se limita a z17.
+Si una capa Web falla al cargar teselas, Leaflet cambia a OSM y recuerda la solicitud
+para evitar volver a pedir el proveedor fallido en cada frame. Una precarga fallida
+no se presenta como lista: ofrece OSM. Las URLs nuevas no reutilizan la caché CARTO
+con marcas de agua; no se elimina la caché ni los datos del usuario.
+
 ---
 
 ## Tabla "Key files" (salta directo aquí) / jump straight here
@@ -107,12 +121,13 @@ data class PoliceShot(from: GeoPoint, to: GeoPoint, at: Long)
   Ajustes→Interfaz), showSpeedometer (=true; velocímetro km/h, solo al conducir), showCoordsWidget
   (widget de coordenadas X/Y/Z, Ajustes→Interfaz, default oculto; X=lon, Y=lat, Z="GLOBAL"),
   showRoadNetwork, isUserPanningMap`.
-- **Zoom por estado (constantes en `WorldMapState.kt`):** `ZOOM_ON_FOOT=22`, `ZOOM_DRIVING=21`,
-  `ZOOM_DRIVING_FAST=20` (≥85% de MAX_SPEED baja a 20; histéresis al 65%). `updateAutoZoom()` corre
-  cada tick del game loop y solo actúa en TRANSICIONES de modo (el pinch manual se respeta).
+- **Zoom por estado (constantes en `WorldMapState.kt`):** `ZOOM_ON_FOOT=22`, `ZOOM_DRIVING=21`;
+  `autoZoomTarget(isDriving)` elige uno según si conduces (la velocidad ya no mueve la cámara; se eliminó
+  `ZOOM_DRIVING_FAST`). `updateAutoZoom()` corre cada tick del game loop y solo actúa cuando CAMBIA el
+  objetivo automático (`lastAutoZoomTarget`), así el pinch manual se respeta.
   **Suavizado de zoom:** `WorldMapState` ahora tiene `targetZoomLevel` y `zoomTransitionTicks`.
   `updateAutoZoom()` fija `targetZoomLevel` en vez de cambiar `zoomLevel` de golpe. El game loop
-  interpola `zoomLevel` hacia `targetZoomLevel` (~1 nivel por tick, ~300 ms de transición) para
+  interpola `zoomLevel` hacia `targetZoomLevel` (10 % de la distancia restante por tick) para
   evitar el "shock" visual al robar/salir de un auto.
   `ZOOM_GAMEPLAY_WEB=19` quedó SOLO como nivel máx. de tiles reales que se pre-descargan en web.
 - **Controles/skin:** `controlType, controlsScale, swapControls, selectedSkin, showSkinSelector`.
@@ -145,9 +160,10 @@ data class PoliceShot(from: GeoPoint, to: GeoPoint, at: Long)
 ## Game loop — `WorldMapGameLoop.kt` / `WorldMapViewModel.startGameLoop`
 
 **ES:** Coroutine en `Dispatchers.Default`, **tick cada 33 ms** (~30 Hz). Arranque: espera ubicación,
-carga calles (caché Room → si no, Overpass con backoff exponencial 1s→30s). Luego, por tick:
+carga calles (caché Room → celda estática `datos-calles` → Overpass con respaldos y backoff).
+La cobertura inicial y la generación mensual se documentan en `tools/calles/README.md`. Luego, por tick:
 **EN:** Coroutine on `Dispatchers.Default`, **tick every 33 ms** (~30 Hz). Startup: wait for location,
-load roads (Room cache → else Overpass with exponential backoff 1s→30s). Then, per tick:
+load roads (Room cache → static `datos-calles` cell → Overpass backups with backoff). Then, per tick:
 
 ```
 1. ESCOM sync: dentro de ESCOM + red lista → `spawnEscomItems` (ya **NO** spawnea la mano; solo marca el flag); fuera → limpia.
@@ -317,8 +333,8 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > Prankedy = render propio sin culling → **ambos siempre visibles**. Ver 09.
 
 ### `NativeOsmMap.kt` (osmdroid)
-- **`FogOverlay`** anclado al jugador cada frame; rect del tamaño de pantalla a pie, sobredimensionado
-  a la diagonal **solo al conducir** (rotación). Evita rellenar ~10× el área cada frame.
+- **`FogOverlay`** anclado al jugador cada frame; rect del tamaño de pantalla siempre (cámara norte-arriba:
+  `mapOrientation = 0f`, ya no se sobredimensiona por rotación). Evita rellenar ~10× el área cada frame.
 - **Over-zoom z20–22:** `MapTileApproximater` + `setMaxZoomLevel(22)` escala z19 (OSM solo sirve tiles
   reales hasta z19). Default OSM = zoom máx 22.
 - **Lambda `update` ~30 Hz — mantener barata** (ver 09): landmarks `GroundOverlay` solo re-`setPosition`/
@@ -341,14 +357,14 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
   `R.id`s rompía un hack `id+100`/`id+400` y causaba `ClassCastException`).
 
 ### `WorldMapLeafletHtml.kt` (Web)
-- `#map-wrapper` **dinámico**: `100vw×100vh` a pie; al conducir crece a un cuadrado del tamaño de la
-  **diagonal en PÍXELES** (no `vmax`/`calc` — daban esquinas negras en WebViews viejas). `setMapOversize(driving)`.
+- `#map-wrapper` **fijo**: `100vw×100vh` siempre. La cámara es norte-arriba: el mapa no gira (solo el sprite del
+  coche, vía `vehicleSpriteHeading`), así que ya no hay `setMapOversize`/`setMapRotation`/`applyVehicleViewport`.
 - Follow-camera con **`map.panBy`** por frame (no `setView`, que hace `_resetView` completo); `setView`
   solo al cambiar zoom o teleport. Tile layer: `keepBuffer:3`, `updateWhenIdle:false`.
 - `updateNpcs`: solo dibuja imágenes para `type` `"CAR"`/`"MODULAR"`; el resto cae a SVG. Por eso
   **`POLICE_CAR` se serializa como imagen base64 (type="CAR")** vía `PoliceSpriteManager`, y `POLICE_COP`
   como **👮 base64 (type="MODULAR")**. `updatePolice(playerLat, playerLng, data)` dibuja 🚓+línea fuera de la fog.
-- `#fog` div dentro de `#map-wrapper` (rota con el mapa); `drawFog` **cachea el string del gradiente** y
+- `#fog` div dentro de `#map-wrapper` (que ya no rota); `drawFog` **cachea el string del gradiente** y
   no re-rasteriza si no cambia.
 
 ### `CachingWebViewClient.kt`

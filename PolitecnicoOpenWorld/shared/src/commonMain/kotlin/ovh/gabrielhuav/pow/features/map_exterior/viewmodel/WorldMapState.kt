@@ -19,7 +19,9 @@ const val ZOOM_GAMEPLAY_WEB = 19.0  // Nivel máx. de TILES reales que se pre-de
 // ─── Zoom de juego por estado (todos los proveedores) ────────────────────────
 const val ZOOM_ON_FOOT      = 22.0  // a pie (default)
 const val ZOOM_DRIVING      = 21.0  // conduciendo
-const val ZOOM_DRIVING_FAST = 20.0  // conduciendo MUY rápido (≥85% de MAX_SPEED, histéresis al 65%)
+
+/** Zoom objetivo automático: depende SOLO de si conduces (la velocidad no mueve la cámara). */
+fun autoZoomTarget(isDriving: Boolean): Double = if (isDriving) ZOOM_DRIVING else ZOOM_ON_FOOT
 
 // ─── Zona de interacción de estaciones de transporte (metro/metrobús) ─────────
 // 60 m (4× los 15 m base de coleccionables/puertas). Las estaciones de metro.json
@@ -42,7 +44,7 @@ data class PoliceShot(
     val at: Long
 )
 
-enum class RoadSource { LOADING, LOCAL_DB, NETWORK }
+enum class RoadSource { LOADING, LOCAL_DB, NETWORK, OFFLINE_FALLBACK }
 enum class TileSource  { LOCAL_OSM, LOCAL_CACHE, NETWORK }
 
 // Herramienta activa del EDITOR del Debug Interiores. Define qué geometría se dibuja
@@ -57,7 +59,7 @@ data class WorldMapState(
     val currentLocation: GeoPoint? = null,
     val isLoadingLocation: Boolean = true,
     val zoomLevel: Double = ZOOM_LOADING,
-    val mapProvider: MapProvider = MapProvider.CARTO_VOYAGER, // Default: CARTO Voyager (web, z20 = máximo detalle)
+    val mapProvider: MapProvider = MapProvider.OSM_WEB, // Default sin credenciales ni marcas de agua
     // Cambio de proveedor con precarga: el nuevo se precarga en segundo plano mientras
     // sigues usando el actual. Cuando 'pendingProviderReady' es true, se avisa para cambiar.
     val pendingProvider: MapProvider? = null,
