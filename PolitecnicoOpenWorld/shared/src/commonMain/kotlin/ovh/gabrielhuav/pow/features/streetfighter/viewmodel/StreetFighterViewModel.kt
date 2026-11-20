@@ -302,12 +302,13 @@ open class StreetFighterViewModel(
     // su poder especial suena con el hadouken genérico. La auditoría NO los marca como faltantes.
     internal val sfVoicelessFighters = setOf(
         SfFighterId.LAZARO, SfFighterId.PARAMEDICO, SfFighterId.PRANKEDY, SfFighterId.ALEXIS_SYNTAXIS,
+        SfFighterId.TITAN_BIENESTAR,
     )
 
     // 🆕 (2026-10-15) Peleadores que NO emiten ningún sonido de voz al ganar (ni su pack WIN
     // ni el fallback al special). Ver emitWinVoice.
     internal val sfNoWinVoiceFighters = setOf(
-        SfFighterId.ALEXIS_SYNTAXIS,
+        SfFighterId.TITAN_BIENESTAR, SfFighterId.ALEXIS_SYNTAXIS,
     )
 
     /** Emite un clip de voz `special_<name>.m4a` si el asset existe. true = se emitió. */
@@ -820,7 +821,10 @@ open class StreetFighterViewModel(
         lastRealMs = sfElapsedRealtime()
         loopJob = scope.launch {
             while (isActive) {
-                delay(tickMs) // 16 ms (~60) o 33 ms (~30) en gama baja
+                // El trabajo del tick consume parte del presupuesto; no añadir otra espera completa.
+                delay(ovh.gabrielhuav.pow.domain.models.streetfighter.SfFramePacing.waitMs(
+                    tickMs, lastRealMs, sfElapsedRealtime(),
+                ))
                 val real = sfElapsedRealtime()
                 val dtMs = (real - lastRealMs).coerceAtMost(100L)
                 lastRealMs = real
@@ -882,9 +886,17 @@ open class StreetFighterViewModel(
     }
 
     private fun tick(now: Long, dt: Float) {
+        if (_state.value.printerBonus != null) {
+            tickPrinterBonus(now, dt)
+            return
+        }
         // 🆕 AUTOJUEGO: al terminar el combate (o agotar el tope) encadena la siguiente pelea.
         if (gauntletActive && maybeAdvanceGauntlet(now)) return
         // 🆕 RONDAS: ¿toca arrancar la ronda nueva? (resetea el estado ANTES de armar el Sim)
+        if (roundResetAtMs > 0 && now >= roundResetAtMs && _state.value.teamBattle != null) {
+            prepareTeamLeg(_state.value.teamBattle!!)
+            return // prepareTeamLeg reinicia el reloj; no reutilizar el now de la pelea anterior.
+        }
         if (roundResetAtMs > 0 && now >= roundResetAtMs) resetRound(now)
         val s = _state.value
         val online = s.onlineStatus == SfOnlineStatus.FIGHTING
@@ -1010,6 +1022,30 @@ open class StreetFighterViewModel(
         // El menú de fin SOLO con el COMBATE decidido (2 rondas); entre rondas solo se congela
         val showEnd = sim.battleEnded && matchOver && now >= endMenuAtMs
         _state.update(sim, now, showEnd)
+    }
+
+    private fun tickPrinterBonus(now: Long, dt: Float) {
+        val s = _state.value
+        val bonus = s.printerBonus ?: return
+        if (bonus.finished) {
+            _state.value = s.copy(gameTimeMs = now)
+            return
+        }
+        val advanced = bonus.advance((now - s.gameTimeMs).coerceAtLeast(0L))
+        _state.value = s.copy(printerBonus = advanced)
+        val sim = Sim(p0 = s.player, p1 = s.cpu, fireballs = s.fireballs.toMutableList(),
+            splashes = s.splashes.toMutableList(), camX = s.cameraX, camY = s.cameraY,
+            score0 = s.playerScore, score1 = 0, winner = null, battleEnded = false)
+        if (advanced.introMs == 0L && !advanced.finished) {
+            updateFighter(sim, 0, buildPlayerInput(now, sim), now, dt)
+            updateFireballs(sim, now, dt)
+            updateSplashes(sim, now)
+        }
+        val result = _state.value.printerBonus ?: advanced
+        _state.value = _state.value.copy(player = sim.p0, cpu = s.cpu,
+            fireballs = sim.fireballs, splashes = sim.splashes,
+            gameTimeMs = now, displayTime = result.seconds, playerScore = result.score)
+        if (result.finished) persistArcadeCheckpoint(3)
     }
 
     private fun MutableStateFlow<StreetFighterState>.update(sim: Sim, now: Long, showEnd: Boolean) {
@@ -1496,12 +1532,15 @@ open class StreetFighterViewModel(
                 val defender = sim.fighter(defenderIdx)
                 val fbBox = fireballBox.toWorld(fb.x, fb.y, fb.direction)
                 val hurtRows = frameDef(defender).hurt
-                val hitArea = hurtRows?.let { rows ->
+                val printer = _state.value.printerBonus
+                val hitArea = if (printer != null) {
+                    if (fbBox.overlaps(ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus.TARGET)) SfHurtArea.BODY else null
+                } else hurtRows?.let { rows ->
                     SfHurtArea.entries.withIndex().firstOrNull { (i, _) ->
                         fbBox.overlaps(SfBox.fromList(rows.getOrNull(i)).toWorld(defender.x, defender.y, defender.direction))
                     }?.value
                 }
-                if (hitArea != null && defender.state in SF_HURT_STATES) {
+                if (hitArea != null && (printer != null || defender.state in SF_HURT_STATES)) {
                     fb = fb.copy(state = SfFireballState.COLLIDED, animationFrame = 0, velocity = fb.velocity * 0.33f,
                         animationTimerMs = now + (fireballCollidedDelays[0] * SfConstants.FRAME_TIME_MS).toLong())
                     applyAttackHit(sim, fb.ownerIndex, fb.strength, SfAttackType.PUNCH, hitArea, null, now)
@@ -1921,6 +1960,10 @@ open class StreetFighterViewModel(
             return
         }
         val s = _state.value
+        s.teamBattle?.let { team ->
+            startTeamBattle(team.playerTeam, team.cpuTeam, s.cpuDifficulty)
+            return
+        }
         // IA vs IA: revancha con los mismos dos peleadores a PESADILLA
         if (s.aiVsAi) {
             startAiVsAi(s.player.id, s.cpu.id, s.cpuDifficulty)
@@ -2148,6 +2191,16 @@ open class StreetFighterViewModel(
         if (remateOnRoundEnd(sim, winnerIdx, now, outcome)) return
         sim.winner = winnerIdx
         sim.battleEnded = true
+        _state.value.teamBattle?.let { team ->
+            val next = team.eliminate(winnerIdx)
+            _state.value = _state.value.copy(teamBattle = next,
+                playerRoundWins = next.cpuIndex, cpuRoundWins = next.playerIndex)
+            if (next.finished) {
+                matchOver = true
+                endMenuAtMs = now + END_MENU_DELAY_MS
+            } else roundResetAtMs = now + ROUND_RESET_DELAY_MS
+            return
+        }
         // 🆕 (2026-07-25) Grado de la ronda (PERFECT/COMBO/SUPER/TIME): resetRound lo pinta bajo
         // la barra del ganador en la ronda siguiente. Solo importa si HABRÁ ronda siguiente.
         pendingRoundOutcome = outcome

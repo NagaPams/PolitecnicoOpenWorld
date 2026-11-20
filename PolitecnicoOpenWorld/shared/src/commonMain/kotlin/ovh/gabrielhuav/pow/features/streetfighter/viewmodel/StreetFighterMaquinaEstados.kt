@@ -573,6 +573,7 @@ internal fun StreetFighterViewModel.crossToOtherSide(sim: StreetFighterViewModel
 
 /** 🆕 (2026-07-21) AGARRE: solo tiene sentido pegado al rival (como en el arcade). */
 internal fun StreetFighterViewModel.tryGrab(sim: StreetFighterViewModel.Sim, idx: Int, now: Long): Boolean {
+    if (_state.value.printerBonus != null) return false
     val me = sim.fighter(idx)
     val foe = sim.fighter(1 - idx)
     if (abs(me.x - foe.x) > SfConstants.GRAB_RANGE) return false
@@ -588,6 +589,7 @@ internal fun StreetFighterViewModel.tryGrab(sim: StreetFighterViewModel.Sim, idx
  * y el fatality consumen su medidor al ENTRAR al estado, no al decidir el input.
  */
 internal fun StreetFighterViewModel.tryPowerGrab(sim: StreetFighterViewModel.Sim, idx: Int, now: Long): Boolean {
+    if (_state.value.printerBonus != null) return false
     val me = sim.fighter(idx)
     if (me.superMeter < SfConstants.POWER_THROW_METER_COST) return false
     val foe = sim.fighter(1 - idx)

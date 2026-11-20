@@ -87,3 +87,29 @@ a esta corrección; sus cifras de 100 px y renderer sin cambios son históricas.
 - Carga de mapa en frío: caché anterior conservada aparte; log real confirma
   `Calles estáticas OK (975_-4958): 3427 ways`. La carga supera 25% y llega al mapa jugable.
 - Informe y límites de QA: `pr-screenshots/alexis-qa/README.md`.
+
+## 2026-11-06 — Titan del Bienestar
+Integración de invitado con atlas dedicado, selector y desbloqueo inicial Android/iOS.
+Detalles y limitaciones: `SF/TITAN_BIENESTAR.md`. Compilación Android correcta; 355 pruebas, cero fallos. Auditoría del atlas sin errores duros. Falta prueba manual en partida e iOS.
+
+Titan: corregido crecimiento artificial del renderer con preserveSpriteScale. Pruebas compartidas y compilación Android correctas. Ver SfFighterScaleTest y SF/TITAN_BIENESTAR.md; pendiente comprobación visual en partida.
+
+Rendimiento: Titan 65 → 8.47 MiB RGBA sin pérdida; ritmo de ticks descuenta coste de simulación. MinSdk 23 en app/shared. Ver SF/RENDIMIENTO_ANDROID6.md para validación y límites.
+
+API23: corregidos newKeySet y constructor PriorityQueue del mundo; lintDebug y tests app correctos. No se ocultaron NewApi. Prueba en Android6 real pendiente.
+
+Titan: reparados recortes y anclajes de especiales y R2; efectos separados ya no se eliminan. 263 cuadros, atlas 2048x1086. Auditoría correcta, GIF de revisión por especial. Ver SF/TITAN_BIENESTAR.md. Pendiente prueba en partida.
+
+Titan golpes: adelante+Y ya no reutiliza upper agachado, usa golpe fuerte de pie como aproximación; escala de crouch-hp y secuencia med-punch corregidas. Ver repair_titan_attacks.py y GIFs. Pendiente prueba visual en partida.
+
+Titan victoria: secuencia de calavera/pétalos asignada a victory en siete poses; antes solo estaba en power-throw. Importador actualizado. Ver victoria_corregida.gif. Pendiente prueba en partida.
+
+
+## 2026-11-06 — Primer bonus arcade: impresora
+Tras vencer al rival 2; independiente del personaje. 30 s, daño/partículas, resultado y continuación al rival 3. Checkpoint pendiente multiplataforma. Ver `SF/BONUS_IMPRESORA.md`. Compilación Android correcta y 366 pruebas sin fallos; siete nuevas. Hojas revisadas. Pendiente partida en dispositivo e iOS.
+
+
+## 2026-11-06 — 3 golpes y a dormir
+Modo offline por equipos 3 vs 3 en Otros modos, selector con 20 sprites y sorteo. Relevos por KO/timeout, superviviente conserva HP/súper. Ver `SF/TRES_GOLPES_Y_A_DORMIR.md`. Compilación Android y 378 pruebas correctas, doce nuevas. Sin prueba manual en dispositivo ni iOS.
+
+Integración: main combinado conservando Titan, equipos, bonus de impresora y funciones nuevas de main. Compilación Android y 530 pruebas correctas; atlas de Alexis idéntico a main. Ver QA/MAIN_INTEGRATION_EN.md.

@@ -288,7 +288,7 @@ fun StreetFighterScreenCommon(
             val contentH = if (lowEnd) {
                 emptyMap()
             } else {
-                fightIds.associateWith { id ->
+                fightIds.filterNot { it.preserveSpriteScale }.associateWith { id ->
                     val sheet = sheets[id.spriteAsset.substringAfterLast('/')]
                     if (sheet != null) {
                         measureFrameContentHeights(sheet, SfFrameCatalog.load(id).frames)
@@ -300,8 +300,15 @@ fun StreetFighterScreenCommon(
             SfFightAssets(sheets, alpha, contentH)
         }
     }
-    val images = remember(themeImages, fightAssets) {
-        themeImages + (fightAssets?.sheets ?: emptyMap())
+    var printerImages by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
+    LaunchedEffect(state.printerBonus != null) {
+        printerImages = if (state.printerBonus != null) withContext(kotlinx.coroutines.Dispatchers.IO) {
+            mapOf("printer_bonus.webp" to PowImagen.deAsset("STREETFIGHTER/IMAGES/printer_bonus.webp"),
+                "printer_particles.webp" to PowImagen.deAsset("STREETFIGHTER/IMAGES/printer_particles.webp"))
+        } else emptyMap()
+    }
+    val images = remember(themeImages, fightAssets, printerImages) {
+        themeImages + (fightAssets?.sheets ?: emptyMap()) + printerImages
     }
     val alphaFallback = fightAssets?.alpha
     val playerContentH = fightAssets?.contentH?.get(playerId) ?: emptyMap()
@@ -319,7 +326,7 @@ fun StreetFighterScreenCommon(
     // mapa (ligado al rival); ONLINE el del ANFITRIÓN; si no, el elegido offline en el selector.
     val effectiveBgFile = when {
         state.gauntletRunning && state.gauntletMapFile != null -> state.gauntletMapFile
-        (state.arcadeActive || state.aiVsAi) && state.arcadeMapFile != null -> state.arcadeMapFile
+        (state.arcadeActive || state.aiVsAi || state.teamBattle != null) && state.arcadeMapFile != null -> state.arcadeMapFile
         state.onlineStatus != SfOnlineStatus.OFF && state.onlineMapFile != null -> state.onlineMapFile
         else -> chosenBgFile
     }
@@ -447,7 +454,8 @@ fun StreetFighterScreenCommon(
     var showResumeDialog by remember { mutableStateOf(controller.hasArcadeSession()) }
 
     // Textos del banner de RONDA (i18n; la fuente arcade solo tiene A-Z/0-9)
-    val roundBannerText = stringResource(Res.string.sf_round_banner, state.roundNumber)
+    val roundBannerText = if (state.teamBattle != null) stringResource(Res.string.sf_team_leg, state.roundNumber)
+        else stringResource(Res.string.sf_round_banner, state.roundNumber)
     val fightBannerText = stringResource(Res.string.sf_fight_banner)
     // 🆕 (2026-07-20) Etiqueta del contador de COMBO ("GOLPES"/"HITS")
     val comboHitsLabel = stringResource(Res.string.sf_combo_hits)
@@ -473,7 +481,7 @@ fun StreetFighterScreenCommon(
                     theme, state, images, playerData, cpuData, stageBg,
                     roundBannerText, fightBannerText, comboHitsLabel, showHitboxes,
                     playerContentH, cpuContentH, effectiveBgFile,
-                    playerSilhouette = !controller.isFighterActuallyUnlocked(state.player.id),
+                    playerSilhouette = state.teamBattle == null && !controller.isFighterActuallyUnlocked(state.player.id),
                     alphaFallback = alphaFallback,
                     sheetScale = sheetSampleScale,
                 )
@@ -482,7 +490,8 @@ fun StreetFighterScreenCommon(
         // 🆕 Pantalla CARGANDO (fuente POW del HUD) mientras se decodifican atlas/hojas
         // (fondo Y ahora también los atlas de peleador, ver fightAssets arriba).
         val fightLoading = !state.inCharacterSelect &&
-            (assetsLoading || fightAssets == null || stageBg == null && effectiveBgFile != null)
+            (assetsLoading || fightAssets == null || stageBg == null && effectiveBgFile != null ||
+                state.printerBonus != null && printerImages.isEmpty())
         // 🆕 (2026-07-22) Avisa al VM para CONGELAR el reloj de juego mientras carga: así el
         // 3-2-1 y el arranque se ven al terminar (antes se gastaban ocultos tras el CARGANDO,
         // sobre todo en gama baja e IA vs IA que decodifica dos atlas).
@@ -748,6 +757,7 @@ fun StreetFighterScreenCommon(
         var sfMenu by remember { mutableStateOf(false) }
         // 🆕 Flujo IA vs IA: elige peleador A → peleaador B → startAiVsAi (PESADILLA, sin mapa).
         var aiVsAiSetup by remember { mutableStateOf(false) }
+        var teamSetup by remember { mutableStateOf(false) }
         // 🆕 (2026-07-21) HOJA DE COMBOS: lista de controles y combos + "PROBAR" (tutorial).
         var showComboSheet by remember { mutableStateOf(false) }
         // 🆕 (issue #150) Pantalla de récords por peleador
@@ -766,11 +776,13 @@ fun StreetFighterScreenCommon(
                 arcadeSetup = false
                 sfMenu = false
                 aiVsAiSetup = false
+                teamSetup = false
                 extraSetup = false
                 when (lastLaunchedMode) {
                     "arcade" -> arcadeSetup = true
                     "aivsai" -> aiVsAiSetup = true
-                    "extra" -> extraSetup = true // 🆕 volver = selector del examen
+                    "team" -> teamSetup = true
+                    "extra" -> extraSetup = true
                     "practice" -> Unit // el selector de práctica es la rama default
                     "combos" -> showComboSheet = true // vuelve a la hoja del peleador probado
                     else -> sfMenu = true
@@ -926,6 +938,13 @@ fun StreetFighterScreenCommon(
                                 pendingRival = null
                                 pendingDifficulty = null
                             },
+                            onTeamBattle = {
+                                controller.stopAudioShowcase()
+                                sfMenu = false
+                                arcadeSetup = false
+                                aiVsAiSetup = false
+                                teamSetup = true
+                            },
                             onPractice = {
                                 controller.stopAudioShowcase()
                                 sfMenu = false
@@ -982,6 +1001,14 @@ fun StreetFighterScreenCommon(
                             },
                             onAudioShowcaseStop = controller::stopAudioShowcase,
                             onBack = onExitToMap,
+                        )
+                        teamSetup -> SfTeamSelectOverlay(
+                            onStart = { playerTeam, cpuTeam, teamDifficulty ->
+                                lastLaunchedMode = "team"
+                                controller.startTeamBattle(playerTeam, cpuTeam, teamDifficulty)
+                                teamSetup = false
+                            },
+                            onBack = { teamSetup = false; sfMenu = true },
                         )
                         // ARCADE: peleadór → Fácil/Medio/Difícil (día / noche / apocalipsis)
                         arcadeSetup && fighter == null -> CharacterSelectOverlay(
@@ -1328,6 +1355,13 @@ fun StreetFighterScreenCommon(
             recordsResult = FighterRecordsStore.register(recordsSettings, state.player.id.name, playerWon)
             recordedThisEnd = true
         }
+
+        state.teamBattle?.let { team -> TeamBattleStatus(team, state.showEndMenu) }
+
+        state.printerBonus?.let { bonus ->
+            if (!fightLoading) PrinterBonusOverlay(bonus, controller::arcadeContinue)
+        }
+
         // 🆕 Fin de pelea en ARCADE: ganar (CONTINUAR) / perder (REINTENTAR) / campeón. Reemplaza
         // el menú normal mientras haya una escalera en curso.
         if (state.showEndMenu && state.arcadeActive) {
@@ -1368,7 +1402,7 @@ fun StreetFighterScreenCommon(
                         PowButton(text = stringResource(Res.string.sf_rematch), onClick = controller::restartBattle)
                     }
                     if (state.onlineStatus == SfOnlineStatus.OFF) {
-                        PowButton(text = stringResource(Res.string.sf_change_character), onClick = controller::backToCharacterSelect)
+                        PowButton(text = stringResource(if (state.teamBattle != null) Res.string.sf_team_change else Res.string.sf_change_character), onClick = controller::backToCharacterSelect)
                     } else {
                         PowButton(text = stringResource(Res.string.sf_mp_leave_room), onClick = { controller.cancelOnline() })
                     }

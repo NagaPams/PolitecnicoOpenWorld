@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "ovh.gabrielhuav.pow"
-        minSdk = 24
+        minSdk = 23
         targetSdk = 36
         versionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull() ?: 12
         versionName = "1.0.0.27"

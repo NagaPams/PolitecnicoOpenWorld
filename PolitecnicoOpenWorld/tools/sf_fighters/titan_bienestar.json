@@ -1,0 +1,15 @@
+{
+  "character": "titan_bienestar",
+  "title": "TitanBienestar",
+  "mode": "titan-sheets",
+  "source_template": "newSFAssets/TitanBienestar/frame_template.json",
+  "geometry_contract": "newSFAssets/TitanBienestar/geometry_contract.json",
+  "sheets": [
+    "newSFAssets/TitanBienestar/TitanBienestar_1.png",
+    "newSFAssets/TitanBienestar/TitanBienestar_2.png",
+    "newSFAssets/TitanBienestar/TitanBienestar_3.png",
+    "newSFAssets/TitanBienestar/TitanBienestar_4.png",
+    "newSFAssets/TitanBienestar/TitanBienestar_5.png",
+    "newSFAssets/TitanBienestar/victoria_referencia.png"
+  ]
+}

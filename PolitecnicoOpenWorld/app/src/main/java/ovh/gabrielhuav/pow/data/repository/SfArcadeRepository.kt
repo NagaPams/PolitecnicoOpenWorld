@@ -47,8 +47,8 @@ class SfArcadeRepository(context: Context) {
         private const val KEY_FIGHTERS_V2 = "UNLOCKED_FIGHTERS_V2"
         private const val KEY_MAPS_V2 = "UNLOCKED_MAPS_V2"
 
-        /** Peleadores desbloqueados de arranque: estudiantes y personajes jugables. */
-        val DEFAULT_FIGHTERS = setOf("ESCOMBOY", "ESCOMGIRL", "ROBOT", "ALEXIS_SYNTAXIS")
+        /** Peleadores desbloqueados de arranque: los 3 estudiantes (el jugador elige uno). */
+        val DEFAULT_FIGHTERS = setOf("ESCOMBOY", "ESCOMGIRL", "ROBOT", "ALEXIS_SYNTAXIS", "TITAN_BIENESTAR")
         /** Mapa desbloqueado de arranque (hogar de los starters = ESCOM día). */
         const val DEFAULT_MAP = "fondo_escom_anim.webp"
         
@@ -69,6 +69,7 @@ class SfArcadeRepository(context: Context) {
             "difficulty" to session.difficulty,
             "baseDifficulty" to session.baseDifficulty,
             "paused" to session.paused,
+            "printerBonusPending" to session.printerBonusPending,
             "ladderRivals" to session.ladderRivals,
         )
 
@@ -96,6 +97,7 @@ class SfArcadeRepository(context: Context) {
                 difficulty = o.optString("difficulty", "NORMAL"),
                 baseDifficulty = o.optString("baseDifficulty", ""),
                 paused = o.optBoolean("paused", true),
+                printerBonusPending = o.optBoolean("printerBonusPending", false),
             )
         }.getOrNull()
     }
@@ -146,6 +148,7 @@ class SfArcadeRepository(context: Context) {
         // (el VM cae a la inferencia legacy).
         val baseDifficulty: String = "",
         val paused: Boolean = true,
+        val printerBonusPending: Boolean = false,
     )
 
     // ── Peleadores ────────────────────────────────────────────────────────────

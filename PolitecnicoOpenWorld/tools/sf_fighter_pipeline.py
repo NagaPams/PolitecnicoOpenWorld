@@ -211,6 +211,10 @@ def build(recipe, output):
     images, data_dir = output / "IMAGES", output / "DATA"
     images.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
+    if recipe["mode"] == "titan-sheets":
+        from build_titan_ci import build_titan
+        build_titan(recipe, output, ROOT)
+        return
     if recipe["mode"] == "grid-sheets":
         build_grid_sheets(recipe, images, data_dir)
         return
@@ -274,6 +278,10 @@ def check(recipe, assets, report):
     data = json.loads((assets / "DATA" / (recipe["character"] + ".json")).read_text(encoding="utf-8"))
     atlas = Image.open(assets / "IMAGES" / (recipe["title"] + ".webp")).convert("RGBA")
     frames = data["frames"]
+    compact = recipe.get("mode") == "titan-sheets"
+    contract = json.loads(source_file(recipe["geometry_contract"]).read_text(encoding="utf-8")) if compact else {}
+    if compact and set(contract) != set(frames):
+        errors.append("Las claves no coinciden con el contrato de geometria")
     if not frames or not data["animations"].get("idle"):
         errors.append("Faltan cuadros o animacion idle")
     used = set()
@@ -281,14 +289,14 @@ def check(recipe, assets, report):
     draw = ImageDraw.Draw(preview)
     for index, (key, frame) in enumerate(frames.items()):
         x, y, w, h = frame["src"]
-        if (w, h) != (256, 256) or min(x, y) < 0 or x + w > atlas.width or y + h > atlas.height:
+        if min(w, h) <= 0 or (not compact and (w, h) != (256, 256)) or min(x, y) < 0 or x + w > atlas.width or y + h > atlas.height:
             errors.append(key + ": celda fuera del atlas o distinta de 256x256")
             continue
         if (x, y) in used:
             errors.append(key + ": celda compartida por dos claves")
         used.add((x, y))
         projectile = is_projectile(key)
-        if frame.get("origin") != ([128, 128] if projectile else [128, 224]):
+        if not compact and frame.get("origin") != ([128, 128] if projectile else [128, 224]):
             errors.append(key + ": origen incorrecto")
         image = cell(atlas, frame)
         bbox = image.getchannel("A").getbbox()
@@ -296,13 +304,18 @@ def check(recipe, assets, report):
             errors.append(key + ": cuadro vacio")
             continue
         left, top, right, bottom = bbox
-        if left == 0 or top == 0 or right == 256 or bottom == 256:
+        if left == 0 or top == 0 or right == w or bottom == h:
             errors.append(key + ": arte toca el borde; posible recorte incompleto")
-        if not projectile and bottom != 224:
+        if compact:
+            expected = contract.get(key, {})
+            for field, actual in (("src", frame["src"]), ("origin", frame.get("origin")), ("bbox", list(bbox))):
+                if expected.get(field) != actual:
+                    errors.append(key + ": " + field + " distinto del contrato de geometria")
+        if not compact and not projectile and bottom != 224:
             errors.append(key + ": pies fuera de y=224")
         expected_height = recipe.get("frame_heights", {}).get(key)
         expected_width = recipe.get("frame_widths", {}).get(key)
-        if expected_height is None and key.startswith(UPRIGHT) and "turn" not in key:
+        if not compact and expected_height is None and key.startswith(UPRIGHT) and "turn" not in key:
             expected_height = 100
         if expected_height is not None and bottom - top != expected_height:
             errors.append(key + ": altura distinta de la calibracion de cuerpo")
@@ -310,7 +323,7 @@ def check(recipe, assets, report):
             errors.append(key + ": longitud distinta de la calibracion de cuerpo")
         if key.startswith("talk-") and bottom - top < 80:
             errors.append(key + ": posible busto sin cuerpo completo")
-        if abs((left + right) / 2 - 128) > 1 and not projectile:
+        if not compact and abs((left + right) / 2 - 128) > 1 and not projectile:
             errors.append(key + ": silueta descentrada")
         px, py = index % 8 * 144, index // 8 * 152
         small = image.resize((128, 128))

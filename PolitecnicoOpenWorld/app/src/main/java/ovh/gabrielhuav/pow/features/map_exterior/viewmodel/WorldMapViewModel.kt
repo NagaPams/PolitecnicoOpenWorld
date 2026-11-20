@@ -314,7 +314,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // golpes seguidos, el NPC agresivo se vuelve IMPLACABLE: te persigue y golpea sin
     // parar hasta matarte (o hasta que muera). Cuanto más agresivo seas, peor para ti.
     internal val npcHitStreak = ConcurrentHashMap<String, Int>()
-    internal val relentlessNpcs = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    internal val relentlessNpcs = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
     internal val RELENTLESS_HIT_STREAK = 6
 
     // ─── NIVEL DE BÚSQUEDA / POLICÍA ─────────────────────────────────────────

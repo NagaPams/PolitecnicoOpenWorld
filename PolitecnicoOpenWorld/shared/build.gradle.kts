@@ -32,7 +32,7 @@ kotlin {
     android {
         namespace = "ovh.gabrielhuav.pow.shared"
         compileSdk = 36
-        minSdk = 24
+        minSdk = 23
         // AGP 9 no empaqueta los composeResources de un androidLibrary KMP si no se habilita.
         // Sin esto compila, pero stringResource/painterResource fallan en runtime.
         androidResources.enable = true

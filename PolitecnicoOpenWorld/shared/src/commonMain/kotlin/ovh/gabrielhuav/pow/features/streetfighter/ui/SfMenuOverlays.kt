@@ -156,6 +156,7 @@ fun SfModeMenuOverlay(
     audioShowcasePhrase: String,
     onArcade: () -> Unit,
     onPractice: () -> Unit,
+    onTeamBattle: () -> Unit,
     onAiVsAi: () -> Unit,
     onCombos: () -> Unit, // 🆕 (2026-07-21) hoja de combos + tutorial interactivo
     onExtraordinario: () -> Unit, // 🆕 EXAMEN EXTRAORDINARIO: práctica de Extraordinarios
@@ -199,6 +200,13 @@ fun SfModeMenuOverlay(
                 enabled = true
             )
             Spacer(modifier = Modifier.height(18.dp))
+            PowButton(
+                text = stringResource(Res.string.sf_team_title), onClick = onTeamBattle,
+                color = Color(0xFF8B1538), modifier = Modifier.fillMaxWidth(0.78f),
+            )
+            Text(stringResource(Res.string.sf_team_description), color = Color(0xFFD4AF37), fontSize = 12.sp,
+                textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             // Otras modalidades (ahora respetando el color guinda del menú principal)
             PowButton(
                 text = stringResource(Res.string.sf_mode_practice),

@@ -146,6 +146,8 @@ data class StreetFighterState(
 
     // ─── 🆕 MODO ARCADE (escalera de 11 peleas, offline; ver SfArcadeLadder) ───
     // Todos los personajes/mapas empiezan bloqueados y se desbloquean derrotando rivales.
+    override val printerBonus: ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus? = null,
+    override val teamBattle: ovh.gabrielhuav.pow.domain.models.streetfighter.SfTeamBattle? = null,
     val arcadeActive: Boolean = false,                 // hay una escalera en curso
     val arcadeStep: Int = 0,                           // pelea actual 1..11 (0 = fuera)
     val arcadeTotal: Int = 0,                          // total de peleas (HUD "PELEA N / T")

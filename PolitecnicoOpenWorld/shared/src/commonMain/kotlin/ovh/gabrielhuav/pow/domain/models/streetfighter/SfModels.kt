@@ -167,6 +167,8 @@ enum class SfFighterId(
     val sharedSet: SfSharedSet? = null,
     /** Poderes extra Grok disponibles desde el boton central P; 0 = controles clasicos. */
     val bonusPowerCount: Int = 0,
+    /** Atlas calibrado: conservar escala también en poses bajas, aéreas y con efectos. */
+    val preserveSpriteScale: Boolean = false,
 ) {
     // ⚠️ COPYRIGHT (2026-07-17): RYU y KEN se ELIMINARON del juego (versión POW 100% propia).
     // Sus assets quedan en el source set debug pero YA NO hay ids en el enum: si un cliente viejo
@@ -264,6 +266,11 @@ enum class SfFighterId(
     ),
     // 🆕 (2026-09-30) Alexis Syntaxis: hoja dedicada 2560x6656 (celdas 256², pies en 128,224)
     // con la misma estructura de frames que escomboy.json.
+    TITAN_BIENESTAR(
+        "Titan del Bienestar", "TITAN",
+        "STREETFIGHTER/DATA/titan_bienestar.json", "STREETFIGHTER/IMAGES/TitanBienestar.webp",
+        preserveSpriteScale = true,
+    ),
     ALEXIS_SYNTAXIS(
         "Alexis Syntaxis", "SYNTAXIS",
         "STREETFIGHTER/DATA/alexis_syntaxis.json", "STREETFIGHTER/IMAGES/AlexisSyntaxis.webp",

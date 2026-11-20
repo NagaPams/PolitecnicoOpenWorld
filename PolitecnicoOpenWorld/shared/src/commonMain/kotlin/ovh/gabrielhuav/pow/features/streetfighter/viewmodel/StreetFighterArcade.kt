@@ -22,6 +22,7 @@ import ovh.gabrielhuav.pow.domain.models.streetfighter.SfStageCatalog
 
 internal fun StreetFighterViewModel.persistArcadeSession(s: StreetFighterState = _state.value) {
     if (!s.arcadeActive || arcadeLadder.isEmpty()) return
+    s.printerBonus?.let { persistArcadeCheckpoint(3, !it.finished); return }
     arcadeRepo.saveSession(
         SfArcadeSession(
             playerId = arcadePlayer.name,
@@ -44,7 +45,7 @@ internal fun StreetFighterViewModel.persistArcadeSession(s: StreetFighterState =
  * 0-0. Antes aquí se BORRABA la sesión → cerrar la app en la pantalla GANASTE/PERDISTE
  * perdía la campaña entera (escalera re-aleatorizada desde el escalón 1).
  */
-internal fun StreetFighterViewModel.persistArcadeCheckpoint(nextStep: Int) {
+internal fun StreetFighterViewModel.persistArcadeCheckpoint(nextStep: Int, printerPending: Boolean = false) {
     if (arcadeLadder.isEmpty()) return
     val idx = nextStep.coerceIn(1, arcadeLadder.size)
     val stepData = arcadeLadder[idx - 1]
@@ -52,6 +53,7 @@ internal fun StreetFighterViewModel.persistArcadeCheckpoint(nextStep: Int) {
         SfArcadeSession(
             playerId = arcadePlayer.name,
             step = idx,
+            printerBonusPending = printerPending,
             total = arcadeLadder.size,
             ladderRivals = arcadeLadder.map { it.rival.name },
             mapFile = stepData.mapFile,
@@ -126,6 +128,10 @@ fun StreetFighterViewModel.resumeArcadeSession(): Boolean {
         cpuRoundWins = ses.cpuRoundWins.coerceIn(0, StreetFighterViewModel.ROUNDS_TO_WIN),
         arcadeOutcome = SfArcadeOutcome.NONE,
     )
+    if (ses.printerBonusPending && ses.step == 3) {
+        startPrinterBonus()
+        _state.value = _state.value.copy(isPaused = true)
+    }
     return true
 }
 
@@ -178,6 +184,22 @@ internal fun StreetFighterViewModel.startArcadeStep(step: Int) {
         arcadeMapFile = arcadeMapCurrent,
         arcadeOutcome = SfArcadeOutcome.NONE,
     )
+}
+
+/** Bonus independiente del rival: mantiene el mapa anterior y el personaje elegido. */
+internal fun StreetFighterViewModel.startPrinterBonus() {
+    val previous = _state.value
+    resetInternals()
+    val base = StreetFighterState()
+    _state.value = base.copy(
+        player = base.player.copy(id = arcadePlayer, x = 600f),
+        cpu = base.cpu.copy(id = arcadePlayer, x = 720f),
+        inCharacterSelect = false, arcadeActive = true, arcadeStep = 2,
+        arcadeTotal = arcadeLadder.size, arcadeMapFile = previous.arcadeMapFile ?: arcadeMapCurrent,
+        cpuDifficulty = arcadeChosenDifficulty,
+        printerBonus = ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus(),
+    )
+    persistArcadeCheckpoint(3, true)
 }
 
 /**
@@ -234,7 +256,8 @@ internal fun StreetFighterViewModel.handleArcadeMatchEnd(winnerIdx: Int) {
     // escalón (mismo que tomaría Continuar/Reintentar). Solo la final completada limpia.
     when (outcome) {
         SfArcadeOutcome.COMPLETED -> arcadeRepo.clearSession()
-        SfArcadeOutcome.WON -> persistArcadeCheckpoint(s.arcadeStep + 1)
+        SfArcadeOutcome.WON -> persistArcadeCheckpoint(s.arcadeStep + 1,
+            ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus.followsVictory(s.arcadeStep))
         // 🆕 (2026-07-22) Retrocede el checkpoint SOLO a la 3ª derrota seguida; si no, se queda.
         else -> persistArcadeCheckpoint(
             if (arcadeLossStreak >= 3) (s.arcadeStep - 1).coerceAtLeast(1) else s.arcadeStep,
@@ -247,6 +270,15 @@ internal fun StreetFighterViewModel.handleArcadeMatchEnd(winnerIdx: Int) {
 fun StreetFighterViewModel.arcadeContinue() {
     val s = _state.value
     if (!s.arcadeActive) return
+    if (s.printerBonus != null) {
+        if (s.printerBonus.finished) startArcadeStep(3)
+        return
+    }
+    if (s.arcadeOutcome == SfArcadeOutcome.WON &&
+        ovh.gabrielhuav.pow.domain.models.streetfighter.SfPrinterBonus.followsVictory(s.arcadeStep)) {
+        startPrinterBonus()
+        return
+    }
     if (s.arcadeOutcome == SfArcadeOutcome.COMPLETED) { arcadeExit(); return }
     startArcadeStep(s.arcadeStep + 1)
 }

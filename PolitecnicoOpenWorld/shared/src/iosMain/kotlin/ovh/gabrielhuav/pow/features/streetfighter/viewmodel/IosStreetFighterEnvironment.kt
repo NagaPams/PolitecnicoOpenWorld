@@ -24,7 +24,7 @@ private class IosSfArcadeStore(
         const val MAPS = "POW_SF_UNLOCKED_MAPS_V2"
         const val STEP = "POW_SF_LADDER_STEP"
         const val SESSION = "POW_SF_ARCADE_SESSION_JSON"
-        val DEFAULT_FIGHTERS = setOf("ESCOMBOY", "ESCOMGIRL", "ROBOT")
+        val DEFAULT_FIGHTERS = setOf("ESCOMBOY", "ESCOMGIRL", "ROBOT", "TITAN_BIENESTAR")
     }
 
     private fun readSet(key: String): Set<String> =
