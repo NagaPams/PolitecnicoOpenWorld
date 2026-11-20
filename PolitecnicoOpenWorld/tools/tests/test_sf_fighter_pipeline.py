@@ -30,6 +30,36 @@ class FighterAssetGateTest(unittest.TestCase):
         image.save(self.root / 'IMAGES/Test.webp', lossless=True)
         return check(self.recipe, self.root, self.root / 'qa')
 
+    def test_compact_atlas_keeps_explicit_geometry_and_anchor(self):
+        self.recipe.update(mode='titan-sheets', geometry_contract='geometry.json')
+        data = {'frames': {'idle-1': {'src': [0, 0, 40, 110], 'origin': [17, 106]}},
+                'animations': {'idle': [['idle-1', 4]]}}
+        contract = {'idle-1': {'src': [0, 0, 40, 110], 'origin': [17, 106],
+                               'bbox': [4, 6, 28, 106]}}
+        (self.root / 'geometry.json').write_text(json.dumps(contract))
+        image = Image.new('RGBA', (40, 110))
+        image.paste('white', (4, 6, 28, 106))
+        with patch('sf_fighter_pipeline.ROOT', self.root):
+            self.assertFalse(self.run_check(image, data))
+            shifted = copy.deepcopy(data)
+            shifted['frames']['idle-1']['origin'][1] -= 3
+            self.assertTrue(self.run_check(image, shifted))
+            shortened = image.copy()
+            shortened.paste((0, 0, 0, 0), (4, 6, 28, 12))
+            self.assertTrue(self.run_check(shortened, data))
+
+    def test_compact_atlas_rejects_edges_even_if_contract_agrees(self):
+        self.recipe.update(mode='titan-sheets', geometry_contract='geometry.json')
+        data = {'frames': {'idle-1': {'src': [0, 0, 40, 110], 'origin': [17, 106]}},
+                'animations': {'idle': [['idle-1', 4]]}}
+        contract = {'idle-1': {'src': [0, 0, 40, 110], 'origin': [17, 106],
+                               'bbox': [0, 6, 28, 106]}}
+        (self.root / 'geometry.json').write_text(json.dumps(contract))
+        image = Image.new('RGBA', (40, 110))
+        image.paste('white', (0, 6, 28, 106))
+        with patch('sf_fighter_pipeline.ROOT', self.root):
+            self.assertTrue(self.run_check(image, data))
+
     def test_detects_original_pr_geometry_and_accepts_normalized_sprite(self):
         image = Image.new('RGBA', (256, 256))
         image.paste((20, 80, 160, 255), (103, 123, 161, 226))

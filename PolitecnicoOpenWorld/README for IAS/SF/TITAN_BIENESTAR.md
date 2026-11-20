@@ -19,7 +19,7 @@ Mapeo y adaptaciones: `newSFAssets/TitanBienestar/importacion.json`.
 
 ## Validación realizada
 
-- Compilación Android y pruebas: BUILD SUCCESSFUL (2026-11-06).
+- Compilación Android y pruebas: BUILD SUCCESSFUL.
 - Shared: 229 pruebas, 0 fallos.
 - App: 126 pruebas, 0 fallos.
 - Auditoría de atlas: 258 cuadros, 58 animaciones, cero errores duros; ocho avisos de poses reutilizadas.
@@ -46,3 +46,24 @@ El overhead reutilizaba incorrectamente crouch-hp: arrancaba agachado y mezclaba
 
 ## Celebración con calavera
 La fila de la calavera y pétalos antes estaba asignada a power-throw/throw, no a victoria. Ahora victory usa sus siete poses completas (94 frames lógicos, 1.57 s), sin espera inicial de un segundo y con pose final sostenida. tools/repair_titan_victory.py se ejecuta al final del importador. Vistas en victoria_corregida.gif/png. Pendiente comprobar al ganar una ronda en dispositivo.
+
+## Reproducible asset validation
+
+The registered recipe is `tools/sf_fighters/titan_bienestar.json`. From the repository root:
+
+```sh
+python PolitecnicoOpenWorld/tools/sf_fighter_pipeline.py build PolitecnicoOpenWorld/tools/sf_fighters/titan_bienestar.json --output .codex-tmp/titan-review
+python PolitecnicoOpenWorld/tools/sf_fighter_pipeline.py check PolitecnicoOpenWorld/tools/sf_fighters/titan_bienestar.json --output .codex-tmp/titan-review
+```
+
+The isolated build reads the original PNG sheets and frozen frame metadata from
+`newSFAssets/TitanBienestar/`, without changing production assets or other fighters.
+The compact atlas uses an explicit geometry contract for frame rectangles, anchors
+and visible bounds. Validation retains checks for clipping, empty frames and broken
+animation references. The final atlas is 2048 x 1132, with 266 frames and 58 animations.
+Dialogue uses full-body idle poses instead of crouched taunt poses. Every non-dialogue
+frame retains identical pixels relative to its original anchor, including attacks,
+specials and victory. Runtime visual verification remains pending.
+
+Validation: 23 sprite/cache tests and 5 map tests passed; the generated cache check
+verified 432 references. These are asset checks, not a new device gameplay test.

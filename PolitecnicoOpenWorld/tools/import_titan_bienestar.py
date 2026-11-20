@@ -133,7 +133,7 @@ def main():
     seq['power-grab']=seq['counter']
     seq['overhead']=seq['crouch-hp']
     seq['idle-relaxed']=seq['idle']
-    seq['talk']=seq['taunt']
+    seq['talk']=seq['idle']
     # Efecto separado: extremo de la ráfaga, sin la mano ni el personaje.
     im=sheets[4]
     projectile=im.crop((round(.765*im.width),round(.025*im.height),round(.90*im.width),round(.085*im.height)))
