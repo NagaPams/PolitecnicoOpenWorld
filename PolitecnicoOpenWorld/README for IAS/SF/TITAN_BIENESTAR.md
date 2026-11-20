@@ -53,7 +53,7 @@ The registered recipe is `tools/sf_fighters/titan_bienestar.json`. From the repo
 
 ```sh
 python PolitecnicoOpenWorld/tools/sf_fighter_pipeline.py build PolitecnicoOpenWorld/tools/sf_fighters/titan_bienestar.json --output .codex-tmp/titan-review
-python PolitecnicoOpenWorld/tools/sf_fighter_pipeline.py check PolitecnicoOpenWorld/tools/sf_fighters/titan_bienestar.json --output .codex-tmp/titan-review
+python PolitecnicoOpenWorld/tools/sf_fighter_pipeline.py check PolitecnicoOpenWorld/tools/sf_fighters/titan_bienestar.json --assets .codex-tmp/titan-review
 ```
 
 The isolated build reads the original PNG sheets and frozen frame metadata from
