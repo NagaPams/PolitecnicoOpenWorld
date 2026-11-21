@@ -17,7 +17,7 @@ internal fun WorldMapViewModel.takeDamage(amount: Float) {
         // al cuerpo seguían llamando takeDamage durante el WASTED y el 💥 aparecía "a cada rato"
         // al morir (y re-disparaban la secuencia).
         if (_uiState.value.showWastedScreen || playerHealth <= 0f) return
-        playerHealth = (playerHealth - amount).coerceAtLeast(0f)
+        combatManager.updateHealth { (it - amount).coerceAtLeast(0f) }
         damagePulseTrigger++
         if (playerHealth > 0f) fireImpactEffect() // 💥 solo si SOBREVIVES (no en el golpe mortal)
         showHealthBar = true
@@ -36,7 +36,7 @@ internal fun WorldMapViewModel.takeDamage(amount: Float) {
     }
 
 internal fun WorldMapViewModel.heal(amount: Float) {
-        playerHealth = (playerHealth + amount).coerceAtMost(maxPlayerHealth)
+        combatManager.updateHealth { (it + amount).coerceAtMost(maxPlayerHealth) }
         showHealthBar = true
         if (playerHealth > 30f) {
             startHealthBarTimer(3000L)

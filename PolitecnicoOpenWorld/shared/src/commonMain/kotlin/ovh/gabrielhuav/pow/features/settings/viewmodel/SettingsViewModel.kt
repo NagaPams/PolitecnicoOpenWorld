@@ -37,6 +37,7 @@ open class SettingsViewModel(
                 showWorldShoulderButtons = repository.getShowWorldShoulderButtons(),
                 musicVolume = repository.getMusicVolume(),
                 sfxVolume = repository.getSfxVolume(),
+                survivalMode = repository.getSurvivalMode(),
                 npcDensity = repository.getNpcDensity(),
                 npcEmojiLod = repository.getNpcEmojiLod(),
                 npcFullEmoji = repository.getNpcFullEmoji(),
@@ -128,6 +129,11 @@ open class SettingsViewModel(
     }
 
     // ─── Jugabilidad: población de NPCs (persisten al instante, como la red vial) ──
+    override fun toggleSurvivalMode(enabled: Boolean) {
+        _state.update { it.copy(survivalMode = enabled) }
+        repository.saveSurvivalMode(enabled)
+    }
+
     override fun changeNpcDensity(value: Float) {
         val c = value.coerceIn(SettingsRepository.NPC_DENSITY_MIN, SettingsRepository.NPC_DENSITY_MAX)
         _state.update { it.copy(npcDensity = c) }

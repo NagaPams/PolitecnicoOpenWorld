@@ -393,4 +393,10 @@
     <string name="sf_records_col_losses">D</string>
     <string name="sf_records_col_rate">Efect.</string>
     <string name="settings_exit_to_menu">SALIR AL MENÚ</string>
+    <string name="settings_survival_title">Modo supervivencia</string>
+    <string name="settings_survival_desc">Activa hambre, sed, cansancio e infección en el mundo abierto.</string>
+    <string name="survival_bitten">🧟 ¡Te mordieron! Podrías estar infectado</string>
+    <string name="survival_no_money">💵 No te alcanza el dinero</string>
+    <string name="survival_not_needed">No lo necesitas ahora</string>
+    <string name="survival_item_used">✅ Consumible usado</string>
 </resources>

@@ -303,6 +303,17 @@ class NpcAiManager {
         _npcs.value = currentLocals + remoteList
     }
 
+    internal val survivalNoiseQueue = ovh.gabrielhuav.pow.domain.models.survival.NoiseBus(32)
+    internal val survivalNoiseMemory = ovh.gabrielhuav.pow.domain.models.survival.NoiseMemory(32, 20_000L)
+    internal val survivalNoiseLock = ovh.gabrielhuav.pow.platform.concurrencia.PowCerrojo()
+    internal val survivalNoiseClock = kotlin.time.TimeSource.Monotonic.markNow()
+    internal var survivalNoiseNowMs = 0L
+    @Volatile internal var survivalNoiseEnabled = false
+    @Volatile internal var survivalNoiseResetPending = false
+    internal var hordeNoiseTarget: ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent? = null
+    internal var hordeNoiseUntilMs = 0L
+    internal val hordeNoiseMembers = mutableSetOf<String>()
+
     internal var serverNpcs = PowListaConcurrente<Npc>()
 
     fun setServerNpcs(npcs: List<Npc>) {
@@ -663,6 +674,7 @@ class NpcAiManager {
             }
 
             val now = ahoraMs()
+            processSurvivalNoise(survivalNoiseClock.elapsedNow().inWholeMilliseconds)
 
             applyPendingFear()
             applyPendingHorn()
@@ -708,11 +720,13 @@ class NpcAiManager {
                     if (nearbyHumans >= HORDE_MIN_HUMANS) {
                         lastHordeMs = now
                         hordeIncomingAt = now
+                        startHordeNoise(survivalNoiseMemory.lastStrong(100.0, survivalNoiseNowMs), survivalNoiseNowMs)
                         val hordeWays = cachedWaysFiltered.get()
                         if (hordeWays.isNotEmpty()) {
                             var k = 0
                             while (k < HORDE_SIZE && nonParkedAlive() < maxTotalNpcs) {
                                 spawnNpcOnRoad(playerLocation, hordeWays, activeLandmarks)?.let {
+                                    rememberHordeMember(it.id)
                                     val role = rollZombieRole()
                                     val hp = maxHealthForRole(role)
                                     serverNpcs.add(it.copy(type = NpcType.ZOMBIE, speed = personSpeed * ZOMBIE_SPEED_MULT * speedMulForRole(role), trait = ovh.gabrielhuav.pow.domain.models.map.NpcTrait.AGGRESSIVE, visualConfig = null, zombieRole = role, health = hp, maxHealth = hp))

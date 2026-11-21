@@ -835,6 +835,7 @@ fun WorldMapScreen(
         // ─── MENÚ DE LA TIENDA (Fase 2) ──────────────────────────────────────────
         if (uiState.showVendorMenu) {
             VendorMenuDialog(
+                survivalMode = uiState.survivalMode,
                 onBuyItem = { itemName -> viewModel.buyItemFromVendor(itemName) },
                 onDismiss = { viewModel.closeVendorMenu() }
             )
@@ -971,6 +972,26 @@ fun WorldMapScreen(
                 color = if (uiState.nightAlpha > 0.05f) Color(0xFF7FB2FF) else Color(0xFFD4AF37),
                 isLoading = false
             )
+            if (uiState.survivalMode) {
+                CacheChip(
+                    label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
+                    text = "🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +
+                        "⚡ ${uiState.survivalNeeds.energy.toInt()}",
+                    color = Color(0xFF8BC34A),
+                    isLoading = false,
+                )
+                if (uiState.survivalInfection.infected) {
+                    CacheChip(
+                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_infection),
+                        text = androidx.compose.ui.res.stringResource(
+                            if (uiState.survivalInfection.symptomatic) ovh.gabrielhuav.pow.R.string.wm_survival_symptoms
+                            else ovh.gabrielhuav.pow.R.string.wm_survival_incubating,
+                        ),
+                        color = Color(0xFFE53935),
+                        isLoading = false,
+                    )
+                }
+            }
             // DINERO del jugador (coleccionables + recompensas de misión). Aparece al ganar el primero.
             AnimatedVisibility(visible = uiState.playerMoney > 0, enter = fadeIn(), exit = fadeOut()) {
                 CacheChip(

@@ -654,4 +654,14 @@
     <string name="sf_fighter_tap_hint">Tap to focus · tap again to choose</string>
 
     <!-- Controls tutorial (optional, i18n 2026-07-11) -->
+    <!-- Modo supervivencia -->
+    <string name="wm_survival_needs">Needs</string>
+    <string name="wm_survival_infection">Infection</string>
+    <string name="wm_survival_symptoms">Symptomatic</string>
+    <string name="wm_survival_incubating">Incubating</string>
+    <string name="vendor_survival_hint">Choose what to buy: fixes hunger or thirst, or cures infection:</string>
+    <string name="vendor_pizza_survival_desc">Fixes hunger and restores a little health.</string>
+    <string name="vendor_drink_survival_desc">Fixes thirst and gives some energy.</string>
+    <string name="vendor_serum_name">Serum</string>
+    <string name="vendor_serum_desc">Cures the bite infection.</string>
 </resources>

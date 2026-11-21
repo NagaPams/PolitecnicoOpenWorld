@@ -112,6 +112,7 @@ class MainActivity : ComponentActivity() {
     //  2. Detenemos TODO el audio (incl. la música del Modo Historia, que seguía sonando
     //     en segundo plano). Se reanuda en onResume.
     override fun onPause() {
+        worldMapViewModel.survivalAppResumed = false
         super.onPause()
         if (worldMapViewModel.inCampaign) {
             worldMapViewModel.saveGame(this, worldMapViewModel.campaignSlot, auto = true)
@@ -122,6 +123,7 @@ class MainActivity : ComponentActivity() {
     // Al volver al primer plano: reanuda las pistas que estaban sonando antes de salir.
     override fun onResume() {
         super.onResume()
+        worldMapViewModel.survivalAppResumed = true
         ovh.gabrielhuav.pow.features.audio.SoundManager.getInstance(this).resumeAllFromBackground()
     }
 

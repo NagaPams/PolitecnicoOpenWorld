@@ -37,10 +37,19 @@ internal fun NpcAiManager.moveZombieNpc(
 
     if (npc.zombieRole == ovh.gabrielhuav.pow.domain.models.map.ZombieRole.SCOUT) {
         val nearestH = serverNpcs
-            .filter { it.type == NpcType.PERSON && it.health > 0f && it.displayName.isNullOrEmpty() }
+            .filter {
+                val visiblePolice = survivalNoiseEnabled && it.type == NpcType.POLICE_COP &&
+                    calculateDistance(it.location.latitude, it.location.longitude, npc.location.latitude, npc.location.longitude) <= ZOMBIE_VISION
+                (it.type == NpcType.PERSON || visiblePolice) && it.health > 0f && it.displayName.isNullOrEmpty()
+            }
             .minByOrNull { calculateDistance(it.location.latitude, it.location.longitude, npc.location.latitude, npc.location.longitude) }
-        if (nearestH == null) return moveNpc(npc, network, now, 0.5f)
+        val playerVisible = calculateDistance(npc.location.latitude, npc.location.longitude, playerLat, playerLon) <= ZOMBIE_VISION
+        if (nearestH == null) {
+            if (!playerVisible) moveScoutTowardNoise(npc)?.let { return it }
+            return moveNpc(npc, network, now, 0.5f)
+        }
         val dh = calculateDistance(nearestH.location.latitude, nearestH.location.longitude, npc.location.latitude, npc.location.longitude)
+        if (dh > ZOMBIE_VISION && !playerVisible) moveScoutTowardNoise(npc)?.let { return it }
         val scoutScreamDist = 0.0002
         val scoutFleeMs = 4500L
         var newScream = npc.screamUntil
@@ -82,7 +91,29 @@ internal fun NpcAiManager.moveZombieNpc(
     }
 
     if (realDist > ZOMBIE_VISION) {
-        return moveNpc(npc, network, now, 0.5f)
+        val sound = strongestSurvivalNoise(npc.location.latitude, npc.location.longitude, survivalNoiseNowMs)
+            ?: hordeNoiseFor(npc.id) ?: return moveNpc(npc, network, now, 0.5f)
+        // La ponderación anterior favorece al jugador; si queda fuera de visión, buscar
+        // cualquier humano visible antes de dejar que un sonido desvíe al zombi.
+        targetIsHuman = null
+        for (human in humans) {
+            val distance = calculateDistance(
+                npc.location.latitude, npc.location.longitude, human.location.latitude, human.location.longitude,
+            )
+            if (distance <= ZOMBIE_VISION && distance < realDist) {
+                realDist = distance
+                targetLat = human.location.latitude
+                targetLon = human.location.longitude
+                targetIsHuman = human
+            }
+        }
+        if (targetIsHuman == null) {
+            targetLat = sound.latitude
+            targetLon = sound.longitude
+            if (calculateDistance(npc.location.latitude, npc.location.longitude, targetLat, targetLon) < 0.000005) {
+                return npc.copy(isMoving = false)
+            }
+        }
     }
 
     if (targetIsHuman != null && realDist <= ZOMBIE_CONTACT_DIST) {
@@ -118,6 +149,23 @@ internal fun NpcAiManager.moveZombieNpc(
         isMoving = true,
         facingRight = facingRight,
         navState = ovh.gabrielhuav.pow.domain.models.map.NpcNavState.MACRO_OSM
+    )
+}
+
+private fun NpcAiManager.moveScoutTowardNoise(npc: Npc): Npc? {
+    val sound = strongestSurvivalNoise(npc.location.latitude, npc.location.longitude, survivalNoiseNowMs)
+        ?: hordeNoiseFor(npc.id) ?: return null
+    val dLat = sound.latitude - npc.location.latitude
+    val dLon = sound.longitude - npc.location.longitude
+    if (dLat * dLat + dLon * dLon < 0.000005 * 0.000005) return npc.copy(isMoving = false)
+    val angle = atan2(dLat, dLon)
+    val speed = personSpeed * ZOMBIE_SPEED_MULT * NpcAiManager.speedMulForRole(npc.zombieRole)
+    return npc.copy(
+        location = GeoPoint(npc.location.latitude + sin(angle) * speed, npc.location.longitude + cos(angle) * speed),
+        rotationAngle = -(angle * 180.0 / PI).toFloat(),
+        isMoving = true,
+        facingRight = cos(angle) >= 0,
+        navState = ovh.gabrielhuav.pow.domain.models.map.NpcNavState.MACRO_OSM,
     )
 }
 

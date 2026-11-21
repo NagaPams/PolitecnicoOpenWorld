@@ -34,6 +34,7 @@ internal fun SettingsContent(
         }
         SettingsCategory.Gameplay -> SettingsSectionGameplay(
             state = state,
+            onSurvivalChanged = controller::toggleSurvivalMode,
             onDensityChanged = {
                 controller.changeNpcDensity(it)
                 onNpcDensityApplied(it)

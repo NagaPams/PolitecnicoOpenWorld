@@ -57,6 +57,11 @@ data class GameSaveData(
     // Tipo de guardado: "MANUAL" (el jugador eligió slot) o "AUTO" (al salir/cerrar la app).
     // Nullable por compatibilidad con guardados antiguos (Gson los deja en null).
     val saveType: String? = null,
+    val survivalHunger: Double = 100.0,
+    val survivalThirst: Double = 100.0,
+    val survivalEnergy: Double = 100.0,
+    val survivalInfected: Boolean = false,
+    val survivalInfectionMs: Long = 0L,
     val savedAt: Long = 0L,
 )
 

@@ -33,6 +33,7 @@ interface SettingsController {
     fun changeControlsScale(scale: Float)
     fun toggleSwapControls(enabled: Boolean)
     fun toggleRoadNetwork(enabled: Boolean)
+    fun toggleSurvivalMode(enabled: Boolean)
     fun changeNpcDensity(value: Float)
     fun toggleNpcEmojiLod(enabled: Boolean)
     fun toggleNpcFullEmoji(enabled: Boolean)

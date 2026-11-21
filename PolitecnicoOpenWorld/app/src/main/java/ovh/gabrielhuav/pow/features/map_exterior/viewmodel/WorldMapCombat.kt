@@ -35,6 +35,7 @@ fun WorldMapViewModel.performPlayerAttack() {
     if (now - lastAttackTime < ATTACK_COOLDOWN_MS) return
     lastAttackTime = now
     soundManager.playPunch()
+    emitSurvivalNoise(ovh.gabrielhuav.pow.domain.models.survival.NoiseSource.MELEE)
     viewModelScope.launch(Dispatchers.Default) {
         delay(300L)
         val playerLoc = _uiState.value.currentLocation ?: return@launch
@@ -404,7 +405,7 @@ internal fun WorldMapViewModel.applyNpcContactDamage(playerLoc: GeoPoint) {
             if (now - lastZombieBiteMs < ZOMBIE_BITE_TO_PLAYER_MS) continue
             lastZombieBiteMs = now
             npcContactCooldowns[id] = now
-            viewModelScope.launch(Dispatchers.Main) { takeDamage(ZOMBIE_BITE_TO_PLAYER_DMG) }
+            viewModelScope.launch(Dispatchers.Main) { takeDamage(ZOMBIE_BITE_TO_PLAYER_DMG); onZombieBite() }
             continue
         }
         val last = npcContactCooldowns[id] ?: 0L

@@ -656,4 +656,14 @@
     <string name="sf_fighter_tap_hint">Toca para enfocar · otra vez para elegir</string>
 
     <!-- Tutorial de controles (optativo, i18n 2026-07-11) -->
+    <!-- Modo supervivencia -->
+    <string name="wm_survival_needs">Necesidades</string>
+    <string name="wm_survival_infection">Infección</string>
+    <string name="wm_survival_symptoms">Con síntomas</string>
+    <string name="wm_survival_incubating">Incubando</string>
+    <string name="vendor_survival_hint">Elige qué comprar: quita hambre o sed, o cura la infección:</string>
+    <string name="vendor_pizza_survival_desc">Quita el hambre y recupera un poco de salud.</string>
+    <string name="vendor_drink_survival_desc">Quita la sed y da algo de energía.</string>
+    <string name="vendor_serum_name">Suero</string>
+    <string name="vendor_serum_desc">Cura la infección por mordida.</string>
 </resources>

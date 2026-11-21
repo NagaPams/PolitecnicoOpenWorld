@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -36,7 +38,8 @@ import androidx.compose.ui.window.DialogProperties
 @Composable
 fun VendorMenuDialog(
     onBuyItem: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    survivalMode: Boolean = false,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -57,6 +60,7 @@ fun VendorMenuDialog(
                     .fillMaxWidth(0.6f) // 60% del ancho de la pantalla (ideal para landscape)
                     .background(Color(0xFF1E1E1E), RoundedCornerShape(12.dp))
                     .border(2.dp, Color(0xFFFBC02D), RoundedCornerShape(12.dp))
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -85,7 +89,8 @@ fun VendorMenuDialog(
 
                 // Lista de Items
                 Text(
-                    text = "Elige un consumible para recuperar salud:",
+                    text = if (survivalMode) androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_survival_hint)
+                    else "Elige un consumible para recuperar salud:",
                     color = Color.LightGray,
                     fontSize = 16.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -95,7 +100,8 @@ fun VendorMenuDialog(
                 VendorItemRow(
                     iconText = "🍕", 
                     name = "Rebanada de Pizza",
-                    description = "Restaura la salud al máximo.",
+                    description = if (survivalMode) androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_pizza_survival_desc)
+                    else "Restaura la salud al máximo.",
                     price = "$15",
                     onClick = { onBuyItem("Pizza") }
                 )
@@ -106,13 +112,25 @@ fun VendorMenuDialog(
                 VendorItemRow(
                     iconText = "🥤", 
                     name = "Refresco Frío",
-                    description = "Te refresca y cura tus heridas.",
+                    description = if (survivalMode) androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_drink_survival_desc)
+                    else "Te refresca y cura tus heridas.",
                     price = "$12",
                     onClick = { onBuyItem("Refresco") }
                 )
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
+                if (survivalMode) {
+                    VendorItemRow(
+                        iconText = "💉",
+                        name = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_serum_name),
+                        description = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_serum_desc),
+                        price = "$40",
+                        onClick = { onBuyItem("Suero") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 // Espacio futuro para imágenes (placeholder)
                 Text(
                     text = "(Si en el futuro agregas assets .webp/.png para los items, puedes cambiar el texto 🍕 por una Image() de Compose aquí)",

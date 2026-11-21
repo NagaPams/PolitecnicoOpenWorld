@@ -28,8 +28,15 @@ import androidx.compose.runtime.setValue
 class CombatManager(private val clockMs: () -> Long = { System.currentTimeMillis() }) {
 
     /** Vida actual del jugador (0..maxPlayerHealth). La escriben takeDamage/heal/wasted del VM. */
-    var playerHealth by mutableStateOf(100f)
-        internal set
+    private val healthLock = Any()
+    private var healthState by mutableStateOf(100f)
+    var playerHealth: Float
+        get() = synchronized(healthLock) { healthState }
+        internal set(value) { synchronized(healthLock) { healthState = value } }
+
+    internal fun updateHealth(transform: (Float) -> Float): Float = synchronized(healthLock) {
+        transform(healthState).also { healthState = it }
+    }
 
     /** Tope de vida (constante de diseño). */
     val maxPlayerHealth = 100f

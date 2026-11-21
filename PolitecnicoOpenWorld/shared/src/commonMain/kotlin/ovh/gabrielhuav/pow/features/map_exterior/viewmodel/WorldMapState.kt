@@ -56,6 +56,12 @@ enum class TileSource  { LOCAL_OSM, LOCAL_CACHE, NETWORK }
 enum class DebugEditTool { NONE, WALL, BLOCK, NAV_PED, NAV_CAR }
 
 data class WorldMapState(
+    // ⚠️ LO POSEE SurvivalManager: solo se escribe a través de sus métodos.
+    val survivalMode: Boolean = false,
+    val survivalNeeds: ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds =
+        ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds(),
+    val survivalInfection: ovh.gabrielhuav.pow.domain.models.survival.InfectionState =
+        ovh.gabrielhuav.pow.domain.models.survival.InfectionState(),
     val currentLocation: GeoPoint? = null,
     val isLoadingLocation: Boolean = true,
     val zoomLevel: Double = ZOOM_LOADING,

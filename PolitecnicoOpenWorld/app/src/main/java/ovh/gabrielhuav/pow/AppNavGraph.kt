@@ -75,6 +75,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.setCampaignObjective
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.setMapProvider
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.setNpcDensity
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.setNpcEmojiLod
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.resetSurvivalForNewGame
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.setNpcFullEmoji
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.setStorySpawn
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startMission1Chase
@@ -239,6 +240,7 @@ fun AppNavGraph(
                             }
                             MainMenuScreen(
                                 onNavigateToMap = { isMultiplayer, playerName ->
+                                    worldMapViewModel.resetSurvivalForNewGame()
                                     // MUNDO LIBRE (sin campaña): no es una sesión de Modo Historia,
                                     // así que NO se auto-guarda al salir.
                                     worldMapViewModel.inCampaign = false
@@ -405,6 +407,7 @@ fun AppNavGraph(
                                     // (rotando). Limpiamos esos 2 para empezar fresco. Además, si el jugador
                                     // eligió un SLOT MANUAL, guardamos ahí la partida inicial. Fija la Misión 1.
                                     campaignRepository.saveCampaign(school.id)
+                                    worldMapViewModel.resetSurvivalForNewGame()
                                     SaveGameRepository(activity).clearAutoSlots()
                                     worldMapViewModel.campaignSchoolId = school.id
                                     worldMapViewModel.campaignSlot = SaveGameRepository.AUTO_SLOTS.first()

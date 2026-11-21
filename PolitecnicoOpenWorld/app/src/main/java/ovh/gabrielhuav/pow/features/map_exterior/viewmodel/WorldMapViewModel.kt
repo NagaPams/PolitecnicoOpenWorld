@@ -161,6 +161,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // completedMissions). El estado de FASE de misión (objetivo/subtítulos/ruta/…) sigue en el VM
     // (entrelazado con el game loop — PARTE B, ver CHECKPOINT_SENIOR_refactor.md).
     internal val campaignManager = CampaignManager()
+    internal val survivalManager = SurvivalManager(settingsRepository.getSurvivalMode())
+    internal var lastSurvivalUpdateMs = 0L
+    internal var lastSurvivalSettingCheckMs = 0L
+    internal var wasSurvivalNoiseActive = false
 
     // FACHADA COMBINADA: la UI sigue viendo UN WorldMapState con la MISMA forma; los campos
     // poseídos por managers se SOBREESCRIBEN desde su sub-estado (sus copias en _uiState ya
@@ -175,10 +179,15 @@ class WorldMapViewModel @javax.inject.Inject constructor(
             designerManager.state,
             collectiblesManager.state,
             wantedManager.state,
-            combine(transitTeleportManager.state, campaignManager.state) { transit, campaign -> transit to campaign }
+            combine(transitTeleportManager.state, campaignManager.state, survivalManager.state) { transit, campaign, survival ->
+                Triple(transit, campaign, survival)
+            }
         ) { base, designer, coll, wanted, transitAndCampaign ->
-            val (transit, campaign) = transitAndCampaign
+            val (transit, campaign, survival) = transitAndCampaign
             base.copy(
+                survivalMode = survival.enabled,
+                survivalNeeds = survival.needs,
+                survivalInfection = survival.infection,
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,
                 debugEditWalls = designer.debugEditWalls,
@@ -444,6 +453,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // tick con el jugador exterior quieto) PISABA el sonido de pasos de los interiores. WorldMapScreen
     // pone este flag a true/false con un DisposableEffect; el bloque de audio del loop se gatea con él.
     @Volatile internal var worldMapForeground = false
+    @Volatile internal var survivalAppResumed = false
 
     internal val hospitalRespawnPoints = listOf(
         GeoPoint(19.5034, -99.1469),
@@ -1028,6 +1038,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             runCampusLifeTick(location)
                         }
                         updateDayNightTick()
+                        updateSurvivalTick()
 
                         maybeRefetchRoadNetwork(location)
                         if (_uiState.value.showRoadNetwork) {
@@ -1419,6 +1430,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
         }
         val loc = _uiState.value.currentLocation ?: return
         npcAiManager.triggerHorn(loc.latitude, loc.longitude)
+        emitSurvivalNoise(ovh.gabrielhuav.pow.domain.models.survival.NoiseSource.HORN)
     }
     private fun recenterIfPanning() { if (_uiState.value.isUserPanningMap) centerOnPlayer() }
 
@@ -1619,6 +1631,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     }
 
     fun buyItemFromVendor(itemName: String) {
+        if (survivalManager.state.value.enabled) {
+            buySurvivalItem(itemName)
+            return
+        }
         // Reproducir sonido de compra/consumir
         soundManager.playItem()
         

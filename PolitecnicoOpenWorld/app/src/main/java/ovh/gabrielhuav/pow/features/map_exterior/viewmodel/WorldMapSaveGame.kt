@@ -92,6 +92,11 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         // ECONOMÍA: el dinero es campo plano de _uiState (no lo posee ningún manager).
         playerMoney = s.playerMoney,
         completedMissions = campaignManager.state.value.completedMissions,
+        survivalHunger = survivalManager.state.value.needs.hunger,
+        survivalThirst = survivalManager.state.value.needs.thirst,
+        survivalEnergy = survivalManager.state.value.needs.energy,
+        survivalInfected = survivalManager.state.value.infection.infected,
+        survivalInfectionMs = survivalManager.state.value.infection.elapsedMs,
         saveType = saveType,
         savedAt = System.currentTimeMillis()
     )
@@ -136,6 +141,12 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     val restoredCompleted: List<String> = data.completedMissions ?: emptyList()
     // wantedLevel (WantedManager) y completedMissions (CampaignManager) los POSEEN sus managers
     // (fachada combine): se restauran vía el manager, NO en el copy de _uiState.
+    survivalManager.restore(
+        ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds(
+            data.survivalHunger, data.survivalThirst, data.survivalEnergy,
+        ),
+        data.survivalInfected, data.survivalInfectionMs,
+    )
     wantedManager.setWantedLevel(data.wantedLevel)
     campaignManager.setCompletedMissions(restoredCompleted)
     _uiState.update {

@@ -24,6 +24,7 @@ class SettingsRepository(
         private const val SCALE_MAX = 1.4f
 
         // ─── Jugabilidad: población de NPCs ──────────────────────────────────
+        private const val KEY_SURVIVAL_MODE = "SURVIVAL_MODE"
         private const val KEY_NPC_DENSITY = "NPC_DENSITY"        // multiplicador 0.4–1.6
         private const val KEY_NPC_EMOJI_LOD = "NPC_EMOJI_LOD"    // NPCs lejanos como emoji (optimizar dibujado)
         private const val KEY_NPC_FULL_EMOJI = "NPC_FULL_EMOJI"  // TODOS los NPCs como emoji (gama baja)
@@ -93,6 +94,9 @@ class SettingsRepository(
     // ─── Jugabilidad: población de NPCs ──────────────────────────────────────
 
     /** Multiplicador de densidad de NPCs elegido por el usuario (se combina con gama/ciudad). */
+    fun getSurvivalMode(): Boolean = settings.getBoolean(KEY_SURVIVAL_MODE, false)
+    fun saveSurvivalMode(enabled: Boolean) { settings.putBoolean(KEY_SURVIVAL_MODE, enabled) }
+
     fun getNpcDensity(): Float = settings.getFloat(KEY_NPC_DENSITY, 1.0f).coerceIn(NPC_DENSITY_MIN, NPC_DENSITY_MAX)
     fun saveNpcDensity(v: Float) {
         settings.putFloat(KEY_NPC_DENSITY, v.coerceIn(NPC_DENSITY_MIN, NPC_DENSITY_MAX))

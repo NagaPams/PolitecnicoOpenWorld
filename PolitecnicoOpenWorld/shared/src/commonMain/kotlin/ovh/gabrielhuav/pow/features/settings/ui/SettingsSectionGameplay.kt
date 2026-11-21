@@ -26,12 +26,20 @@ import ovh.gabrielhuav.pow.shared.recursos.*
 @Composable
 internal fun SettingsSectionGameplay(
     state: SettingsState,
+    onSurvivalChanged: (Boolean) -> Unit,
     onDensityChanged: (Float) -> Unit,
     onEmojiLodChanged: (Boolean) -> Unit,
     onFullEmojiChanged: (Boolean) -> Unit,
     onOptimize: () -> Unit,
 ) {
     Column {
+        SettingsSwitch(
+            stringResource(Res.string.settings_survival_title),
+            stringResource(Res.string.settings_survival_desc),
+            state.survivalMode,
+            onSurvivalChanged,
+        )
+        Spacer(Modifier.height(24.dp))
         Button(
             onClick = onOptimize,
             shape = RoundedCornerShape(10.dp),

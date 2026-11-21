@@ -222,7 +222,7 @@ internal fun WorldMapViewModel.handleInteraction() {
             nearby.id.startsWith("CAT_") -> {
                 // Acariciar al gato: +10% de vida
                 soundManager.playItem()
-                playerHealth = (playerHealth + 10f).coerceAtMost(100f)
+                combatManager.updateHealth { (it + 10f).coerceAtMost(100f) }
                 showHealthBar = true
                 
                 _uiState.update { it.copy(interactionPrompt = "¡Miau! ❤️ (+10% Salud)") }

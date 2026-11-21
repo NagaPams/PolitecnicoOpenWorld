@@ -30,6 +30,7 @@ data class SettingsState(
     val showRoadNetwork: Boolean = true,
 
     // ─── Jugabilidad: población de NPCs ──────────────────────────────────────
+    val survivalMode: Boolean = false,
     val npcDensity: Float = 1.0f,        // multiplicador de cantidad de NPCs (0.4–1.6)
     val npcEmojiLod: Boolean = false,    // "Optimizar dibujado de NPCs": NPCs lejanos como emoji
     val npcFullEmoji: Boolean = false,   // "Optimizar para gama baja": TODOS los NPCs como emoji

@@ -1,0 +1,46 @@
+package ovh.gabrielhuav.pow.domain.models.survival
+
+enum class NoiseSource { WALKING, RUNNING, MELEE, GUNSHOT, ENGINE, HORN, DOOR }
+
+data class NoiseEvent(val latitude: Double, val longitude: Double, val source: NoiseSource, val night: Boolean) {
+    val radiusMeters: Double get() = NoiseRules.radiusFor(source, night)
+}
+
+object NoiseRules {
+    fun radiusFor(source: NoiseSource, night: Boolean): Double {
+        val radius = when (source) {
+            NoiseSource.WALKING -> 12.0
+            NoiseSource.RUNNING -> 30.0
+            NoiseSource.MELEE -> 35.0
+            NoiseSource.GUNSHOT -> 160.0
+            NoiseSource.ENGINE -> 45.0
+            NoiseSource.HORN -> 140.0
+            NoiseSource.DOOR -> 25.0
+        }
+        return if (night) radius * 1.2 else radius
+    }
+}
+
+/** Cola acotada: conserva los eventos existentes cuando se llena. */
+class NoiseBus(capacity: Int) {
+    init { require(capacity > 0) }
+    private val events = arrayOfNulls<NoiseEvent>(capacity)
+    private var head = 0
+    private var count = 0
+
+    fun offer(event: NoiseEvent): Boolean {
+        if (count == events.size) return false
+        events[(head + count) % events.size] = event
+        count++
+        return true
+    }
+
+    fun poll(): NoiseEvent? {
+        if (count == 0) return null
+        val event = events[head]
+        events[head] = null
+        head = (head + 1) % events.size
+        count--
+        return event
+    }
+}
