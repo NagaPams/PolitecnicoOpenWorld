@@ -195,6 +195,11 @@ class NpcAiManager {
     private val SPAWN_SCAN_MS = 900L
     @Volatile private var lastSpawnScanMs = 0L
     private val simRadius      = 0.0010
+
+    /** Un zombi fuera del radio de simulación sigue activo si oye un ruido (modo supervivencia): así el ruido llega más allá de su vista. */
+    private fun zombieHearsNoise(npc: Npc): Boolean =
+        survivalNoiseEnabled && npc.type == NpcType.ZOMBIE &&
+            strongestSurvivalNoise(npc.location.latitude, npc.location.longitude, survivalNoiseNowMs) != null
     private val despawnDistance = 0.0028
     private val spawnDistance   = 0.0012
     private val spawnRingMin = 0.0004
@@ -802,7 +807,8 @@ class NpcAiManager {
                     moved
                 } else if (!npc.displayName.isNullOrEmpty()) {
                     npc
-                } else if (calculateDistance(npc.location.latitude, npc.location.longitude, pLat0, pLon0) > simRadius) {
+                } else if (calculateDistance(npc.location.latitude, npc.location.longitude, pLat0, pLon0) > simRadius &&
+                    !zombieHearsNoise(npc)) {
                     // Fuera del radio de simulación no se mueven (LOD). Los NPCs de ruta deben quedar
                     // QUIETOS (no reproducir la animación de caminado en el sitio) hasta acercarse.
                     if (npc.id.startsWith(ROUTE_NPC_PREFIX) && npc.isMoving) npc.copy(isMoving = false) else npc
