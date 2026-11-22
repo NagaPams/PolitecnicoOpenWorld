@@ -17,6 +17,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_bitten
+import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
+import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_no_money
 import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
@@ -34,6 +36,7 @@ private fun WorldMapViewModel.survivalPaused(): Boolean {
 
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     survivalManager.resetForNewGame()
+    rebuildDoorCollisions()
     npcAiManager.setSurvivalNoiseEnabled(false)
     wasSurvivalNoiseActive = false
     lastSurvivalUpdateMs = 0L
@@ -46,7 +49,7 @@ internal fun WorldMapViewModel.emitSurvivalNoise(source: NoiseSource) {
     npcAiManager.queueSurvivalNoise(NoiseEvent(location.latitude, location.longitude, source, state.nightAlpha > 0.05f))
 }
 
-private fun WorldMapViewModel.showSurvivalPrompt(text: String) {
+internal fun WorldMapViewModel.showSurvivalPrompt(text: String) {
     _uiState.update { it.copy(interactionPrompt = text) }
     viewModelScope.launch {
         delay(3000L)
@@ -67,6 +70,10 @@ internal fun WorldMapViewModel.onZombieBite() {
 internal fun WorldMapViewModel.buySurvivalItem(itemName: String) {
     val item = SurvivalItem.fromName(itemName) ?: return
     val price = SurvivalRules.priceOf(item)
+    if (item == SurvivalItem.TABLONES) {
+        buyBoards(price)
+        return
+    }
     val current = survivalManager.state.value
     val preview = SurvivalRules.consume(item, current.needs, current.infection)
     when {
@@ -79,6 +86,22 @@ internal fun WorldMapViewModel.buySurvivalItem(itemName: String) {
             addMoney(-price)
             _uiState.update { it.copy(showVendorMenu = false) }
             viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_item_used)) }
+        }
+    }
+}
+
+/** Los tablones se guardan para barricadar; no se consumen. */
+private fun WorldMapViewModel.buyBoards(price: Int) {
+    when {
+        survivalManager.state.value.boards >= MAX_BOARDS_CARRIED ->
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_boards_full)) }
+        _uiState.value.playerMoney < price ->
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_no_money)) }
+        else -> {
+            survivalManager.addBoards(1)
+            soundManager.playItem()
+            addMoney(-price)
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_boards_bought)) }
         }
     }
 }
@@ -120,6 +143,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
             SurvivalActivity.IDLE -> Unit
         }
     }
+    updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     combatManager.updateHealth { health ->
         survivalManager.tick(elapsed.coerceAtMost(1000L), true, false, activity, s.nightAlpha > 0.05f, health)
     }

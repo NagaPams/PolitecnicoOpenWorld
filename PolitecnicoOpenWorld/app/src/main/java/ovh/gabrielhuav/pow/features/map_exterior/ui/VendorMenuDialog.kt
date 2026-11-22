@@ -129,6 +129,14 @@ fun VendorMenuDialog(
                         onClick = { onBuyItem("Suero") }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
+                    VendorItemRow(
+                        iconText = "🪵",
+                        name = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_boards_name),
+                        description = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.vendor_boards_desc),
+                        price = "$20",
+                        onClick = { onBuyItem("Tablones") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 // Espacio futuro para imágenes (placeholder)

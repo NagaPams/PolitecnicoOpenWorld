@@ -3,6 +3,7 @@ package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import ovh.gabrielhuav.pow.domain.models.map.DoorRuntime
 import ovh.gabrielhuav.pow.domain.models.survival.InfectionState
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalActivity
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalConsumeResult
@@ -14,7 +15,12 @@ data class SurvivalSubState(
     val enabled: Boolean = false,
     val needs: SurvivalNeeds = SurvivalNeeds(),
     val infection: InfectionState = InfectionState(),
+    val boards: Int = 0,
+    /** Solo puertas cuyo estado cambió respecto al esquema; clave `<huella>_e<arista>`. */
+    val doors: Map<String, DoorRuntime> = emptyMap(),
 )
+
+internal const val MAX_BOARDS_CARRIED = 9
 
 class SurvivalManager(enabled: Boolean = false) {
     private val mutableState = MutableStateFlow(SurvivalSubState(enabled = enabled))
@@ -28,8 +34,18 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.value = SurvivalSubState(enabled = mutableState.value.enabled)
     }
 
-    fun restore(needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long) {
+    fun addBoards(count: Int) {
+        mutableState.update { it.copy(boards = (it.boards + count).coerceIn(0, MAX_BOARDS_CARRIED)) }
+    }
+
+    fun setDoors(boards: Int, doors: Map<String, DoorRuntime>) {
+        mutableState.update { it.copy(boards = boards.coerceIn(0, MAX_BOARDS_CARRIED), doors = doors) }
+    }
+
+    fun restore(needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0, doors: Map<String, DoorRuntime> = emptyMap()) {
         mutableState.value = SurvivalSubState(
+            boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
+            doors = doors,
             enabled = mutableState.value.enabled,
             needs = SurvivalNeeds(
                 hunger = needs.hunger.coerceIn(0.0, 100.0),

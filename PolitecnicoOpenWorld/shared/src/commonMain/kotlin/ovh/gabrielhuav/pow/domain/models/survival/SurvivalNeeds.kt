@@ -12,7 +12,7 @@ enum class NeedLevel { OK, LOW, CRITICAL }
 
 /** Consumibles de la tienda del campus. Si se agregan más, van AL FINAL (viajan por nombre). */
 enum class SurvivalItem {
-    PIZZA, REFRESCO, SUERO;
+    PIZZA, REFRESCO, SUERO, TABLONES;
 
     companion object {
         fun fromName(name: String): SurvivalItem? = entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
@@ -57,6 +57,7 @@ object SurvivalRules {
         SurvivalItem.PIZZA -> 15
         SurvivalItem.REFRESCO -> 12
         SurvivalItem.SUERO -> 40
+        SurvivalItem.TABLONES -> 20
     }
 
     fun consume(item: SurvivalItem, needs: SurvivalNeeds, infection: InfectionState): SurvivalConsumeResult =
@@ -75,6 +76,8 @@ object SurvivalRules {
             SurvivalItem.SUERO ->
                 if (infection.infected) SurvivalConsumeResult(needs, infection.cure(), 0f, true)
                 else SurvivalConsumeResult(needs, infection, 0f, false)
+            // No se consume: se guarda como material (SurvivalManager.addBoards) para barricadar puertas.
+            SurvivalItem.TABLONES -> SurvivalConsumeResult(needs, infection, 0f, false)
         }
 
     /**

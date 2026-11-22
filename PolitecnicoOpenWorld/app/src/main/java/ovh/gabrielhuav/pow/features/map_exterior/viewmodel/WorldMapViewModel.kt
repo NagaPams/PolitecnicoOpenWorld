@@ -165,6 +165,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal val survivalManager = SurvivalManager(settingsRepository.getSurvivalMode())
     internal var lastSurvivalUpdateMs = 0L
     internal var lastSurvivalSettingCheckMs = 0L
+    internal var doorEnterBypass = false
     internal var wasSurvivalNoiseActive = false
 
     // FACHADA COMBINADA: la UI sigue viendo UN WorldMapState con la MISMA forma; los campos
@@ -189,6 +190,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalMode = survival.enabled,
                 survivalNeeds = survival.needs,
                 survivalInfection = survival.infection,
+                survivalBoards = survival.boards,
+                doorStates = survival.doors,
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,
                 debugEditWalls = designer.debugEditWalls,
@@ -1191,7 +1194,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal fun loadExteriorCollisions() { // llamado desde WorldMapDesigner.kt
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                exteriorCollisions = cargarColisionesConHuellas()
+                exteriorCollisions = cargarColisionesConHuellas(survivalManager.state.value.doors)
 
                 npcAiManager.setExteriorCollisions(exteriorCollisions)
                 // Exponer al estado para el overlay de Debug Interiores (zonas no caminables).

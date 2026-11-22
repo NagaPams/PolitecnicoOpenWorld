@@ -667,4 +667,16 @@
     <string name="vendor_drink_survival_desc">Quita la sed y da algo de energía.</string>
     <string name="vendor_serum_name">Suero</string>
     <string name="vendor_serum_desc">Cura la infección por mordida.</string>
+    <string name="vendor_boards_name">Tablones</string>
+    <string name="vendor_boards_desc">Material para barricadar una puerta de edificio.</string>
+    <string name="door_menu_title">Puerta (tablones: %1$d)</string>
+    <string name="door_state_open">Abierta</string>
+    <string name="door_state_closed">Cerrada</string>
+    <string name="door_state_barricaded">Barricada (%1$d%%)</string>
+    <string name="door_action_enter">Entrar</string>
+    <string name="door_action_open">Abrir</string>
+    <string name="door_action_close">Cerrar</string>
+    <string name="door_action_barricade">Barricar (1 tablón)</string>
+    <string name="door_action_dismantle">Desmontar barricada</string>
+    <string name="door_menu_cancel">Cancelar</string>
 </resources>

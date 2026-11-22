@@ -665,4 +665,16 @@
     <string name="vendor_drink_survival_desc">Fixes thirst and gives some energy.</string>
     <string name="vendor_serum_name">Serum</string>
     <string name="vendor_serum_desc">Cures the bite infection.</string>
+    <string name="vendor_boards_name">Planks</string>
+    <string name="vendor_boards_desc">Material to barricade a building door.</string>
+    <string name="door_menu_title">Door (planks: %1$d)</string>
+    <string name="door_state_open">Open</string>
+    <string name="door_state_closed">Closed</string>
+    <string name="door_state_barricaded">Barricaded (%1$d%%)</string>
+    <string name="door_action_enter">Enter</string>
+    <string name="door_action_open">Open</string>
+    <string name="door_action_close">Close</string>
+    <string name="door_action_barricade">Barricade (1 plank)</string>
+    <string name="door_action_dismantle">Dismantle barricade</string>
+    <string name="door_menu_cancel">Cancel</string>
 </resources>

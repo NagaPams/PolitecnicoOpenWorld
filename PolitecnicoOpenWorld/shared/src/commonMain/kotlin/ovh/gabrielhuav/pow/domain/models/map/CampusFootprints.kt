@@ -115,14 +115,17 @@ fun CampusFootprintsFile.toCollisionPolygons(spec: BuildingSpecFile = BuildingSp
  * Zomboid. Quien entra por el hueco camina por dentro; el resto de la pared sigue sólida. Las puertas cerradas o
  * barricadas no abren hueco. Los edificios sin puertas siguen siendo un polígono macizo ([toCollisionPolygons]).
  */
-fun CampusFootprintsFile.toCollisionWalls(spec: BuildingSpecFile = BuildingSpecFile()): List<CollisionWall> =
+fun CampusFootprintsFile.toCollisionWalls(
+    spec: BuildingSpecFile = BuildingSpecFile(),
+    doorStates: Map<String, DoorRuntime> = emptyMap(),
+): List<CollisionWall> =
     toFootprints(spec).filter { it.kind == FootprintKind.BUILDING && it.doors.isNotEmpty() }.flatMap { fp ->
         val n = fp.points.size
         (0 until n).flatMap { k ->
             val a = fp.points[k]
             val b = fp.points[(k + 1) % n]
             val lengthM = edgeLengthMeters(a, b)
-            val gaps = fp.doors.filter { it.edge == k && it.state == DoorState.OPEN && lengthM > 0.0 }
+            val gaps = fp.doors.filter { it.edge == k && (doorStates["${fp.id}_e${it.edge}"]?.state ?: it.state) == DoorState.OPEN && lengthM > 0.0 }
                 .map { (it.t - it.widthM / lengthM / 2.0).coerceIn(0.0, 1.0) to (it.t + it.widthM / lengthM / 2.0).coerceIn(0.0, 1.0) }
                 .sortedBy { it.first }
             val solid = ArrayList<Pair<Double, Double>>()
@@ -146,12 +149,13 @@ fun CampusFootprintsFile.toCollisionWalls(spec: BuildingSpecFile = BuildingSpecF
 fun ExteriorCollisionsConfig.conHuellasDelCampus(
     huellas: CampusFootprintsFile,
     spec: BuildingSpecFile = BuildingSpecFile(),
+    doorStates: Map<String, DoorRuntime> = emptyMap(),
 ): ExteriorCollisionsConfig {
     val existentes = polygons.map { it.name }.toSet()
     val murosExistentes = walls.map { it.name }.toSet()
     return copy(
         polygons = polygons + huellas.toCollisionPolygons(spec).filter { it.name !in existentes },
-        walls = walls + huellas.toCollisionWalls(spec).filter { it.name !in murosExistentes },
+        walls = walls + huellas.toCollisionWalls(spec, doorStates).filter { it.name !in murosExistentes },
     )
 }
 
@@ -160,10 +164,14 @@ fun ExteriorCollisionsConfig.conHuellasDelCampus(
  * mano (nunca lanza). Bloqueante (I/O de assets): llamarlo fuera del hilo de UI. Lo usan Android (ViewModel) e iOS
  * (`MapaMundoIos`); mover al jugador con [avanzarConColision] para que quien quede dentro de un edificio pueda salir.
  */
-fun cargarColisionesConHuellas(): ExteriorCollisionsConfig {
+fun cargarColisionesConHuellas(doorStates: Map<String, DoorRuntime> = emptyMap()): ExteriorCollisionsConfig {
     val base = cargarColisionesExteriores()
     return try {
-        base.conHuellasDelCampus(PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS)), cargarEsquemaEdificios())
+        base.conHuellasDelCampus(
+            PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS)),
+            cargarEsquemaEdificios(),
+            doorStates,
+        )
     } catch (e: Exception) {
         // Sin huellas no hay colisión con edificios (el polígono dibujado a mano ya no existe): que no sea silencioso.
         powLog("CampusFootprints", "No se pudieron cargar las huellas ($RUTA_HUELLAS_CAMPUS): ${e::class.simpleName}: ${e.message}. Sin colisión con edificios.")

@@ -167,6 +167,7 @@ internal fun WorldMapViewModel.handleInteraction() {
                 }
             }
             nearby.id.startsWith("escom_door_") -> {
+                if (nearby.id.startsWith(SPEC_DOOR_ID_PREFIX) && interceptSpecDoor(nearby.id)) return
                 // Enrutamos la puerta a su interior por el NOMBRE del landmark, vía el
                 // catálogo data-driven InteriorEntryCatalog (antes era un `when` hardcodeado
                 // aquí). Usa `contains` (no match exacto) para tolerar variantes/acentos al

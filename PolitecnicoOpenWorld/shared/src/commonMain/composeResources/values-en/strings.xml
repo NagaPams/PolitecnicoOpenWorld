@@ -411,4 +411,11 @@
     <string name="survival_no_money">💵 Not enough money</string>
     <string name="survival_not_needed">You do not need that right now</string>
     <string name="survival_item_used">✅ Item used</string>
+    <string name="survival_boards_bought">🪵 Plank stored</string>
+    <string name="survival_boards_full">🪵 You cannot carry more planks</string>
+    <string name="survival_door_opened">🚪 Door opened</string>
+    <string name="survival_door_closed">🚪 Door closed</string>
+    <string name="survival_door_barricaded">🪵 Door barricaded</string>
+    <string name="survival_door_dismantled">🪵 Barricade dismantled</string>
+    <string name="survival_door_broken">🧟 Zombies broke a barricade!</string>
 </resources>

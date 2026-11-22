@@ -105,6 +105,8 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.DebugEditTool
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MapProvider
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapViewModel
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.addLandmarkAtPlayer
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.closeDoorMenu
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.performDoorAction
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.cancelPendingProvider
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.centerOnPlayer
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.clearDebugEdits
@@ -873,6 +875,17 @@ fun WorldMapScreen(
                 survivalMode = uiState.survivalMode,
                 onBuyItem = { itemName -> viewModel.buyItemFromVendor(itemName) },
                 onDismiss = { viewModel.closeVendorMenu() }
+            )
+        }
+
+        // ─── MENÚ DE PUERTA (t30, modo supervivencia) ────────────────────────────
+        uiState.doorMenuId?.let { doorId ->
+            DoorMenuDialog(
+                doorState = uiState.doorStates[doorId] ?: ovh.gabrielhuav.pow.domain.models.map.DoorRuntime(ovh.gabrielhuav.pow.domain.models.map.DoorState.OPEN),
+                boards = uiState.survivalBoards,
+                canEnter = uiState.campusEntryDoors.firstOrNull { it.id == doorId }?.entry?.isNotEmpty() == true,
+                onAction = { viewModel.performDoorAction(it) },
+                onDismiss = { viewModel.closeDoorMenu() },
             )
         }
 

@@ -62,6 +62,10 @@ data class WorldMapState(
         ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds(),
     val survivalInfection: ovh.gabrielhuav.pow.domain.models.survival.InfectionState =
         ovh.gabrielhuav.pow.domain.models.survival.InfectionState(),
+    // ⚠️ LO POSEE SurvivalManager (tablones y puertas cambiadas); `doorMenuId` es de la vista (id `<huella>_e<arista>`).
+    val survivalBoards: Int = 0,
+    val doorStates: Map<String, ovh.gabrielhuav.pow.domain.models.map.DoorRuntime> = emptyMap(),
+    val doorMenuId: String? = null,
     val currentLocation: GeoPoint? = null,
     val isLoadingLocation: Boolean = true,
     val zoomLevel: Double = ZOOM_LOADING,

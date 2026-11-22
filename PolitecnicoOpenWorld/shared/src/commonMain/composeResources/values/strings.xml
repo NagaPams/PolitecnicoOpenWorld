@@ -411,4 +411,11 @@
     <string name="survival_no_money">💵 No te alcanza el dinero</string>
     <string name="survival_not_needed">No lo necesitas ahora</string>
     <string name="survival_item_used">✅ Consumible usado</string>
+    <string name="survival_boards_bought">🪵 Tablón guardado</string>
+    <string name="survival_boards_full">🪵 No cargas más tablones</string>
+    <string name="survival_door_opened">🚪 Puerta abierta</string>
+    <string name="survival_door_closed">🚪 Puerta cerrada</string>
+    <string name="survival_door_barricaded">🪵 Puerta barricada</string>
+    <string name="survival_door_dismantled">🪵 Barricada desmontada</string>
+    <string name="survival_door_broken">🧟 ¡Los zombis rompieron una barricada!</string>
 </resources>
