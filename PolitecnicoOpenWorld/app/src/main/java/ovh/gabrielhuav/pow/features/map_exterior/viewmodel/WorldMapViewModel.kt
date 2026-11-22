@@ -735,25 +735,18 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                     ovh.gabrielhuav.pow.domain.models.campaign.MissionCatalog.ESCOM_FORCEWALK_LON)
                                 ) <= ovh.gabrielhuav.pow.domain.models.campaign.MissionCatalog.ESCOM_FORCEWALK_RADIUS_M
 
-                            if (isSteeringLeftPressed || isSteeringRightPressed) {
-                                val dir = if (currentSpeed >= 0) 1f else -1f
-                                if (isSteeringLeftPressed) currentRotation -= 2f * dir
-                                if (isSteeringRightPressed) currentRotation += 2f * dir
-                            }
-
-                            if (isGasPressed && !prankedyBoarding && !forceWalkNearEscom) {
-                                val speedRatio = (currentSpeed / MAX_SPEED).coerceIn(0.0, 1.0)
-                                val dynamicAcc = ACCELERATION * (1.0 - speedRatio * 0.75) // Cuesta más llegar al 100%
-                                currentSpeed = (currentSpeed + dynamicAcc).coerceAtMost(MAX_SPEED)
-                            } else if (isBrakePressed && !prankedyBoarding) {
-                                currentSpeed -= BRAKING_FRICTION
-                                if (currentSpeed < -MAX_SPEED / 2) currentSpeed = -MAX_SPEED / 2
-                            } else {
-                                if (currentSpeed > 0) currentSpeed = (currentSpeed - (ACCELERATION / 2)).coerceAtLeast(0.0)
-                                if (currentSpeed < 0) currentSpeed = (currentSpeed + (ACCELERATION / 2)).coerceAtMost(0.0)
-                            }
-                            // I: refuerza "solo reversa" cerca de la ESCOM (anula cualquier avance hacia adelante).
-                            if (forceWalkNearEscom && currentSpeed > 0.0) currentSpeed = 0.0
+                            // Velocidad y rumbo: paso puro en :shared (VehicleDriving, t37).
+                            val driven = ovh.gabrielhuav.pow.domain.models.map.VehicleDriving.step(
+                                ovh.gabrielhuav.pow.domain.models.map.DriveState(currentSpeed, currentRotation),
+                                ovh.gabrielhuav.pow.domain.models.map.DriveInput(
+                                    gas = isGasPressed, brake = isBrakePressed,
+                                    steerLeft = isSteeringLeftPressed, steerRight = isSteeringRightPressed,
+                                    holdForBoarding = prankedyBoarding, reverseOnly = forceWalkNearEscom,
+                                ),
+                                MAX_SPEED, ACCELERATION, BRAKING_FRICTION,
+                            )
+                            currentSpeed = driven.speed
+                            currentRotation = driven.rotationDegrees
 
                             val angleRad = Math.toRadians(currentRotation.toDouble())
                             val dx = kotlin.math.sin(angleRad) * currentSpeed
