@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -38,7 +39,6 @@ import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import ovh.gabrielhuav.pow.platform.assets.PowAssets
 import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
-import ovh.gabrielhuav.pow.platform.imagen.rememberImagenDeAsset
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
 import ovh.gabrielhuav.pow.domain.models.map.BuildingMaterial
@@ -140,10 +140,6 @@ private fun isoWallQuad(
 
 private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color)
 private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color)
-private data class IsoCarSprites(
-    val north: ImageBitmap?, val northEast: ImageBitmap?, val east: ImageBitmap?,
-    val southEast: ImageBitmap?, val south: ImageBitmap?,
-)
 private class IsoBuildingLayer(
     val layer: GraphicsLayer,
     val xs: FloatArray,
@@ -174,7 +170,7 @@ private class IsoLayerPool(private val context: GraphicsContext) : RememberObser
 }
 
 private const val ISO_TINT_CACHE_MAX = 48
-private const val ISO_TINT_GAIN = 2.2f
+private const val ISO_TINT_GAIN = 1.6f
 private val isoTintCache = HashMap<Int, ColorFilter>()
 
 /** Tiñe el sprite conservando su sombreado: la luminancia del sprite se reparte por el color del coche. */
@@ -222,15 +218,8 @@ fun IsoWorldView(
     if (center == null) return
     val graphicsContext = LocalGraphicsContext.current
     val playerFrames by produceState<Array<ImageBitmap?>?>(null) { value = loadIsoPlayerSprites() }
-    val zombieSprite = rememberImagenDeAsset("ISOMETRIC/zombie_idle_se_v1.png", reduccion = 8)
-    val carNorth = rememberImagenDeAsset("ISOMETRIC/car_n_v1.png", reduccion = 8)
-    val carNorthEast = rememberImagenDeAsset("ISOMETRIC/car_ne_v1.png", reduccion = 8)
-    val carEast = rememberImagenDeAsset("ISOMETRIC/car_e_v1.png", reduccion = 8)
-    val carSouthEast = rememberImagenDeAsset("ISOMETRIC/car_se_v1.png", reduccion = 8)
-    val carSouth = rememberImagenDeAsset("ISOMETRIC/car_s_v1.png", reduccion = 8)
-    val carSprites = remember(carNorth, carNorthEast, carEast, carSouthEast, carSouth) {
-        IsoCarSprites(carNorth, carNorthEast, carEast, carSouthEast, carSouth)
-    }
+    val artScope = rememberCoroutineScope()
+    val art = remember { IsoActorArt(artScope) }
     val centerState by rememberUpdatedState(center)
     val zoomState by rememberUpdatedState(zoom)
     val npcState by rememberUpdatedState(npcs)
@@ -386,14 +375,41 @@ fun IsoWorldView(
             }
             playerFrame = playerFrames?.get(ISO_SECTOR_ROW[sector] * ISO_SLOT_FOLDER.size + slot)
             playerMirror = sector >= 5
-            actors.insert(playerX, playerY, projection.depth(player), null, "", vehicleHeadingState, vehicleColorState ?: -1)
+            var playerCar: ImageBitmap? = null
+            var playerCarMirror = false
+            if (drivingState) {
+                val sedan = art.vehicleViews(IsoVehicle.SEDAN)
+                val carDirection = isoVehicleDirection(vehicleHeadingState)
+                playerCar = sedan?.frames?.get(carDirection.first)
+                playerCarMirror = carDirection.second
+            }
+            actors.insert(playerX, playerY, projection.depth(player), null, "", vehicleHeadingState, vehicleColorState ?: -1,
+                playerCar, playerCarMirror, IsoVehicle.SEDAN.drawMeters, IsoVehicle.SEDAN.tintable)
             val currentNpcs = npcState
             for (i in currentNpcs.indices) {
                 val npc = currentNpcs[i]
                 val x = projection.projectX(npc.location.latitude, npc.location.longitude).toFloat()
                 val y = projection.projectY(npc.location.latitude, npc.location.longitude).toFloat()
                 if (x < left - 20f || x > right + 20f || y < top - 20f || y > bottom + 20f) continue
-                actors.insert(x, y, projection.depth(npc.location), npc.type, npc.id, (npc.rotationAngle + 90f) % 360f, npc.carColor)
+                val heading = (npc.rotationAngle + 90f) % 360f
+                var sprite: ImageBitmap? = null
+                var mirror = false
+                var meters = 0f
+                var tintable = false
+                val skin = isoSkinFor(npc.type, npc.id)
+                if (skin != null) {
+                    val track = art.track(npc.id, npc.location.latitude, npc.location.longitude, elapsed)
+                    sprite = art.skinFrames(skin)?.get(IsoActorArt.frameIndex(track.sector, elapsed < track.movingUntilMs, elapsed))
+                    mirror = IsoActorArt.mirrored(track.sector)
+                } else if (npc.type == NpcType.CAR || npc.type == NpcType.POLICE_CAR) {
+                    val vehicle = isoVehicleFor(npc.type, npc.carModel, npc.id)
+                    val direction = isoVehicleDirection(heading)
+                    sprite = art.vehicleViews(vehicle)?.frames?.get(direction.first)
+                    mirror = direction.second
+                    meters = vehicle.drawMeters
+                    tintable = vehicle.tintable
+                }
+                actors.insert(x, y, projection.depth(npc.location), npc.type, npc.id, heading, npc.carColor, sprite, mirror, meters, tintable)
             }
             val ppm = projection.pixelsPerMeter.toFloat()
             val personBoost = (ISO_MIN_PERSON_PX * density.toFloat() / (ppm * scale * 2.05f)).coerceIn(1f, ISO_MAX_SPRITE_BOOST)
@@ -420,7 +436,7 @@ fun IsoWorldView(
                 var actorIndex = 0
                 for (building in buildings) {
                     while (actorIndex < actors.size && actors.depth[actorIndex] > building.depth) {
-                        drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame, zombieSprite, carSprites)
+                        drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame)
                     }
                     if (building.right >= left && building.left <= right && building.bottom >= top && building.top <= bottom) {
                         val target = if (isoPointInPolygon(playerX, playerY, building.xs, building.ys)) ISO_ROOF_HIDDEN_ALPHA else 1f
@@ -434,7 +450,7 @@ fun IsoWorldView(
                     }
                 }
                 while (actorIndex < actors.size) {
-                    drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame, zombieSprite, carSprites)
+                    drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame)
                 }
             }
             val maxRadius = (size.minDimension * 0.40f).coerceAtLeast(1f)
@@ -493,6 +509,10 @@ private class IsoActors(private val capacity: Int) {
     val depth = DoubleArray(capacity)
     val heading = FloatArray(capacity)
     val colors = IntArray(capacity)
+    val sprites = arrayOfNulls<ImageBitmap>(capacity)
+    val mirrors = BooleanArray(capacity)
+    val vehicleMeters = FloatArray(capacity)
+    val tintable = BooleanArray(capacity)
     val types = arrayOfNulls<NpcType>(capacity)
     private val ids = arrayOfNulls<String>(capacity)
     var size: Int = 0
@@ -500,24 +520,29 @@ private class IsoActors(private val capacity: Int) {
 
     fun clear() { size = 0 }
 
-    fun insert(px: Float, py: Float, value: Double, type: NpcType?, id: String, worldHeading: Float, color: Int = -1) {
+    fun insert(
+        px: Float, py: Float, value: Double, type: NpcType?, id: String, worldHeading: Float, color: Int = -1,
+        sprite: ImageBitmap? = null, mirror: Boolean = false, meters: Float = 0f, tint: Boolean = false,
+    ) {
         if (size == capacity) return
         var index = size
         while (index > 0 && (depth[index - 1] < value ||
                 (depth[index - 1] == value && (ids[index - 1] ?: "") > id))) {
             x[index] = x[index - 1]; y[index] = y[index - 1]; depth[index] = depth[index - 1]
             types[index] = types[index - 1]; ids[index] = ids[index - 1]; heading[index] = heading[index - 1]
-            colors[index] = colors[index - 1]
+            colors[index] = colors[index - 1]; sprites[index] = sprites[index - 1]; mirrors[index] = mirrors[index - 1]
+            vehicleMeters[index] = vehicleMeters[index - 1]; tintable[index] = tintable[index - 1]
             index--
         }
         x[index] = px; y[index] = py; depth[index] = value; types[index] = type; ids[index] = id; heading[index] = worldHeading; colors[index] = color
+        sprites[index] = sprite; mirrors[index] = mirror; vehicleMeters[index] = meters; tintable[index] = tint
         size++
     }
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
     actors: IsoActors, index: Int, pixelsPerMeter: Float, playerDriving: Boolean, playerMirror: Boolean, personBoost: Float,
-    playerFrame: ImageBitmap?, zombieSprite: ImageBitmap?, carSprites: IsoCarSprites,
+    playerFrame: ImageBitmap?,
 ) {
     val x = actors.x[index]
     val y = actors.y[index]
@@ -526,22 +551,18 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
         drawIsoPlayerFrame(playerFrame, x, y, pixelsPerMeter * personBoost, playerMirror)
         return
     }
-    val sprite = when {
-        type == NpcType.ZOMBIE -> zombieSprite
-        else -> null
-    }
+    val sprite = actors.sprites[index]
+    val isVehicle = actors.vehicleMeters[index] > 0f
     if (sprite != null) {
-        val height = (pixelsPerMeter * 2.05f * personBoost).toInt().coerceAtLeast(1)
-        val width = (height.toFloat() * sprite.width / sprite.height).toInt().coerceAtLeast(1)
-        val facingRight = isoSpriteHeading(actors.heading[index].toDouble()) in 0.0..180.0
-        withTransform({ if (!facingRight) scale(-1f, 1f, pivot = Offset(x, y)) }) {
-            drawImage(
-                image = sprite,
-                srcSize = IntSize(sprite.width, sprite.height),
-                dstOffset = IntOffset((x - width / 2f).toInt(), (y - height).toInt()),
-                dstSize = IntSize(width, height),
-                filterQuality = FilterQuality.None,
-            )
+        if (isVehicle) {
+            val width = (pixelsPerMeter * actors.vehicleMeters[index]).toInt().coerceAtLeast(1)
+            val height = (width.toFloat() * sprite.height / sprite.width).toInt().coerceAtLeast(1)
+            val tint = if (actors.tintable[index]) isoCarTint(actors.colors[index]) else null
+            withTransform({ if (actors.mirrors[index]) scale(-1f, 1f, pivot = Offset(x, y)) }) {
+                drawIsoCarSprite(sprite, x, y, width, height, tint)
+            }
+        } else {
+            drawIsoPlayerFrame(sprite, x, y, pixelsPerMeter * personBoost, actors.mirrors[index])
         }
         return
     }
@@ -550,29 +571,6 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
         return
     }
     val isCar = type == NpcType.CAR || type == NpcType.POLICE_CAR || (type == null && playerDriving)
-    if (isCar && type != NpcType.POLICE_CAR) {
-        val direction = ((isoSpriteHeading(actors.heading[index].toDouble()) + 22.5) / 45.0).toInt() % 8
-        val carSprite = when (direction) {
-            0 -> carSprites.north
-            1, 7 -> carSprites.northEast
-            2, 6 -> carSprites.east
-            3, 5 -> carSprites.southEast
-            else -> carSprites.south
-        }
-        if (carSprite != null) {
-            val width = (pixelsPerMeter * 5.2f).toInt().coerceAtLeast(1)
-            val height = (width.toFloat() * carSprite.height / carSprite.width).toInt().coerceAtLeast(1)
-            val tint = isoCarTint(actors.colors[index])
-            if (direction > 4) {
-                withTransform({ scale(-1f, 1f, pivot = Offset(x, y)) }) {
-                    drawIsoCarSprite(carSprite, x, y, width, height, tint)
-                }
-            } else {
-                drawIsoCarSprite(carSprite, x, y, width, height, tint)
-            }
-            return
-        }
-    }
     val width = pixelsPerMeter * if (isCar) 2.0f else 0.7f
     val height = pixelsPerMeter * if (isCar) 2.1f else 1.5f
     val color = when (type) {
@@ -612,7 +610,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoPlayerFrame(
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoCarSprite(
-    sprite: ImageBitmap, x: Float, y: Float, width: Int, height: Int, tint: ColorFilter,
+    sprite: ImageBitmap, x: Float, y: Float, width: Int, height: Int, tint: ColorFilter?,
 ) {
     drawImage(
         image = sprite, srcSize = IntSize(sprite.width, sprite.height),
@@ -634,4 +632,17 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoRoute(
             strokeWidth = (projection.pixelsPerMeter * 1.2).toFloat(), cap = StrokeCap.Round)
         previousX = x; previousY = y
     }
+}
+
+/** Vista (0 = N, 1 = NE, 2 = E, 3 = SE, 4 = S) y si hay que espejarla, para un rumbo de mundo en grados. */
+internal fun isoVehicleDirection(worldHeadingDegrees: Float): Pair<Int, Boolean> {
+    val sector = isoScreenSector(isoSpriteHeading(worldHeadingDegrees.toDouble()))
+    val view = when (sector) {
+        0 -> 0
+        1, 7 -> 1
+        2, 6 -> 2
+        3, 5 -> 3
+        else -> 4
+    }
+    return view to (sector > 4)
 }

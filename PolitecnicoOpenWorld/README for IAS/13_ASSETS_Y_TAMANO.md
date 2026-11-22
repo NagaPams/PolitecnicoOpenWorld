@@ -145,7 +145,7 @@ Las dos juntas dejarían el AAB en torno a **330 MB**: margen de 170 MB en vez d
 
 ### 🆕 Vista isométrica (2026-11-22)
 
-`assets/ISOMETRIC/` guarda PNG provisionales (zombi, coches y la hoja fuente del jugador). El jugador ya está cortado a WebP en `SPRITES/PLAYER/EstudianteIso/` (40 cuadros, ~0,5 MB, estándar 193×249). Son pequeños, pero siguen en PNG: al producir el arte final pasarlos a **WebP** y mantener el lienzo en 128 px (personajes) y ~192 px (coches) para no gastar presupuesto del AAB.
+El arte isométrico ya no usa PNG provisionales (2026-11-22): `assets/ISOMETRIC/` quedó vacío y las **hojas fuente** (PNG de ~1,3 MB, ~50 MB en total) viven FUERA de `assets` en `tools/iso_art_sources/` para que no entren al AAB (solo `student_sheet_v1.png` está versionada; las demás se excluyen en local). Lo que se empaqueta son los WebP ya cortados con `tools/slice_iso_actor.py` (lienzo 193×249 para personajes, 384 px de ancho para vehículos): `SPRITES/PLAYER/EstudianteIso/` (40 cuadros), `SPRITES/NPC/Iso/<skin>/` (9 skins), `SPRITES/ZOMBIE/Iso/<skin>/` (10), `SPRITES/POLICE/Iso/police_officer/` y `SPRITES/VEHICLES/Iso/<modelo>/` (7 modelos × 5 vistas). Total ≈ 11 MB de WebP (875 archivos). Para una skin nueva: generar la hoja, `python tools/slice_iso_actor.py character <hoja.png> app/src/main/assets/SPRITES/<GRUPO>/Iso/<skin>` y añadirla a `IsoActorArt.kt`.
 
 ## 5. La barrera del CI
 
