@@ -63,7 +63,7 @@ internal fun SettingsSectionMap(state: SettingsState, controller: SettingsContro
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.background(Color(0xFF2A1C21)),
             ) {
-                MapProvider.entries.filter { it.keyFreeProvider == it && (it != MapProvider.ISOMETRIC || state.developerMode) }.forEach { provider ->
+                MapProvider.entries.filter { it.keyFreeProvider == it }.forEach { provider ->
                     DropdownMenuItem(
                         text = { Text(mapProviderName(provider), color = Color.White) },
                         onClick = { pending = provider; expanded = false },

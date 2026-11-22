@@ -57,10 +57,7 @@ open class SettingsViewModel(
 
     override fun selectCategory(category: SettingsCategory) { _state.update { it.copy(selectedCategory = category) } }
     override fun changeMapProvider(provider: MapProvider) {
-        _state.update {
-            val safeProvider = if (provider == MapProvider.ISOMETRIC && !it.developerMode) MapProvider.OSM_WEB else provider
-            it.copy(mapProvider = safeProvider.keyFreeProvider)
-        }
+        _state.update { it.copy(mapProvider = provider.keyFreeProvider) }
     }
     override fun toggleCacheWidget(enabled: Boolean) { _state.update { it.copy(showCacheWidget = enabled) } }
     override fun toggleFpsWidget(enabled: Boolean) { _state.update { it.copy(showFpsWidget = enabled) } }
@@ -79,7 +76,7 @@ open class SettingsViewModel(
     // Modo Desarrollador: persiste al instante. Las pantallas que tengan botones de
     // prueba deben observar state.developerMode para mostrarlos/ocultarlos.
     override fun toggleDeveloperMode(enabled: Boolean) {
-        _state.update { it.copy(developerMode = enabled, mapProvider = if (!enabled && it.mapProvider == MapProvider.ISOMETRIC) MapProvider.OSM_WEB else it.mapProvider) }
+        _state.update { it.copy(developerMode = enabled) }
         repository.saveDeveloperMode(enabled)
     }
     // 🆕 Mostrar hitboxes del modo pelea (estilo Minecraft). Persiste al instante.

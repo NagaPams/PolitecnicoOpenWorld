@@ -7,7 +7,7 @@ import ovh.gabrielhuav.pow.features.settings.models.SettingsCategory
 
 data class SettingsState(
     val selectedCategory: SettingsCategory = SettingsCategory.Map,
-    val mapProvider: MapProvider = MapProvider.OSM_WEB, // Default sin credenciales ni marcas de agua
+    val mapProvider: MapProvider = MapProvider.ISOMETRIC, // Vista inicial: la isométrica (local, sin credenciales ni marcas de agua)
     val showCacheWidget: Boolean = true,
     val showFpsWidget: Boolean = false,
     val showZoomWidget: Boolean = false, // widget de nivel de zoom (Interfaz)
