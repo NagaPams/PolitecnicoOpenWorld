@@ -19,6 +19,24 @@
       "levels": 1,
       "material": "PLASTER",
       "windows": { "spacingM": 3.0 }
+    },
+    {
+      "id": 9000000,
+      "material": "CONCRETE",
+      "windows": { "spacingM": 3.5 },
+      "doors": [ { "edge": 26, "t": 0.5, "widthM": 3.0, "state": "OPEN" } ]
+    },
+    {
+      "id": 9000001,
+      "material": "CONCRETE",
+      "windows": { "spacingM": 3.5 },
+      "doors": [ { "edge": 10, "t": 0.5, "widthM": 3.0, "state": "OPEN" } ]
+    },
+    {
+      "id": 9000002,
+      "material": "CONCRETE",
+      "windows": { "spacingM": 3.5 },
+      "doors": [ { "edge": 43, "t": 0.5, "widthM": 3.0, "state": "OPEN" } ]
     }
   ]
 }
