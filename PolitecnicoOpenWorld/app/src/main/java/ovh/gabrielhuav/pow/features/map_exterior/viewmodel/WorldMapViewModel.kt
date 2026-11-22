@@ -166,6 +166,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var lastSurvivalUpdateMs = 0L
     internal var lastSurvivalSettingCheckMs = 0L
     internal var doorEnterBypass = false
+    private val vehicleDodge = ovh.gabrielhuav.pow.domain.models.map.VehicleDodge()
     internal var wasSurvivalNoiseActive = false
 
     // FACHADA COMBINADA: la UI sigue viendo UN WorldMapState con la MISMA forma; los campos
@@ -759,55 +760,18 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             val absSpeed = kotlin.math.abs(currentSpeed)
                             val isSteeringSharply = isSteeringLeftPressed || isSteeringRightPressed
 
-                            val overtakeRadius = 0.00008
-
-                            val hdLat = kotlin.math.cos(angleRad)
-                            val hdLon = kotlin.math.sin(angleRad)
-                            val perpLat = -hdLon
-                            val perpLon = hdLat
-
-                            var dodgeOffsetX = 0.0
-                            var dodgeOffsetY = 0.0
-
+                            // Esquive de tráfico: acumulador puro en :shared (VehicleDodge, t37).
+                            // TOMBSTONE: NO empujar la posición de los NPC cuando estás detenido (causaba
+                            // órbitas); el rebase lo hace el propio NPC en NpcAiManager.moveNpc (ver "ESQUIVE DE TRÁFICO").
+                            vehicleDodge.begin(tempLoc.latitude, tempLoc.longitude, angleRad, absSpeed, MAX_SPEED, isSteeringSharply)
                             for (npc in remoteEntities.values) { // sin copia: este bucle solo lee (sin allocations por tick)
                                 if (npc.type == NpcType.CAR || npc.type == ovh.gabrielhuav.pow.domain.models.map.NpcType.POLICE_CAR) {
-                                    val vLat = npc.location.latitude - tempLoc.latitude
-                                    val vLon = npc.location.longitude - tempLoc.longitude
-                                    val dist = kotlin.math.sqrt(vLat * vLat + vLon * vLon)
-
-                                    val inFront = vLat * hdLat + vLon * hdLon
-                                    val rightDist = vLat * perpLat + vLon * perpLon
-
-                                    if (dist < overtakeRadius) {
-                                        // 1. (ELIMINADO) El "empujón" posicional a los NPCs cuando estabas
-                                        // detenido causaba órbitas/oscilaciones alrededor del jugador (se
-                                        // empujaba la POSICIÓN sin tocar el RUMBO, y el road-following los
-                                        // regresaba al punto de empuje en bucle). Ahora el rebase lo hace
-                                        // el PROPIO NPC en NpcAiManager.moveNpc: desplaza su OBJETIVO un
-                                        // carril mientras el jugador esté en su trayectoria, lo pasa y se
-                                        // reincorpora (ver "ESQUIVE DE TRÁFICO").
-                                        if (absSpeed >= MAX_SPEED * 0.09 && !isSteeringSharply && inFront > 0) {
-                                            // 2. Manejando recto a velocidad normal o alta: NOSOTROS los esquivamos
-                                            // de forma automática sin desviarnos de la calle (desplazando el tempLoc).
-                                            val dodgeDir = if (rightDist >= 0) -1.0 else 1.0
-                                            val dodgeForce = (overtakeRadius - dist) * 0.08
-                                            dodgeOffsetY += perpLat * dodgeDir * dodgeForce
-                                            dodgeOffsetX += perpLon * dodgeDir * dodgeForce
-                                        }
-                                        // 3. Si vamos muy rápido o giramos bruscamente, no hay esquive suave,
-                                        // tempLoc no se altera y runOverNpcs se encargará del choque (Toretto).
-                                    }
+                                    vehicleDodge.consider(npc.location.latitude, npc.location.longitude)
                                 }
                             }
-
-                            // FIX "te sales mucho al esquivar": cap del desplazamiento lateral POR TICK
-                            // del esquive (con varios coches cerca las fuerzas se sumaban). ~1.6 m/tick máx.
-                            val dodgeMag = kotlin.math.sqrt(dodgeOffsetX * dodgeOffsetX + dodgeOffsetY * dodgeOffsetY)
-                            val maxDodgePerTick = 0.0000015
-                            if (dodgeMag > maxDodgePerTick) {
-                                val k = maxDodgePerTick / dodgeMag
-                                dodgeOffsetX *= k; dodgeOffsetY *= k
-                            }
+                            vehicleDodge.finish()
+                            val dodgeOffsetX = vehicleDodge.offsetLon
+                            val dodgeOffsetY = vehicleDodge.offsetLat
                             tempLoc = GeoPoint(tempLoc.latitude + dodgeOffsetY, tempLoc.longitude + dodgeOffsetX)
 
                             var nearestRoadPoint = getNearestCarRoadPoint(tempLoc)
