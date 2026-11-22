@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -32,6 +33,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
+import ovh.gabrielhuav.pow.platform.assets.PowAssets
+import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 import ovh.gabrielhuav.pow.platform.imagen.rememberImagenDeAsset
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
@@ -42,11 +48,14 @@ import ovh.gabrielhuav.pow.domain.models.map.MapWay
 import ovh.gabrielhuav.pow.domain.models.map.Npc
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.isoPointInPolygon
+import ovh.gabrielhuav.pow.domain.models.map.isoScreenSector
+import ovh.gabrielhuav.pow.domain.models.map.isoWorldAngleToScreenHeading
 import ovh.gabrielhuav.pow.domain.models.map.isoWallFacesCamera
 import ovh.gabrielhuav.pow.domain.models.map.isoSpriteHeading
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.pow
+import kotlin.time.TimeSource
 
 private const val ISO_BAKE_ZOOM = 18.0
 private const val ISO_LAYER_MARGIN = 8f
@@ -62,6 +71,30 @@ private val ISO_WALL_DARK = Color(0xFF574E40)
 private val ISO_FOG = Color(0x6E222A33)
 private const val ISO_MIN_PERSON_PX = 44f
 private const val ISO_MAX_SPRITE_BOOST = 2.5f
+
+// Hoja del jugador al estándar POW (tools/slice_iso_player.py): 5 direcciones x 8 cuadros.
+private const val ISO_PLAYER_PATH = "SPRITES/PLAYER/EstudianteIso/"
+private const val ISO_PLAYER_REDUCTION = 2
+private const val ISO_PLAYER_CANVAS_METERS = 2.3f
+private const val ISO_PLAYER_FOOT_FRACTION = 0.036f
+private val ISO_PLAYER_DIRS = arrayOf("s", "se", "e", "ne", "n")
+private val ISO_SLOT_FOLDER = arrayOf("Idle", "Walk", "Walk", "Walk", "Run", "Run", "Run", "Special")
+private val ISO_SLOT_LETTER = arrayOf("i", "w", "w", "w", "r", "r", "r", "s")
+private val ISO_SLOT_NUMBER = intArrayOf(1, 1, 2, 3, 1, 2, 3, 1)
+private val ISO_SECTOR_ROW = intArrayOf(4, 3, 2, 1, 0, 1, 2, 3)
+private val ISO_STEP_ORDER = intArrayOf(0, 1, 2, 1)
+
+private suspend fun loadIsoPlayerSprites(): Array<ImageBitmap?> = withContext(Dispatchers.Default) {
+    val slots = ISO_SLOT_FOLDER.size
+    val out = arrayOfNulls<ImageBitmap>(ISO_PLAYER_DIRS.size * slots)
+    for (d in ISO_PLAYER_DIRS.indices) {
+        for (slot in 0 until slots) {
+            val path = "$ISO_PLAYER_PATH${ISO_SLOT_FOLDER[slot]}/iso_${ISO_PLAYER_DIRS[d]}_${ISO_SLOT_LETTER[slot]}_${ISO_SLOT_NUMBER[slot]}.webp"
+            out[d * slots + slot] = runCatching { decodificarReducido(PowAssets.bytes(path), ISO_PLAYER_REDUCTION) }.getOrNull()
+        }
+    }
+    out
+}
 
 private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color)
 private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color)
@@ -140,12 +173,13 @@ fun IsoWorldView(
     vehicleHeading: Float,
     fogVisionMeters: Double,
     modifier: Modifier = Modifier,
-    playerFacingRight: Boolean = true,
+    playerMoveAngle: Float? = null,
+    playerAction: PlayerAction = PlayerAction.IDLE,
     vehicleColor: Int? = null,
 ) {
     if (center == null) return
     val graphicsContext = LocalGraphicsContext.current
-    val playerSprite = rememberImagenDeAsset("ISOMETRIC/student_idle_se_v1.png", reduccion = 8)
+    val playerFrames by produceState<Array<ImageBitmap?>?>(null) { value = loadIsoPlayerSprites() }
     val zombieSprite = rememberImagenDeAsset("ISOMETRIC/zombie_idle_se_v1.png", reduccion = 8)
     val carNorth = rememberImagenDeAsset("ISOMETRIC/car_n_v1.png", reduccion = 8)
     val carNorthEast = rememberImagenDeAsset("ISOMETRIC/car_ne_v1.png", reduccion = 8)
@@ -165,7 +199,8 @@ fun IsoWorldView(
     val missionRouteState by rememberUpdatedState(missionRoute)
     val drivingState by rememberUpdatedState(isDriving)
     val vehicleHeadingState by rememberUpdatedState(vehicleHeading)
-    val facingRightState by rememberUpdatedState(playerFacingRight)
+    val moveAngleState by rememberUpdatedState(playerMoveAngle)
+    val actionState by rememberUpdatedState(playerAction)
     val vehicleColorState by rememberUpdatedState(vehicleColor)
     val layerPool = remember { IsoLayerPool(graphicsContext) }
     val density = LocalDensity.current.density.toDouble()
@@ -259,6 +294,9 @@ fun IsoWorldView(
         val fog = Path().apply { fillType = PathFillType.EvenOdd }
         val actors = IsoActors(512)
         var cachedFogRadius = -1f
+        val clock = TimeSource.Monotonic.markNow()
+        var playerFrame: ImageBitmap? = null
+        var playerMirror = false
 
         onDrawBehind {
             drawRect(ISO_GROUND)
@@ -271,6 +309,16 @@ fun IsoWorldView(
             val left = -tx / scale; val top = -ty / scale
             val right = (size.width - tx) / scale; val bottom = (size.height - ty) / scale
             actors.clear()
+            val sector = moveAngleState?.let { isoScreenSector(isoWorldAngleToScreenHeading(it.toDouble())) } ?: 4
+            val elapsed = clock.elapsedNow().inWholeMilliseconds
+            val slot = when (actionState) {
+                PlayerAction.IDLE -> 0
+                PlayerAction.WALK -> 1 + ISO_STEP_ORDER[((elapsed / 110) % 4).toInt()]
+                PlayerAction.RUN -> 4 + ISO_STEP_ORDER[((elapsed / 85) % 4).toInt()]
+                PlayerAction.SPECIAL -> 7
+            }
+            playerFrame = playerFrames?.get(ISO_SECTOR_ROW[sector] * ISO_SLOT_FOLDER.size + slot)
+            playerMirror = sector >= 5
             actors.insert(playerX, playerY, projection.depth(player), null, "", vehicleHeadingState, vehicleColorState ?: -1)
             val currentNpcs = npcState
             for (i in currentNpcs.indices) {
@@ -305,7 +353,7 @@ fun IsoWorldView(
                 var actorIndex = 0
                 for (building in buildings) {
                     while (actorIndex < actors.size && actors.depth[actorIndex] > building.depth) {
-                        drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, facingRightState, personBoost, playerSprite, zombieSprite, carSprites)
+                        drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame, zombieSprite, carSprites)
                     }
                     if (building.right >= left && building.left <= right && building.bottom >= top && building.top <= bottom) {
                         val target = if (isoPointInPolygon(playerX, playerY, building.xs, building.ys)) ISO_ROOF_HIDDEN_ALPHA else 1f
@@ -319,7 +367,7 @@ fun IsoWorldView(
                     }
                 }
                 while (actorIndex < actors.size) {
-                    drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, facingRightState, personBoost, playerSprite, zombieSprite, carSprites)
+                    drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame, zombieSprite, carSprites)
                 }
             }
             val maxRadius = (size.minDimension * 0.40f).coerceAtLeast(1f)
@@ -401,22 +449,24 @@ private class IsoActors(private val capacity: Int) {
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
-    actors: IsoActors, index: Int, pixelsPerMeter: Float, playerDriving: Boolean, playerFacingRight: Boolean, personBoost: Float,
-    playerSprite: ImageBitmap?, zombieSprite: ImageBitmap?, carSprites: IsoCarSprites,
+    actors: IsoActors, index: Int, pixelsPerMeter: Float, playerDriving: Boolean, playerMirror: Boolean, personBoost: Float,
+    playerFrame: ImageBitmap?, zombieSprite: ImageBitmap?, carSprites: IsoCarSprites,
 ) {
     val x = actors.x[index]
     val y = actors.y[index]
     val type = actors.types[index]
+    if (type == null && !playerDriving && playerFrame != null) {
+        drawIsoPlayerFrame(playerFrame, x, y, pixelsPerMeter * personBoost, playerMirror)
+        return
+    }
     val sprite = when {
-        type == null && !playerDriving -> playerSprite
         type == NpcType.ZOMBIE -> zombieSprite
         else -> null
     }
     if (sprite != null) {
         val height = (pixelsPerMeter * 2.05f * personBoost).toInt().coerceAtLeast(1)
         val width = (height.toFloat() * sprite.width / sprite.height).toInt().coerceAtLeast(1)
-        val facingRight = if (type == null) playerFacingRight
-            else isoSpriteHeading(actors.heading[index].toDouble()) in 0.0..180.0
+        val facingRight = isoSpriteHeading(actors.heading[index].toDouble()) in 0.0..180.0
         withTransform({ if (!facingRight) scale(-1f, 1f, pivot = Offset(x, y)) }) {
             drawImage(
                 image = sprite,
@@ -475,6 +525,22 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
         }
     } else {
         drawRect(color, Offset(x - width / 2f, y - height), Size(width, height))
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoPlayerFrame(
+    frame: ImageBitmap, x: Float, y: Float, pixelsPerMeter: Float, mirror: Boolean,
+) {
+    val height = (pixelsPerMeter * ISO_PLAYER_CANVAS_METERS).toInt().coerceAtLeast(1)
+    val width = (height.toFloat() * frame.width / frame.height).toInt().coerceAtLeast(1)
+    withTransform({ if (mirror) scale(-1f, 1f, pivot = Offset(x, y)) }) {
+        drawImage(
+            image = frame,
+            srcSize = IntSize(frame.width, frame.height),
+            dstOffset = IntOffset((x - width / 2f).toInt(), (y - height * (1f - ISO_PLAYER_FOOT_FRACTION)).toInt()),
+            dstSize = IntSize(width, height),
+            filterQuality = FilterQuality.Low,
+        )
     }
 }
 

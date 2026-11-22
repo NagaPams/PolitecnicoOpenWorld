@@ -105,6 +105,8 @@ data class WorldMapState(
     // Estados del personaje
     val playerAction: PlayerAction = PlayerAction.IDLE,
     val isPlayerFacingRight: Boolean = true,
+    /** Último ángulo de mundo del movimiento (solo vista isométrica); null = aún no se movió. */
+    val playerMoveAngle: Float? = null,
     val isRunning: Boolean = false,
     val isDriving: Boolean = false,
     val currentVehicleModel: CarModel? = null,

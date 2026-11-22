@@ -145,7 +145,7 @@ Las dos juntas dejarían el AAB en torno a **330 MB**: margen de 170 MB en vez d
 
 ### 🆕 Vista isométrica (2026-11-22)
 
-`assets/ISOMETRIC/` guarda 7 PNG provisionales (jugador, zombi y coches en 5 direcciones; el resto se obtiene espejando). Son pequeños, pero siguen en PNG: al producir el arte final pasarlos a **WebP** y mantener el lienzo en 128 px (personajes) y ~192 px (coches) para no gastar presupuesto del AAB.
+`assets/ISOMETRIC/` guarda PNG provisionales (zombi, coches y la hoja fuente del jugador). El jugador ya está cortado a WebP en `SPRITES/PLAYER/EstudianteIso/` (40 cuadros, ~0,5 MB, estándar 193×249). Son pequeños, pero siguen en PNG: al producir el arte final pasarlos a **WebP** y mantener el lienzo en 128 px (personajes) y ~192 px (coches) para no gastar presupuesto del AAB.
 
 ## 5. La barrera del CI
 

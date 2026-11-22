@@ -595,7 +595,8 @@ fun WorldMapScreen(
                     isDriving = uiState.isDriving,
                     vehicleHeading = uiState.vehicleRotation,
                     fogVisionMeters = NPC_FOG_VISION_METERS,
-                    playerFacingRight = uiState.isPlayerFacingRight,
+                    playerMoveAngle = uiState.playerMoveAngle,
+                    playerAction = uiState.playerAction,
                     vehicleColor = uiState.currentVehicleColor,
                 )
             }

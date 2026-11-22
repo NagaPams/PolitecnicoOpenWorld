@@ -218,6 +218,12 @@ internal fun WorldMapViewModel.moveCharacterByAngle(angleRad: Double) {
         val dx = if (_uiState.value.mapProvider == MapProvider.ISOMETRIC) cos(angleRad) - sin(angleRad) else cos(angleRad)
         val isMovingRight = if (abs(dx) > 0.01) dx > 0 else null
         startMovementAction(isMovingRight)
+        if (_uiState.value.mapProvider == MapProvider.ISOMETRIC) {
+            val last = _uiState.value.playerMoveAngle
+            if (last == null || abs(last - angleRad.toFloat()) > 0.02f) {
+                _uiState.update { it.copy(playerMoveAngle = angleRad.toFloat()) }
+            }
+        }
 
         val step = if (_uiState.value.isRunning) 0.000006 else 0.000003
 
