@@ -71,6 +71,7 @@
     <string name="settings_account_sign_in_error">Sign-in failed.</string>
     <string name="settings_account_privacy">View privacy policy</string>
     <string name="settings_controls_saved">Controls settings saved</string>
+    <string name="low_memory_warning">Low memory: close other apps if the game gets slow.</string>
 
     <!-- ─── Interiors/zombies HUD ─── -->
     <string name="zhud_zone">ZONE: %1$s</string>

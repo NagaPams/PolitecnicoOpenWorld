@@ -338,7 +338,9 @@ px-por-metro), `PlayerCharacter` (jugador a pie/conduciendo). El sprite nativo u
   (`LinkedHashMap` + `removeEldestEntry`, cap ~384). Nunca volver a `mutableMapOf`: sus claves embeben
   health/zoom/frame → crece hasta **OOM**.
 - Sprite managers (`Character`, `Vehicle`, `Police`, `Zombie`) exponen `clearCaches()`, liberados por
-  **`MainActivity.onTrimMemory`** bajo presión de memoria.
+  **`MainActivity.onTrimMemory`** bajo presión de memoria. Ahí mismo se avisa al jugador con un Toast si quedan
+  menos de 300 MB y han pasado ≥30 s desde el último aviso (`shouldWarnLowMemory`, `domain/platform/LowMemoryWarning.kt`;
+  cadena `low_memory_warning`). No hace nada con RAM suficiente.
 - `buildDoorEffectBitmap` reusa **un** `Bitmap`/`Canvas`/`Paint` por fuente (no asigna por frame). Iconos
   de bala/🔫/📞 de policía **cacheados por tamaño** en `nativeDrawableCache`.
 - `NpcAiManager.setLandmarks` precomputa `cachedNavLandmarks` (no `.filter { navGraph!=null }` por NPC/tick).

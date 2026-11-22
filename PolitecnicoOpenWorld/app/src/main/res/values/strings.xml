@@ -73,6 +73,7 @@
     <!-- URL pública de la política de privacidad (compartida por todos los idiomas) -->
     <string name="settings_privacy_url" translatable="false">https://gabrielhuav.github.io/PolitecnicoOpenWorld/policy_en_es.html</string>
     <string name="settings_controls_saved">Configuración de controles guardada</string>
+    <string name="low_memory_warning">Poca memoria disponible: cierra otras apps si el juego va lento.</string>
 
     <!-- ─── HUD de interiores/zombis (features/interiores/zombies) ─── -->
     <string name="zhud_zone">ZONA: %1$s</string>

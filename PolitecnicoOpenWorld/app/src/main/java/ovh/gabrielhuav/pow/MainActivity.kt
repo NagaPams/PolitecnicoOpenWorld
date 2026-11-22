@@ -38,6 +38,7 @@ import java.io.File
 // El juego SIEMPRE arranca en ESCOM, sin depender del GPS real del dispositivo.
 private const val SPAWN_ESCOM_LAT = 19.504603
 private const val SPAWN_ESCOM_LON = -99.145985
+private const val BYTES_PER_MB = 1024L * 1024L
 
 @dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -88,10 +89,24 @@ class MainActivity : ComponentActivity() {
     // soltamos las cachés de sprites (NPCs/vehículos/patrullas/zombis). Se regeneran bajo
     // demanda; evita que una sesión larga acumule bitmaps hasta el OOM en equipos con poca
     // RAM. No altera el juego: solo recicla memoria reconstruible.
+    private var lastLowMemoryWarnMs: Long? = null
+
+    /** Avisa con un Toast si queda poca RAM (umbral y enfriamiento en `shouldWarnLowMemory`). */
+    private fun warnIfLowMemory() {
+        val info = android.app.ActivityManager.MemoryInfo()
+        (getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(info)
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (ovh.gabrielhuav.pow.domain.platform.shouldWarnLowMemory(info.availMem / BYTES_PER_MB, now, lastLowMemoryWarnMs)) {
+            lastLowMemoryWarnMs = now
+            android.widget.Toast.makeText(this, R.string.low_memory_warning, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
     @Suppress("OVERRIDE_DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            warnIfLowMemory()
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.CharacterSpriteManager.clearCaches()
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.VehicleSpriteManager.clearCaches()
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.PoliceSpriteManager.clearCaches()
