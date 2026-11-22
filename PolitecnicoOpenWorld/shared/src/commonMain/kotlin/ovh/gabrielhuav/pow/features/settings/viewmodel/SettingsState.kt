@@ -2,6 +2,7 @@ package ovh.gabrielhuav.pow.features.settings.viewmodel
 
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MapProvider
 import ovh.gabrielhuav.pow.features.settings.models.ControlType
+import ovh.gabrielhuav.pow.features.settings.models.ControlsLayout
 import ovh.gabrielhuav.pow.features.settings.models.SettingsCategory
 
 data class SettingsState(
@@ -27,6 +28,7 @@ data class SettingsState(
     val controlType: ControlType = ControlType.JOYSTICK, // Default: JOYSTICK
     val controlsScale: Float = 1.0f, // Rango recomendado: 0.6f a 1.4f
     val swapControls: Boolean = false, // false = Izq: Movimiento, Der: Acción
+    val controlsLayout: ControlsLayout = ControlsLayout(), // editor de controles: posición/escala/opacidad por bloque
     val showRoadNetwork: Boolean = true,
 
     // ─── Jugabilidad: población de NPCs ──────────────────────────────────────
@@ -43,11 +45,13 @@ data class SettingsState(
     // momento en el que se copian a los committeados de arriba y se persisten.
     val tempControlType: ControlType = ControlType.JOYSTICK,
     val tempControlsScale: Float = 1.0f,
-    val tempSwapControls: Boolean = false
+    val tempSwapControls: Boolean = false,
+    val tempControlsLayout: ControlsLayout = ControlsLayout(),
 ) {
     /** ¿Hay cambios de controles sin guardar? */
     val hasUnsavedControlChanges: Boolean
         get() = tempControlType != controlType ||
                 tempControlsScale != controlsScale ||
-                tempSwapControls != swapControls
+                tempSwapControls != swapControls ||
+                tempControlsLayout != controlsLayout
 }

@@ -3,6 +3,7 @@ package ovh.gabrielhuav.pow.features.settings.ui
 import kotlinx.coroutines.flow.StateFlow
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MapProvider
 import ovh.gabrielhuav.pow.features.settings.models.ControlType
+import ovh.gabrielhuav.pow.features.settings.models.ControlsLayout
 import ovh.gabrielhuav.pow.features.settings.models.SettingsCategory
 import ovh.gabrielhuav.pow.features.settings.viewmodel.SettingsState
 
@@ -32,6 +33,7 @@ interface SettingsController {
     fun changeControlType(type: ControlType)
     fun changeControlsScale(scale: Float)
     fun toggleSwapControls(enabled: Boolean)
+    fun changeControlsLayout(layout: ControlsLayout)
     fun toggleRoadNetwork(enabled: Boolean)
     fun toggleSurvivalMode(enabled: Boolean)
     fun changeNpcDensity(value: Float)

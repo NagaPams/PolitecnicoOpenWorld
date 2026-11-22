@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 import ovh.gabrielhuav.pow.data.repository.SettingsRepository
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MapProvider
 import ovh.gabrielhuav.pow.features.settings.models.ControlType
+import ovh.gabrielhuav.pow.features.settings.models.ControlsLayout
 import ovh.gabrielhuav.pow.features.settings.models.SettingsCategory
 import ovh.gabrielhuav.pow.features.settings.ui.SettingsController
 import ovh.gabrielhuav.pow.presentation.PowViewModel
@@ -22,10 +23,12 @@ open class SettingsViewModel(
             val type = repository.getControlType()
             val scale = repository.getControlsScale()
             val swap = repository.getSwapControls()
+            val layout = repository.getControlsLayout()
             SettingsState(
                 controlType = type,
                 controlsScale = scale,
                 swapControls = swap,
+                controlsLayout = layout,
                 showRoadNetwork = repository.getShowRoadNetwork(),
                 showZoomWidget = repository.getShowZoomWidget(),
                 showSpeedometer = repository.getShowSpeedometer(),
@@ -45,7 +48,8 @@ open class SettingsViewModel(
                 // Los temporales arrancan sincronizados con lo persistido.
                 tempControlType = type,
                 tempControlsScale = scale,
-                tempSwapControls = swap
+                tempSwapControls = swap,
+                tempControlsLayout = layout,
             )
         }
     )
@@ -116,6 +120,7 @@ open class SettingsViewModel(
     override fun changeControlType(type: ControlType) { _state.update { it.copy(tempControlType = type) } }
     override fun changeControlsScale(scale: Float) { _state.update { it.copy(tempControlsScale = scale) } }
     override fun toggleSwapControls(enabled: Boolean) { _state.update { it.copy(tempSwapControls = enabled) } }
+    override fun changeControlsLayout(layout: ControlsLayout) { _state.update { it.copy(tempControlsLayout = layout.clamped()) } }
 
     /** Descarta los cambios temporales no guardados, volviéndolos a los committeados. */
     override fun discardControlsChanges() {
@@ -123,7 +128,8 @@ open class SettingsViewModel(
             it.copy(
                 tempControlType = it.controlType,
                 tempControlsScale = it.controlsScale,
-                tempSwapControls = it.swapControls
+                tempSwapControls = it.swapControls,
+                tempControlsLayout = it.controlsLayout,
             )
         }
     }
@@ -166,7 +172,8 @@ open class SettingsViewModel(
             it.copy(
                 controlType = it.tempControlType,
                 controlsScale = it.tempControlsScale,
-                swapControls = it.tempSwapControls
+                swapControls = it.tempSwapControls,
+                controlsLayout = it.tempControlsLayout,
             )
         }
         val currentState = _state.value
@@ -175,6 +182,7 @@ open class SettingsViewModel(
             scale = currentState.controlsScale,
             swap = currentState.swapControls
         )
+        repository.saveControlsLayout(currentState.controlsLayout)
     }
 
 }

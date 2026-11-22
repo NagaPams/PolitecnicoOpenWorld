@@ -3,6 +3,7 @@ package ovh.gabrielhuav.pow.data.repository
 import com.russhwolf.settings.Settings
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerSkin
 import ovh.gabrielhuav.pow.features.settings.models.ControlType
+import ovh.gabrielhuav.pow.features.settings.models.ControlsLayout
 
 /**
  * Ajustes persistentes compartidos. La plataforma inyecta el almacén nativo sin cambiar claves.
@@ -17,6 +18,7 @@ class SettingsRepository(
         private const val KEY_CONTROL_TYPE = "CONTROL_TYPE"
         private const val KEY_CONTROLS_SCALE = "CONTROLS_SCALE"
         private const val KEY_SWAP_CONTROLS = "SWAP_CONTROLS"
+        private const val KEY_CONTROLS_LAYOUT = "CONTROLS_LAYOUT" // JSON de ControlsLayout ("" = de fábrica)
         private const val KEY_PLAYER_SKIN = "PLAYER_SKIN"
 
         private const val KEY_SHOW_ROAD_NETWORK = "SHOW_ROAD_NETWORK"
@@ -69,6 +71,12 @@ class SettingsRepository(
     fun getControlsScale(): Float = settings.getFloat(KEY_CONTROLS_SCALE, 1.0f).coerceIn(SCALE_MIN, SCALE_MAX)
 
     fun getSwapControls(): Boolean = settings.getBoolean(KEY_SWAP_CONTROLS, false)
+
+    /** Disposición (posición, escala, opacidad) de los bloques de controles del mundo; de fábrica si no hay nada guardado. */
+    fun getControlsLayout(): ControlsLayout = ControlsLayout.decode(settings.getString(KEY_CONTROLS_LAYOUT, ""))
+    fun saveControlsLayout(layout: ControlsLayout) {
+        settings.putString(KEY_CONTROLS_LAYOUT, if (layout.isDefault) "" else layout.encode())
+    }
 
     // ─── Skin del jugador ────────────────────────────────────────────────
 

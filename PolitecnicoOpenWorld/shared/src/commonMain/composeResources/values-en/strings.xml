@@ -277,6 +277,17 @@
     <string name="settings_speedometer_desc">Shows your speed (km/h) while driving</string>
     <string name="settings_swap_sides">Swap Sides</string>
     <string name="settings_swap_sides_desc">Moves the action to the left</string>
+    <string name="settings_layout_section">Controls layout</string>
+    <string name="settings_layout_hint">Drag the joystick and buttons wherever suits you; change size and opacity. Press SAVE to apply it.</string>
+    <string name="settings_layout_edit">Edit layout</string>
+    <string name="layout_editor_title">Controls editor</string>
+    <string name="layout_editor_hint">Drag a block to move it; the selected one has a gold border.</string>
+    <string name="layout_movement">Movement</string>
+    <string name="layout_actions">Action</string>
+    <string name="layout_scale">Size: %1$d%</string>
+    <string name="layout_opacity">Opacity: %1$d%</string>
+    <string name="layout_reset">Reset</string>
+    <string name="layout_done">Done</string>
     <string name="settings_title">GAME SETTINGS</string>
     <string name="settings_tutorial_exterior">TUTORIAL · OPEN WORLD</string>
     <string name="settings_tutorial_hint">Review what each button does in each world. The settings above (style, size, side) change how they are laid out on screen.</string>

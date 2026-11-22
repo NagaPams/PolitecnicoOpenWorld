@@ -277,6 +277,17 @@
     <string name="settings_speedometer_desc">Muestra tu velocidad (km/h) al conducir</string>
     <string name="settings_swap_sides">Intercambiar Lados</string>
     <string name="settings_swap_sides_desc">Mueve la acción a la izquierda</string>
+    <string name="settings_layout_section">Disposición de los controles</string>
+    <string name="settings_layout_hint">Arrastra el joystick y los botones donde te acomoden; cambia tamaño y opacidad. Pulsa GUARDAR para aplicarlo.</string>
+    <string name="settings_layout_edit">Editar disposición</string>
+    <string name="layout_editor_title">Editor de controles</string>
+    <string name="layout_editor_hint">Arrastra un bloque para moverlo; el seleccionado tiene borde dorado.</string>
+    <string name="layout_movement">Movimiento</string>
+    <string name="layout_actions">Acción</string>
+    <string name="layout_scale">Tamaño: %1$d%</string>
+    <string name="layout_opacity">Opacidad: %1$d%</string>
+    <string name="layout_reset">Restablecer</string>
+    <string name="layout_done">Listo</string>
     <string name="settings_title">AJUSTES DEL JUEGO</string>
     <string name="settings_tutorial_exterior">TUTORIAL · MUNDO ABIERTO</string>
     <string name="settings_tutorial_hint">Repasa qué hace cada botón en cada mundo. Los ajustes de arriba (estilo, tamaño, lado) cambian cómo se acomodan en pantalla.</string>

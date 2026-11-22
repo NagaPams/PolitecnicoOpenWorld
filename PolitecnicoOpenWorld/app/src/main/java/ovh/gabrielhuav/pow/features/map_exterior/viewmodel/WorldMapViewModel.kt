@@ -126,6 +126,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
             // 🆕 (2026-07-26) Gatillos L1/L2/R1/R2 del modo pelea, opcionales en el mundo (OFF).
             showShoulderButtons = settingsRepository.getShowWorldShoulderButtons(),
             swapControls  = settingsRepository.getSwapControls(),
+            controlsLayout = settingsRepository.getControlsLayout(),
             selectedSkin  = settingsRepository.getPlayerSkin(),   // ← NUEVO
             npcEmojiLod   = settingsRepository.getNpcEmojiLod(),  // optimizar dibujado de NPCs (LOD)
             npcFullEmoji  = settingsRepository.getNpcFullEmoji(), // optimizar para gama baja (emoji total)
@@ -1247,6 +1248,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 controlType = type,
                 controlsScale = scale,
                 swapControls = swap,
+                controlsLayout = settingsRepository.getControlsLayout(),
                 showShoulderButtons = settingsRepository.getShowWorldShoulderButtons(),
             )
         }

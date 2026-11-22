@@ -136,7 +136,7 @@ fun AppNavGraph(
                     // 🆕 (2026-07-26) `showWorldShoulderButtons` va TAMBIÉN como clave: su
                     // interruptor vive en Ajustes → INTERFAZ, no en Controles, así que sin esto
                     // el efecto no se relanzaba y los gatillos no aparecían hasta reiniciar.
-                    LaunchedEffect(settingsState.controlType, settingsState.controlsScale, settingsState.swapControls, settingsState.showWorldShoulderButtons) {
+                    LaunchedEffect(settingsState.controlType, settingsState.controlsScale, settingsState.swapControls, settingsState.showWorldShoulderButtons, settingsState.controlsLayout) {
                         worldMapViewModel.updateControlSettings(
                             settingsState.controlType,
                             settingsState.controlsScale,

@@ -137,6 +137,39 @@ internal fun SettingsSectionControls(
                 )
             }
 
+            var editingLayout by remember { mutableStateOf(false) }
+            Column {
+                Text(
+                    stringResource(Res.string.settings_layout_section),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    stringResource(Res.string.settings_layout_hint),
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                )
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { editingLayout = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2A1C21),
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Text(stringResource(Res.string.settings_layout_edit), fontSize = 12.sp)
+                }
+            }
+            if (editingLayout) {
+                ControlsLayoutEditor(
+                    layout = state.tempControlsLayout,
+                    swapSides = state.tempSwapControls,
+                    onChange = controller::changeControlsLayout,
+                    onClose = { editingLayout = false },
+                )
+            }
+
             var tutorialWorld by remember { mutableStateOf<Int?>(null) }
             Column {
                 Text(

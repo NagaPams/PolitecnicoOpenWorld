@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
@@ -47,11 +48,16 @@ import kotlinx.coroutines.launch
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onClaimCollectiblePressed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onInteractButtonPressed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
+import ovh.gabrielhuav.pow.features.settings.models.ControlSlotLayout
 import ovh.gabrielhuav.pow.features.settings.models.ControlType
 
 // MANTENER Y (a pie) este tiempo = abrir el INVENTARIO del mapa (paridad con interiores,
 // petición del dueño 2026-07-13). Un toque más corto = subir/bajar del auto (al SOLTAR).
 private const val Y_HOLD_INVENTORY_MS = 450L
+
+/** Aplica el ajuste del editor de controles (desplazamiento y opacidad); la escala se aplica aparte. */
+private fun Modifier.controlSlot(slot: ControlSlotLayout): Modifier =
+    offset(x = slot.offsetXDp.dp, y = slot.offsetYDp.dp).alpha(slot.opacity)
 
 /**
  * Controles en pantalla del mundo abierto (extraído de WorldMapScreen.kt para reducir su
@@ -99,6 +105,9 @@ fun BoxScope.WorldMapControls(
         label = "rightCtrlShift"
     )
     val rightShiftMod = Modifier.offset(x = rightCtrlShift)
+    val layout = uiState.controlsLayout
+    val moveScale = effectiveScale * layout.movement.scale
+    val actionScale = effectiveScale * layout.actions.scale
 
     if (uiState.globalZombieMode) {
         androidx.compose.material3.Button(
@@ -120,13 +129,13 @@ fun BoxScope.WorldMapControls(
                 // D-pad = flechitas. Gas/freno siempre en el diamante A/B/X/Y (drivingActions).
                 if (uiState.controlType == ControlType.JOYSTICK)
                     VehicleJoystickController(
-                        modifier = m.scale(effectiveScale),
+                        modifier = m.controlSlot(layout.movement).scale(moveScale),
                         onSteerLeft = { viewModel.steerLeft(it) },
                         onSteerRight = { viewModel.steerRight(it) }
                     )
                 else
                     VehicleDPadController(
-                        modifier = m.scale(effectiveScale),
+                        modifier = m.controlSlot(layout.movement).scale(moveScale),
                         onUp = { /* sin uso en conducción */ },
                         onDown = { /* sin uso en conducción */ },
                         onLeft = { viewModel.steerLeft(it) },
@@ -139,7 +148,7 @@ fun BoxScope.WorldMapControls(
             // dueño): el teletransporte ya tiene su propio botón en el menú Mapa. NO recrearlo.
             val drivingActions = @Composable { m: Modifier ->
                 VehicleActionButtonsController(
-                    modifier = m.scale(effectiveScale),
+                    modifier = m.controlSlot(layout.actions).scale(actionScale),
                     onAccelerate = { viewModel.accelerate(it) },
                     onBrake = { viewModel.brake(it) },
                     onHandbrake = { viewModel.brake(it) },
@@ -171,10 +180,10 @@ fun BoxScope.WorldMapControls(
                     // `m` (el desplazamiento por el menú de Opciones) va en la COLUMNA, no en el
                     // control: así los gatillos se mueven CON él. Con los gatillos apagados la
                     // columna envuelve un único hijo → el layout queda igual que antes.
-                    Column(modifier = m, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(modifier = m.controlSlot(layout.movement), horizontalAlignment = Alignment.CenterHorizontally) {
                         shoulders(!uiState.swapControls)
                         if (uiState.controlType == ControlType.DPAD) {
-                            DPadController(modifier = Modifier.scale(effectiveScale), onDirectionPressed = { direction ->
+                            DPadController(modifier = Modifier.scale(moveScale), onDirectionPressed = { direction ->
                                 if (uiState.mapProvider == MapProvider.ISOMETRIC) {
                                     val angle = when (direction) {
                                         Direction.UP -> PI / 2.0
@@ -186,7 +195,7 @@ fun BoxScope.WorldMapControls(
                                 } else viewModel.moveCharacter(direction)
                             })
                         } else {
-                            JoystickController(modifier = Modifier.scale(effectiveScale), onMove = { angle ->
+                            JoystickController(modifier = Modifier.scale(moveScale), onMove = { angle ->
                                 val worldAngle = if (uiState.mapProvider == MapProvider.ISOMETRIC) {
                                     isoInputToWorldAngle(angle)
                                 } else angle
@@ -201,10 +210,10 @@ fun BoxScope.WorldMapControls(
                 var yHoldJob by remember { mutableStateOf<Job?>(null) }
                 var yPressedAtMs by remember { mutableStateOf(0L) }
                 val actionComponent = @Composable { m: Modifier ->
-                  Column(modifier = m, horizontalAlignment = Alignment.CenterHorizontally) {
+                  Column(modifier = m.controlSlot(layout.actions), horizontalAlignment = Alignment.CenterHorizontally) {
                     shoulders(uiState.swapControls)
                     ActionButtonsController(
-                        modifier = Modifier.scale(effectiveScale),
+                        modifier = Modifier.scale(actionScale),
                         onActionChanged = { action, isPressed ->
                             if (action == GameAction.X && isPressed) {
                                 viewModel.handleInteraction()

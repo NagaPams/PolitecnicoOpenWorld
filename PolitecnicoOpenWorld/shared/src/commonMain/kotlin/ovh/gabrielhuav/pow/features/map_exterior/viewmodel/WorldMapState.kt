@@ -97,6 +97,8 @@ data class WorldMapState(
     // FALSE: en el mundo abierto todavía no tienen acción, así que solo aparecen si los pides.
     val showShoulderButtons: Boolean = false,
     val swapControls: Boolean = false,
+    // Editor de controles: posición/escala/opacidad de los bloques de movimiento y acción.
+    val controlsLayout: ovh.gabrielhuav.pow.features.settings.models.ControlsLayout = ovh.gabrielhuav.pow.features.settings.models.ControlsLayout(),
 
     // ─── Skin del jugador ────────────────────────────────────────────────
     val selectedSkin: PlayerSkin = PlayerSkin.LAZARO,
