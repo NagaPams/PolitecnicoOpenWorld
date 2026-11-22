@@ -55,10 +55,13 @@ private const val ISO_ROOF_FADE_STEP = 0.12f
 private val ISO_GROUND = Color(0xFF65745E)
 private val ISO_ROAD = Color(0xFF797C76)
 private val ISO_WALKWAY = Color(0xFFA49F8D)
-private val ISO_ROOF = Color(0xFFB6AA8E)
-private val ISO_WALL_LIGHT = Color(0xFF8D806B)
-private val ISO_WALL_DARK = Color(0xFF716858)
-private val ISO_FOG = Color(0xA5222A33)
+private val ISO_ROOF = Color(0xFFCDBF9B)
+private val ISO_ROOF_EDGE = Color(0xFF4E4637)
+private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
+private val ISO_WALL_DARK = Color(0xFF574E40)
+private val ISO_FOG = Color(0x6E222A33)
+private const val ISO_MIN_PERSON_PX = 44f
+private const val ISO_MAX_SPRITE_BOOST = 2.5f
 
 private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color)
 private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color)
@@ -234,6 +237,7 @@ fun IsoWorldView(
             layer.record(this, layoutDirection, IntSize(width, height)) {
                 for ((wall, color) in walls) drawPath(wall, color)
                 drawPath(roof, ISO_ROOF)
+                drawPath(roof, ISO_ROOF_EDGE, style = Stroke(width = 1.5f))
             }
             buildings.add(IsoBuildingLayer(layer, xs, ys, 1f, left, top, right, bottom, frontDepth, footprint.id))
         }
@@ -276,6 +280,8 @@ fun IsoWorldView(
                 if (x < left - 20f || x > right + 20f || y < top - 20f || y > bottom + 20f) continue
                 actors.insert(x, y, projection.depth(npc.location), npc.type, npc.id, (npc.rotationAngle + 90f) % 360f, npc.carColor)
             }
+            val ppm = projection.pixelsPerMeter.toFloat()
+            val personBoost = (ISO_MIN_PERSON_PX * density.toFloat() / (ppm * scale * 2.05f)).coerceIn(1f, ISO_MAX_SPRITE_BOOST)
             withTransform({ translate(tx, ty); scale(scale, scale, pivot = Offset.Zero) }) {
                 for (ground in grounds) {
                     if (isoOnScreen(ground.bounds, left, top, right, bottom)) drawPath(ground.path, ground.color)
@@ -299,7 +305,7 @@ fun IsoWorldView(
                 var actorIndex = 0
                 for (building in buildings) {
                     while (actorIndex < actors.size && actors.depth[actorIndex] > building.depth) {
-                        drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, facingRightState, playerSprite, zombieSprite, carSprites)
+                        drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, facingRightState, personBoost, playerSprite, zombieSprite, carSprites)
                     }
                     if (building.right >= left && building.left <= right && building.bottom >= top && building.top <= bottom) {
                         val target = if (isoPointInPolygon(playerX, playerY, building.xs, building.ys)) ISO_ROOF_HIDDEN_ALPHA else 1f
@@ -313,7 +319,7 @@ fun IsoWorldView(
                     }
                 }
                 while (actorIndex < actors.size) {
-                    drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, facingRightState, playerSprite, zombieSprite, carSprites)
+                    drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, facingRightState, personBoost, playerSprite, zombieSprite, carSprites)
                 }
             }
             val maxRadius = (size.minDimension * 0.40f).coerceAtLeast(1f)
@@ -395,7 +401,7 @@ private class IsoActors(private val capacity: Int) {
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
-    actors: IsoActors, index: Int, pixelsPerMeter: Float, playerDriving: Boolean, playerFacingRight: Boolean,
+    actors: IsoActors, index: Int, pixelsPerMeter: Float, playerDriving: Boolean, playerFacingRight: Boolean, personBoost: Float,
     playerSprite: ImageBitmap?, zombieSprite: ImageBitmap?, carSprites: IsoCarSprites,
 ) {
     val x = actors.x[index]
@@ -407,7 +413,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
         else -> null
     }
     if (sprite != null) {
-        val height = (pixelsPerMeter * 2.05f).toInt().coerceAtLeast(1)
+        val height = (pixelsPerMeter * 2.05f * personBoost).toInt().coerceAtLeast(1)
         val width = (height.toFloat() * sprite.width / sprite.height).toInt().coerceAtLeast(1)
         val facingRight = if (type == null) playerFacingRight
             else isoSpriteHeading(actors.heading[index].toDouble()) in 0.0..180.0
