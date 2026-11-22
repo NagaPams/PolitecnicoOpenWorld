@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.data.json.PowJson
 import ovh.gabrielhuav.pow.domain.models.map.CampusFootprintsFile
 import ovh.gabrielhuav.pow.domain.models.map.RUTA_HUELLAS_CAMPUS
+import ovh.gabrielhuav.pow.domain.models.map.cargarEsquemaEdificios
 import ovh.gabrielhuav.pow.domain.models.map.toFootprints
 import ovh.gabrielhuav.pow.platform.assets.PowAssets
 
@@ -28,7 +29,7 @@ internal fun WorldMapViewModel.setCampusFootprints(show: Boolean) {
     viewModelScope.launch(Dispatchers.IO) {
         try {
             val file = PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS))
-            val footprints = file.toFootprints()
+            val footprints = file.toFootprints(cargarEsquemaEdificios())
             withContext(Dispatchers.Main) {
                 _uiState.update { it.copy(campusFootprints = footprints, showCampusFootprints = true) }
             }
@@ -45,7 +46,7 @@ internal fun WorldMapViewModel.ensureCampusFootprintsLoaded() {
     viewModelScope.launch(Dispatchers.IO) {
         try {
             val file = PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS))
-            val footprints = file.toFootprints()
+            val footprints = file.toFootprints(cargarEsquemaEdificios())
             withContext(Dispatchers.Main) { _uiState.update { it.copy(campusFootprints = footprints) } }
         } catch (e: Exception) {
             Log.e("Footprints", "Error al cargar huellas isométricas: ${e.message}")

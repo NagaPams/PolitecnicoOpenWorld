@@ -34,6 +34,11 @@ data class CampusFootprint(
     val kind: FootprintKind,
     val heightMeters: Double,
     val points: List<GeoPoint>,
+    /** Datos del esquema de edificio (`escom_buildings_spec.json`); sin esquema quedan los valores por defecto. */
+    val material: BuildingMaterial = BuildingMaterial.DEFAULT,
+    val roofColor: Long? = null,
+    val windowSpacingM: Double = 0.0,
+    val doors: List<DoorSpec> = emptyList(),
 )
 
 private const val METERS_PER_LEVEL = 3.2
@@ -63,13 +68,25 @@ internal fun FootprintWay.heightMeters(kind: FootprintKind): Double {
  * (parques, estacionamientos, canchas) y luego los edificios de norte a sur, para que un edificio
  * al sur tape las paredes del que tiene detrás. Descarta formas con menos de 3 vértices.
  */
-fun CampusFootprintsFile.toFootprints(): List<CampusFootprint> {
+fun CampusFootprintsFile.toFootprints(spec: BuildingSpecFile = BuildingSpecFile()): List<CampusFootprint> {
     val result = ways.mapNotNull { way ->
         val raw = way.pts.mapNotNull { if (it.size >= 2) GeoPoint(it[0], it[1]) else null }
         val pts = if (raw.size > 1 && raw.first() == raw.last()) raw.dropLast(1) else raw
         if (pts.size < 3) return@mapNotNull null
         val kind = way.classify()
-        CampusFootprint(way.id, way.tags["name"].orEmpty(), kind, way.heightMeters(kind), pts)
+        val extra = if (kind == FootprintKind.BUILDING) spec.specFor(way.id) else null
+        val height = if (extra != null && extra.levels > 0) extra.levels * METERS_PER_LEVEL else way.heightMeters(kind)
+        CampusFootprint(
+            id = way.id,
+            name = way.tags["name"].orEmpty(),
+            kind = kind,
+            heightMeters = height,
+            points = pts,
+            material = extra?.material ?: BuildingMaterial.DEFAULT,
+            roofColor = extra?.roofColor?.let(::parseColorHex),
+            windowSpacingM = extra?.windows?.spacingM ?: 0.0,
+            doors = extra?.doors.orEmpty(),
+        )
     }
     val groundOrder = listOf(FootprintKind.PARK, FootprintKind.PARKING, FootprintKind.PITCH)
     val ground = groundOrder.flatMap { k -> result.filter { it.kind == k } }
@@ -85,18 +102,57 @@ const val RUTA_HUELLAS_CAMPUS = "CONFIG/escom_osm_footprints.json"
  * Colisiones de edificios derivadas de las huellas: solo `building` (no techos sueltos como gasolineras,
  * ni canchas/estacionamientos/parques, que se pisan). Nombre `OSM_<id>` para distinguirlos de los dibujados a mano.
  */
-fun CampusFootprintsFile.toCollisionPolygons(): List<CollisionPolygon> =
-    toFootprints().filter { it.kind == FootprintKind.BUILDING }.map { fp ->
+fun CampusFootprintsFile.toCollisionPolygons(spec: BuildingSpecFile = BuildingSpecFile()): List<CollisionPolygon> =
+    toFootprints(spec).filter { it.kind == FootprintKind.BUILDING && it.doors.isEmpty() }.map { fp ->
         CollisionPolygon(
             name = "OSM_${fp.id}" + if (fp.name.isNotBlank()) "_${fp.name}" else "",
             nodes = fp.points.map { GeoNode(it.latitude, it.longitude) },
         )
     }
 
-/** Agrega las huellas como polígonos BARRIER; no repite nombres ya presentes. */
-fun ExteriorCollisionsConfig.conHuellasDelCampus(huellas: CampusFootprintsFile): ExteriorCollisionsConfig {
+/**
+ * Edificios con puertas: la colisión es por BORDES (un muro por arista) y una puerta abierta deja un hueco, como en
+ * Zomboid. Quien entra por el hueco camina por dentro; el resto de la pared sigue sólida. Las puertas cerradas o
+ * barricadas no abren hueco. Los edificios sin puertas siguen siendo un polígono macizo ([toCollisionPolygons]).
+ */
+fun CampusFootprintsFile.toCollisionWalls(spec: BuildingSpecFile = BuildingSpecFile()): List<CollisionWall> =
+    toFootprints(spec).filter { it.kind == FootprintKind.BUILDING && it.doors.isNotEmpty() }.flatMap { fp ->
+        val n = fp.points.size
+        (0 until n).flatMap { k ->
+            val a = fp.points[k]
+            val b = fp.points[(k + 1) % n]
+            val lengthM = edgeLengthMeters(a, b)
+            val gaps = fp.doors.filter { it.edge == k && it.state == DoorState.OPEN && lengthM > 0.0 }
+                .map { (it.t - it.widthM / lengthM / 2.0).coerceIn(0.0, 1.0) to (it.t + it.widthM / lengthM / 2.0).coerceIn(0.0, 1.0) }
+                .sortedBy { it.first }
+            val solid = ArrayList<Pair<Double, Double>>()
+            var cursor = 0.0
+            for ((from, to) in gaps) {
+                if (from > cursor) solid.add(cursor to from)
+                cursor = maxOf(cursor, to)
+            }
+            if (cursor < 1.0) solid.add(cursor to 1.0)
+            solid.mapIndexed { index, (t0, t1) ->
+                CollisionWall(
+                    name = "OSM_${fp.id}_e${k}_$index",
+                    lat1 = a.latitude + (b.latitude - a.latitude) * t0, lon1 = a.longitude + (b.longitude - a.longitude) * t0,
+                    lat2 = a.latitude + (b.latitude - a.latitude) * t1, lon2 = a.longitude + (b.longitude - a.longitude) * t1,
+                )
+            }
+        }
+    }
+
+/** Agrega las huellas como polígonos y muros BARRIER; no repite nombres ya presentes. */
+fun ExteriorCollisionsConfig.conHuellasDelCampus(
+    huellas: CampusFootprintsFile,
+    spec: BuildingSpecFile = BuildingSpecFile(),
+): ExteriorCollisionsConfig {
     val existentes = polygons.map { it.name }.toSet()
-    return copy(polygons = polygons + huellas.toCollisionPolygons().filter { it.name !in existentes })
+    val murosExistentes = walls.map { it.name }.toSet()
+    return copy(
+        polygons = polygons + huellas.toCollisionPolygons(spec).filter { it.name !in existentes },
+        walls = walls + huellas.toCollisionWalls(spec).filter { it.name !in murosExistentes },
+    )
 }
 
 /**
@@ -107,7 +163,7 @@ fun ExteriorCollisionsConfig.conHuellasDelCampus(huellas: CampusFootprintsFile):
 fun cargarColisionesConHuellas(): ExteriorCollisionsConfig {
     val base = cargarColisionesExteriores()
     return try {
-        base.conHuellasDelCampus(PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS)))
+        base.conHuellasDelCampus(PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS)), cargarEsquemaEdificios())
     } catch (e: Exception) {
         // Sin huellas no hay colisión con edificios (el polígono dibujado a mano ya no existe): que no sea silencioso.
         powLog("CampusFootprints", "No se pudieron cargar las huellas ($RUTA_HUELLAS_CAMPUS): ${e::class.simpleName}: ${e.message}. Sin colisión con edificios.")

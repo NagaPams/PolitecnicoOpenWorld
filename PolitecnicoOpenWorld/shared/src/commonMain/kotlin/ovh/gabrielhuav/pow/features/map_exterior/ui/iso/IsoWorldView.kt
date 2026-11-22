@@ -41,7 +41,9 @@ import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 import ovh.gabrielhuav.pow.platform.imagen.rememberImagenDeAsset
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
+import ovh.gabrielhuav.pow.domain.models.map.BuildingMaterial
 import ovh.gabrielhuav.pow.domain.models.map.CampusFootprint
+import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
 import ovh.gabrielhuav.pow.domain.models.map.FootprintKind
 import ovh.gabrielhuav.pow.domain.models.map.IsoProjection
 import ovh.gabrielhuav.pow.domain.models.map.MapWay
@@ -69,6 +71,13 @@ private val ISO_ROOF_EDGE = Color(0xFF4E4637)
 private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
 private val ISO_WALL_DARK = Color(0xFF574E40)
 private val ISO_FOG = Color(0x6E222A33)
+private val ISO_WINDOW = Color(0xFF2C3A47)
+private val ISO_DOOR = Color(0xFF241C14)
+private const val ISO_LEVEL_METERS = 3.2
+private const val ISO_WINDOW_WIDTH_M = 1.0
+private const val ISO_WINDOW_BASE_M = 1.0
+private const val ISO_WINDOW_HEIGHT_M = 1.3
+private const val ISO_DOOR_HEIGHT_M = 2.2
 private const val ISO_MIN_PERSON_PX = 44f
 private const val ISO_MAX_SPRITE_BOOST = 2.5f
 
@@ -94,6 +103,39 @@ private suspend fun loadIsoPlayerSprites(): Array<ImageBitmap?> = withContext(Di
         }
     }
     out
+}
+
+/** Tonos de una fachada: techo, pared iluminada y pared en sombra. */
+private class IsoTones(val roof: Color, val light: Color, val dark: Color)
+
+private val ISO_TONES_BRICK = IsoTones(Color(0xFFC7A48A), Color(0xFF9A5F48), Color(0xFF6B3F31))
+private val ISO_TONES_CONCRETE = IsoTones(Color(0xFFC9CBCB), Color(0xFF8E9296), Color(0xFF5D6165))
+private val ISO_TONES_PLASTER = IsoTones(Color(0xFFD9CDB3), Color(0xFFB8A98C), Color(0xFF857964))
+private val ISO_TONES_DEFAULT = IsoTones(ISO_ROOF, ISO_WALL_LIGHT, ISO_WALL_DARK)
+
+private fun isoTones(material: BuildingMaterial): IsoTones = when (material) {
+    BuildingMaterial.BRICK -> ISO_TONES_BRICK
+    BuildingMaterial.CONCRETE -> ISO_TONES_CONCRETE
+    BuildingMaterial.PLASTER -> ISO_TONES_PLASTER
+    BuildingMaterial.DEFAULT -> ISO_TONES_DEFAULT
+}
+
+/** Cuadrilátero sobre la pared i→j entre las fracciones [t0, t1] y las alturas [h0, h1] en píxeles. */
+private fun isoWallQuad(
+    xs: FloatArray, ys: FloatArray, i: Int, j: Int, left: Float, top: Float,
+    t0: Float, t1: Float, h0: Float, h1: Float,
+): Path {
+    val ax = xs[i] + (xs[j] - xs[i]) * t0 - left
+    val ay = ys[i] + (ys[j] - ys[i]) * t0 - top
+    val bx = xs[i] + (xs[j] - xs[i]) * t1 - left
+    val by = ys[i] + (ys[j] - ys[i]) * t1 - top
+    return Path().apply {
+        moveTo(ax, ay - h0)
+        lineTo(bx, by - h0)
+        lineTo(bx, by - h1)
+        lineTo(ax, ay - h1)
+        close()
+    }
 }
 
 private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color)
@@ -254,7 +296,9 @@ fun IsoWorldView(
                 val j = (i + 1) % points.size
                 winding += xs[i].toDouble() * ys[j] - xs[j].toDouble() * ys[i]
             }
+            val tones = isoTones(footprint.material)
             val walls = ArrayList<Pair<Path, Color>>()
+            val details = ArrayList<Pair<Path, Color>>()
             for (i in points.indices) {
                 val j = (i + 1) % points.size
                 if (!isoWallFacesCamera(xs[i].toDouble(), xs[j].toDouble(), winding)) continue
@@ -265,13 +309,36 @@ fun IsoWorldView(
                     lineTo(xs[i] - left, ys[i] - top - rise)
                     close()
                 }
-                walls.add(path to if (ys[j] > ys[i]) ISO_WALL_LIGHT else ISO_WALL_DARK)
+                walls.add(path to if (ys[j] > ys[i]) tones.light else tones.dark)
+                val lengthM = edgeLengthMeters(points[i], points[j])
+                val ppm = projection.pixelsPerMeter.toFloat()
+                if (footprint.windowSpacingM > 0.0 && lengthM > 2.0 * ISO_WINDOW_WIDTH_M) {
+                    val count = (lengthM / footprint.windowSpacingM).toInt().coerceAtLeast(1)
+                    val levels = (footprint.heightMeters / ISO_LEVEL_METERS).toInt().coerceAtLeast(1)
+                    val half = (ISO_WINDOW_WIDTH_M / lengthM / 2.0).toFloat()
+                    for (level in 0 until levels) {
+                        val h0 = ((level * ISO_LEVEL_METERS + ISO_WINDOW_BASE_M) * ppm).toFloat()
+                        val h1 = h0 + (ISO_WINDOW_HEIGHT_M * ppm).toFloat()
+                        for (k in 0 until count) {
+                            val center = (k + 0.5f) / count
+                            details.add(isoWallQuad(xs, ys, i, j, left, top, center - half, center + half, h0, h1) to ISO_WINDOW)
+                        }
+                    }
+                }
+                for (door in footprint.doors) {
+                    if (door.edge != i || lengthM <= 0.0) continue
+                    val halfDoor = (door.widthM / lengthM / 2.0).toFloat()
+                    val c = door.t.toFloat()
+                    details.add(isoWallQuad(xs, ys, i, j, left, top, c - halfDoor, c + halfDoor, 0f,
+                        (ISO_DOOR_HEIGHT_M * ppm).toFloat()) to ISO_DOOR)
+                }
             }
             val layer = layerPool.track(obtainGraphicsLayer())
             layer.compositingStrategy = CompositingStrategy.ModulateAlpha
             layer.record(this, layoutDirection, IntSize(width, height)) {
                 for ((wall, color) in walls) drawPath(wall, color)
-                drawPath(roof, ISO_ROOF)
+                for ((detail, color) in details) drawPath(detail, color)
+                drawPath(roof, footprint.roofColor?.let { Color(it.toInt()) } ?: tones.roof)
                 drawPath(roof, ISO_ROOF_EDGE, style = Stroke(width = 1.5f))
             }
             buildings.add(IsoBuildingLayer(layer, xs, ys, 1f, left, top, right, bottom, frontDepth, footprint.id))

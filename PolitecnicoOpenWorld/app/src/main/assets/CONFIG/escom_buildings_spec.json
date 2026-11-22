@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "buildings": [
+    {
+      "id": 293808589,
+      "levels": 3,
+      "material": "BRICK",
+      "windows": { "spacingM": 3.0 },
+      "doors": [ { "edge": 1, "t": 0.5, "widthM": 2.0, "state": "OPEN" } ]
+    },
+    {
+      "id": 293808590,
+      "levels": 2,
+      "material": "CONCRETE",
+      "windows": { "spacingM": 3.5 }
+    },
+    {
+      "id": 423031206,
+      "levels": 1,
+      "material": "PLASTER",
+      "windows": { "spacingM": 3.0 }
+    }
+  ]
+}
