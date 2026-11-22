@@ -131,6 +131,18 @@ internal fun WorldMapViewModel.checkCollectibleProximity(playerLat: Double, play
                 )
             }
 
+        // Puertas del esquema de edificios (`entry`): mismas puertas virtuales que las del Diseñador, con la ruta propia.
+        val specDoorItems = _uiState.value.campusEntryDoors.map { door ->
+            ActiveCollectible(
+                id = "$SPEC_DOOR_ID_PREFIX${door.id}",
+                name = "Puerta ESCOM",
+                description = "Puerta interactiva",
+                assetPath = "",
+                latitude = door.location.latitude,
+                longitude = door.location.longitude
+            )
+        }
+
         // Convertimos los NPCs Vendedores y Gatos en collectibles virtuales para interactuar con ellos
         val npcItems = _uiState.value.npcs
             .filter { it.id.startsWith("VENDOR_") || it.id.startsWith("CAT_") }
@@ -147,7 +159,7 @@ internal fun WorldMapViewModel.checkCollectibleProximity(playerLat: Double, play
             }
 
         // 3. Juntamos todo en un solo radar global
-        val allPossibleItems = baseItems + doorItems + npcItems
+        val allPossibleItems = baseItems + doorItems + specDoorItems + npcItems
 
         val activeItem = allPossibleItems.minByOrNull {
             playerGeo.distanceToAsDouble(GeoPoint(it.latitude, it.longitude))

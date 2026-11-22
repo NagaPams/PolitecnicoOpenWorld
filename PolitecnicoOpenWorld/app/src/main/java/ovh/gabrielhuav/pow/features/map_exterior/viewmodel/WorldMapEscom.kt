@@ -9,6 +9,9 @@ import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import java.util.UUID
 import kotlin.math.abs
 
+/** Prefijo del id de las puertas virtuales del esquema de edificios (empieza por `escom_door_` a propósito: reusa su flujo). */
+internal const val SPEC_DOOR_ID_PREFIX = "escom_door_spec_"
+
 internal fun WorldMapViewModel.spawnEscomDoors() {
         // Las coordenadas exactas se ajustan con el Modo Diseñador.
         // Estos valores son placeholders; reemplázalos con los guardados en Room DB

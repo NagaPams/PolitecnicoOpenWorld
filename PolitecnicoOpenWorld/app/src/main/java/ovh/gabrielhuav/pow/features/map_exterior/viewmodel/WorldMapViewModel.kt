@@ -1196,7 +1196,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 npcAiManager.setExteriorCollisions(exteriorCollisions)
                 // Exponer al estado para el overlay de Debug Interiores (zonas no caminables).
                 val cfg = exteriorCollisions
-                withContext(Dispatchers.Main) { _uiState.update { it.copy(exteriorCollisions = cfg) } }
+                val entryDoors = ovh.gabrielhuav.pow.domain.models.map.cargarPuertasDeEntrada()
+                withContext(Dispatchers.Main) { _uiState.update { it.copy(exteriorCollisions = cfg, campusEntryDoors = entryDoors) } }
 
             } catch (e: Exception) {
                 Log.e("Collisions", "Error: ${e.message}")

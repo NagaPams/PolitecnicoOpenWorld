@@ -86,3 +86,33 @@ fun cargarEsquemaEdificios(): BuildingSpecFile = try {
     powLog("BuildingSpec", "Sin esquema de edificios ($RUTA_EDIFICIOS_CAMPUS): ${e::class.simpleName}: ${e.message}")
     BuildingSpecFile()
 }
+
+/** Puerta de edificio que lleva a un interior: [id] estable (`<huella>_e<arista>`), [entry] es la ruta de navegación. */
+data class EntryDoor(val id: String, val entry: String, val location: GeoPoint)
+
+/** Centro de cada puerta con `entry` (las de `entry` vacío no llevan a ningún interior). */
+fun List<CampusFootprint>.entryDoors(): List<EntryDoor> = flatMap { fp ->
+    val n = fp.points.size
+    if (n < 2) return@flatMap emptyList<EntryDoor>()
+    fp.doors.filter { it.entry.isNotEmpty() && it.edge in 0 until n }.map { door ->
+        val a = fp.points[door.edge]
+        val b = fp.points[(door.edge + 1) % n]
+        EntryDoor(
+            id = "${fp.id}_e${door.edge}",
+            entry = door.entry,
+            location = GeoPoint(
+                a.latitude + (b.latitude - a.latitude) * door.t,
+                a.longitude + (b.longitude - a.longitude) * door.t,
+            ),
+        )
+    }
+}
+
+/** Puertas con interior del campus; vacío si faltan las huellas o el esquema (nunca lanza). Bloqueante. */
+fun cargarPuertasDeEntrada(): List<EntryDoor> = try {
+    PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS))
+        .toFootprints(cargarEsquemaEdificios()).entryDoors()
+} catch (e: Exception) {
+    powLog("BuildingSpec", "Sin puertas de entrada: ${e::class.simpleName}: ${e.message}")
+    emptyList()
+}

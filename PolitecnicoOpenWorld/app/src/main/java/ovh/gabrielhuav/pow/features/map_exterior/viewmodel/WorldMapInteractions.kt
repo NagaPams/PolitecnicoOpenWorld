@@ -172,7 +172,13 @@ internal fun WorldMapViewModel.handleInteraction() {
                 // aquí). Usa `contains` (no match exacto) para tolerar variantes/acentos al
                 // colocar la puerta en el Diseñador; si nada casa, cae a DEFAULT_ROUTE (lobby
                 // ESCOM). Para añadir un edificio enterable, edita InteriorEntryCatalog. Ver 04/06.
-                val targetRoute = ovh.gabrielhuav.pow.domain.models.map.InteriorEntryCatalog.routeForDoorName(nearby.name)
+                // Las puertas del esquema de edificios traen su propia ruta (`entry`); las del Diseñador, el catálogo por nombre.
+                val targetRoute = if (nearby.id.startsWith(SPEC_DOOR_ID_PREFIX)) {
+                    _uiState.value.campusEntryDoors.firstOrNull { "$SPEC_DOOR_ID_PREFIX${it.id}" == nearby.id }?.entry
+                        ?: ovh.gabrielhuav.pow.domain.models.map.InteriorEntryCatalog.DEFAULT_ROUTE
+                } else {
+                    ovh.gabrielhuav.pow.domain.models.map.InteriorEntryCatalog.routeForDoorName(nearby.name)
+                }
                 // MISIÓN 2 · fase MOCHILA (🆕 2026-07-13): la puerta de la ESCOM YA NO redirige
                 // al salón — se entra por el flujo normal (lobby → Edificio Principal → salón,
                 // puertas en ZombieRoomCatalog). El TP del modo dev sí va directo (devTpRoute).
