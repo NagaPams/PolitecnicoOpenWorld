@@ -791,46 +791,17 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             }
 
                             val vehicleModel = _uiState.value.currentVehicleModel ?: CarModel.SEDAN
-                            // Lógica de 'main': Auto-centrado y límite dinámico de la calle
-                                val distToRoad = distance(tempLoc, nearestRoadPoint)
-                                // Radio expandido al rebasar REDUCIDO (0.00006 → 0.000045 ≈ 5 m): con el
-                                // anterior el coche se veía claramente FUERA de la carretera al esquivar.
-                                val maxRoadRadius = if (dodgeOffsetX != 0.0 || dodgeOffsetY != 0.0 || isAutoCentering) 0.000045 else 0.00004
-
-                                val finalLoc = if (distToRoad <= maxRoadRadius) {
-                                    tempLoc
-                                } else if (distance(location, nearestRoadPoint) <= maxRoadRadius * ROAD_SLIDE_ENTRY_FACTOR) {
-                                    // Venías por la calle y rozas el borde del corredor: DESLIZA a lo largo de ella
-                                    // (pared que desliza) en vez de frenar ×0.6 y quedarte clavado con el gas puesto.
-                                    val slid = slideAlongCorridor(nearestRoadPoint, tempLoc, maxRoadRadius)
-                                    val stepLen = distance(location, tempLoc)
-                                    val keptRatio = if (stepLen > 0.0) distance(location, slid) / stepLen else 1.0
-                                    // Solo pierde velocidad de frente contra el borde; en ángulo rasante casi no pierde.
-                                    currentSpeed *= ROAD_SLIDE_BASE_KEEP + (1.0 - ROAD_SLIDE_BASE_KEEP) * keptRatio.coerceIn(0.0, 1.0)
-                                    slid
-                                } else if (absSpeed < MAX_SPEED * 0.15) {
-                                    // Apenas arrancando: en lugar de frenar en seco (que impedía
-                                    // mover el coche si abordabas en una calle sin marca "car"),
-                                    // deslízate suavemente hacia la calzada más cercana.
-                                    val pull = (maxRoadRadius / distToRoad).coerceAtMost(0.3)
-                                    currentSpeed *= 0.95
-                                    GeoPoint(
-                                        tempLoc.latitude  + (nearestRoadPoint.latitude  - tempLoc.latitude)  * pull,
-                                        tempLoc.longitude + (nearestRoadPoint.longitude - tempLoc.longitude) * pull
-                                    )
-                                } else {
-                                    // Te saliste de la calle yendo a cierta velocidad: ANTES te CLAVABA en
-                                    // 'location' (estado absorbente) — como seguías acelerando nunca bajabas
-                                    // del umbral y el coche quedaba atascado; solo se arreglaba BAJÁNDOTE y
-                                    // re-subiendo (R9/R11). Ahora frena FUERTE y DESLÍZATE hacia la calzada
-                                    // más cercana para poder reincorporarte sin quedar atrapado.
-                                    currentSpeed *= 0.6
-                                    val pull = (maxRoadRadius / distToRoad).coerceAtMost(0.3)
-                                    GeoPoint(
-                                        tempLoc.latitude  + (nearestRoadPoint.latitude  - tempLoc.latitude)  * pull,
-                                        tempLoc.longitude + (nearestRoadPoint.longitude - tempLoc.longitude) * pull
-                                    )
-                                }
+                            // Ajuste a la calzada (deslizar / jalar / frenar): paso puro en :shared (VehicleRoadClamp, t37).
+                            // Radio expandido al rebasar REDUCIDO (0.00006 → 0.000045 ≈ 5 m): se veía fuera de la carretera.
+                            val roadClamp = ovh.gabrielhuav.pow.domain.models.map.VehicleRoadClamp.apply(
+                                from = location, target = tempLoc, nearestRoadPoint = nearestRoadPoint,
+                                speed = currentSpeed, maxSpeed = MAX_SPEED,
+                                radius = ovh.gabrielhuav.pow.domain.models.map.VehicleRoadClamp.corridorRadius(
+                                    dodging = dodgeOffsetX != 0.0 || dodgeOffsetY != 0.0, autoCentering = isAutoCentering,
+                                ),
+                            )
+                            currentSpeed = roadClamp.speed
+                            val finalLoc = roadClamp.location
 
                                 // La aduana se aplica DESPUÉS del ajuste de carretera: ese ajuste no
                                 // puede empujar la carrocería a través de una barda o edificio. Si el coche
@@ -1223,9 +1194,6 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // "jalar" al jugador hacia una calle. Más lejos = la red no cubre esta zona
     // todavía; el movimiento se ignora en vez de teletransportar.
     internal val MAX_SNAP_DISTANCE_DEG = 0.0003
-    /** Si el punto previo estaba a ≤ este múltiplo del radio de la calle, el coche DESLIZA por el borde (si no, se reincorpora). */
-    internal val ROAD_SLIDE_ENTRY_FACTOR = 1.25
-    internal val ROAD_SLIDE_BASE_KEEP = 0.85
     internal var indexedRef: List<MapWay>?    = null
     internal var segs: List<Seg>              = emptyList()
     internal var grid: Map<Long, List<Seg>>   = emptyMap()
