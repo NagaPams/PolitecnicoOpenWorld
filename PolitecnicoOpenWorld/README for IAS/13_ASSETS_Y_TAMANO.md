@@ -143,6 +143,10 @@ Las dos juntas dejarían el AAB en torno a **330 MB**: margen de 170 MB en vez d
 
 ---
 
+### 🆕 Vista isométrica (2026-11-22)
+
+`assets/ISOMETRIC/` guarda 7 PNG provisionales (jugador, zombi y coches en 5 direcciones; el resto se obtiene espejando). Son pequeños, pero siguen en PNG: al producir el arte final pasarlos a **WebP** y mantener el lienzo en 128 px (personajes) y ~192 px (coches) para no gastar presupuesto del AAB.
+
 ## 5. La barrera del CI
 
 `.github/workflows/android-release.yml`, paso *"Validar tamaño máximo de Play Store"*:

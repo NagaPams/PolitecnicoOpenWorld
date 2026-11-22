@@ -388,6 +388,8 @@ px-por-metro), `PlayerCharacter` (jugador a pie/conduciendo). El sprite nativo u
     algún día el copy de `WorldMapState` pesa, dividir `uiState` en varios StateFlow por grupo (la UI ya
     observa por campo) en vez de un solo objeto — pero HOY no hace falta.
 
+- **Vista isométrica (2026-11-22):** el renderer `IsoWorldView` no puede crear `GraphicsLayer` sueltas: se registran en `IsoLayerPool` o la memoria de GPU crece al cambiar de tamaño/huellas. La entrada del joystick se convierte **una vez** con `isoInputToWorldAngle`; no volver a rotar en snap-to-road ni en colisiones. Detalle y medidas en `MUNDO/04_MAP_EXTERIOR.md`.
+
 ## 7. Mapa web `#map-wrapper` / web map wrapper
 
 **Fijo:** `100vw×100vh` SIEMPRE (≈45 tiles). La cámara es **norte-arriba** (estilo GTA Chinatown Wars):

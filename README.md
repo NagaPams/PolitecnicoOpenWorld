@@ -538,6 +538,8 @@ POW supports **eight map providers** that can be hot-swapped from the Settings s
 | Esri Satellite | WebView + Leaflet | Real aerial view |
 | OpenTopoMap | WebView + Leaflet | Terrain and contour lines |
 
+**Experimental isometric view (developer mode):** an opt-in renderer shows the ESCOM campus and nearby streets with a 2:1 isometric camera, extruded buildings whose roofs fade out when you step inside, and tinted car sprites. It is a ninth entry in the provider list, only visible with developer mode on; collisions, NPC AI and missions keep working in geographic coordinates.
+
 Web modes render through **Leaflet** inside a `WebView` and are intercepted by a `CachingWebViewClient` that caches each tile in Room (`MapTileEntity`) using the normalized URL as key (stripping load-balancing subdomains and volatile parameters before hashing with SHA-256). This allows offline play in any previously visited area. Since 2026-11-10 the camera stays **north-up** on web, Google and native OSM (the map no longer rotates while driving; vehicle sprites rotate on their own), so the Leaflet `#map-wrapper` is always screen-sized (`100vw × 100vh`) and `setMapOversize` was removed — roughly **~8× fewer tiles** than the old fixed `300vw × 300vh` wrapper.
 
 #### Tile & road-network caching
