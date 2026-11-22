@@ -393,6 +393,7 @@
     <string name="sf_records_col_losses">L</string>
     <string name="sf_records_col_rate">Rate</string>
     <string name="settings_exit_to_menu">Exit to menu</string>
+    <string name="settings_map_isometric">Isometric view (experimental)</string>
     <string name="settings_survival_title">Survival mode</string>
     <string name="settings_survival_desc">Enable hunger, thirst, fatigue and infection in the open world.</string>
     <string name="survival_bitten">🧟 You were bitten! You may be infected</string>

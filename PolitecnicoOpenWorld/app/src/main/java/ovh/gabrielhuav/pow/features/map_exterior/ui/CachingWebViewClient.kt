@@ -36,7 +36,7 @@ class CachingWebViewClient(
         val rawUrl = request?.url?.toString() ?: return null
         val provider = getCurrentProvider()
 
-        if (provider == MapProvider.OSM || request.method != "GET") return null
+        if (!provider.isWebProvider || request.method != "GET") return null
 
         // USAR LA NUEVA FUNCIÓN AQUÍ
         val normalizedUrl = normalizeTileUrl(rawUrl)

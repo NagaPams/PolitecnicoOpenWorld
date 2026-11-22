@@ -38,3 +38,17 @@ internal fun WorldMapViewModel.setCampusFootprints(show: Boolean) {
         }
     }
 }
+
+/** Carga las huellas para el renderer isométrico sin activar la capa cenital de depuración. */
+internal fun WorldMapViewModel.ensureCampusFootprintsLoaded() {
+    if (_uiState.value.campusFootprints.isNotEmpty()) return
+    viewModelScope.launch(Dispatchers.IO) {
+        try {
+            val file = PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS))
+            val footprints = file.toFootprints()
+            withContext(Dispatchers.Main) { _uiState.update { it.copy(campusFootprints = footprints) } }
+        } catch (e: Exception) {
+            Log.e("Footprints", "Error al cargar huellas isométricas: ${e.message}")
+        }
+    }
+}

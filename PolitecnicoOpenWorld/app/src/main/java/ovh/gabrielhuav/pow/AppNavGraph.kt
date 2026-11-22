@@ -114,6 +114,10 @@ fun AppNavGraph(
                             // Arranque: aplica el proveedor guardado de inmediato (sin aviso).
                             worldMapViewModel.setMapProvider(settingsState.mapProvider)
                             providerInitialized = true
+                        } else if (!settingsState.developerMode && worldMapViewModel.uiState.value.mapProvider ==
+                            ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MapProvider.ISOMETRIC
+                        ) {
+                            worldMapViewModel.setMapProvider(settingsState.mapProvider)
                         } else {
                             // Cambios posteriores: precarga en segundo plano y avisa para cambiar.
                             worldMapViewModel.requestMapProvider(settingsState.mapProvider)

@@ -654,7 +654,7 @@
     <string name="sf_fighter_tap_hint">Tap to focus · tap again to choose</string>
 
     <!-- Controls tutorial (optional, i18n 2026-07-11) -->
-    <!-- Modo supervivencia -->
+    <string name="wm_provider_isometric">Isometric view (experimental)</string>
     <string name="wm_survival_needs">Needs</string>
     <string name="wm_survival_infection">Infection</string>
     <string name="wm_survival_symptoms">Symptomatic</string>

@@ -214,7 +214,8 @@ internal fun WorldMapViewModel.moveCharacterByAngle(angleRad: Double) {
         val loc = _uiState.value.currentLocation ?: return
         if (!_uiState.value.isRoadNetworkReady || roadNetwork.isEmpty()) return
 
-        val dx = cos(angleRad)
+        // En la vista isométrica el lado visible sale del eje X de pantalla (este - norte), no del mundo.
+        val dx = if (_uiState.value.mapProvider == MapProvider.ISOMETRIC) cos(angleRad) - sin(angleRad) else cos(angleRad)
         val isMovingRight = if (abs(dx) > 0.01) dx > 0 else null
         startMovementAction(isMovingRight)
 

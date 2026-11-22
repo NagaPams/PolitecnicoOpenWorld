@@ -36,7 +36,7 @@ import ovh.gabrielhuav.pow.shared.recursos.*
 @Composable
 internal fun SettingsSectionMap(state: SettingsState, controller: SettingsController) {
     var expanded by remember { mutableStateOf(false) }
-    var pending by remember(state.mapProvider) { mutableStateOf(state.mapProvider.keyFreeProvider) }
+    var pending by remember(state.mapProvider, state.developerMode) { mutableStateOf(state.mapProvider.keyFreeProvider) }
     val changed = pending != state.mapProvider
     Column {
         Text(
@@ -55,7 +55,7 @@ internal fun SettingsSectionMap(state: SettingsState, controller: SettingsContro
                 ),
                 border = BorderStroke(1.dp, Color(0xFF6B1C3A)),
             ) {
-                Text(pending.displayName, Modifier.weight(1f))
+                Text(mapProviderName(pending), Modifier.weight(1f))
                 Icon(Icons.Default.ArrowDropDown, null, tint = Color(0xFFD4AF37))
             }
             DropdownMenu(
@@ -63,9 +63,9 @@ internal fun SettingsSectionMap(state: SettingsState, controller: SettingsContro
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.background(Color(0xFF2A1C21)),
             ) {
-                MapProvider.entries.filter { it.keyFreeProvider == it }.forEach { provider ->
+                MapProvider.entries.filter { it.keyFreeProvider == it && (it != MapProvider.ISOMETRIC || state.developerMode) }.forEach { provider ->
                     DropdownMenuItem(
-                        text = { Text(provider.displayName, color = Color.White) },
+                        text = { Text(mapProviderName(provider), color = Color.White) },
                         onClick = { pending = provider; expanded = false },
                     )
                 }
@@ -108,3 +108,7 @@ internal fun SettingsSectionMap(state: SettingsState, controller: SettingsContro
         )
     }
 }
+
+@Composable
+private fun mapProviderName(provider: MapProvider): String =
+    if (provider == MapProvider.ISOMETRIC) stringResource(Res.string.settings_map_isometric) else provider.displayName

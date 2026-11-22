@@ -30,6 +30,10 @@ import ovh.gabrielhuav.pow.ui.components.NeonTriggerPair
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.VehicleActionButtonsController
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.VehicleDPadController
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.VehicleJoystickController
+import kotlin.math.PI
+import ovh.gabrielhuav.pow.domain.models.map.isoInputToWorldAngle
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.Direction
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MapProvider
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.GameAction
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapState
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapViewModel
@@ -169,8 +173,26 @@ fun BoxScope.WorldMapControls(
                     // columna envuelve un único hijo → el layout queda igual que antes.
                     Column(modifier = m, horizontalAlignment = Alignment.CenterHorizontally) {
                         shoulders(!uiState.swapControls)
-                        if (uiState.controlType == ControlType.DPAD) DPadController(modifier = Modifier.scale(effectiveScale), onDirectionPressed = { viewModel.moveCharacter(it) })
-                        else JoystickController(modifier = Modifier.scale(effectiveScale), onMove = { viewModel.moveCharacterByAngle(it) })
+                        if (uiState.controlType == ControlType.DPAD) {
+                            DPadController(modifier = Modifier.scale(effectiveScale), onDirectionPressed = { direction ->
+                                if (uiState.mapProvider == MapProvider.ISOMETRIC) {
+                                    val angle = when (direction) {
+                                        Direction.UP -> PI / 2.0
+                                        Direction.DOWN -> -PI / 2.0
+                                        Direction.LEFT -> PI
+                                        Direction.RIGHT -> 0.0
+                                    }
+                                    viewModel.moveCharacterByAngle(isoInputToWorldAngle(angle))
+                                } else viewModel.moveCharacter(direction)
+                            })
+                        } else {
+                            JoystickController(modifier = Modifier.scale(effectiveScale), onMove = { angle ->
+                                val worldAngle = if (uiState.mapProvider == MapProvider.ISOMETRIC) {
+                                    isoInputToWorldAngle(angle)
+                                } else angle
+                                viewModel.moveCharacterByAngle(worldAngle)
+                            })
+                        }
                     }
                 }
                 // 🆕 2026-07-13: Y a pie tiene DOS usos — toque corto (al SOLTAR) = subir al

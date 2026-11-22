@@ -11,7 +11,8 @@ enum class MapProvider(val displayName: String) {
     CARTO_DB_LIGHT("CartoDB Claro (Web)"),
     ESRI("Esri World Street (Web)"),
     ESRI_SATELLITE("Esri Satélite (Web)"),
-    OPEN_TOPO("OpenTopoMap (Web)");
+    OPEN_TOPO("OpenTopoMap (Web)"),
+    ISOMETRIC("Vista isométrica");
 
     // CARTO now watermarks anonymous tiles (September 2026). Keep legacy enum
     // values for stored settings, but never request credentialed services anonymously.
@@ -21,6 +22,7 @@ enum class MapProvider(val displayName: String) {
     }
 
     val webTileTemplate: String get() = when (keyFreeProvider) {
+        ISOMETRIC -> ""
         ESRI -> "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
         ESRI_SATELLITE -> "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         OPEN_TOPO -> "https://a.tile.opentopomap.org/{z}/{x}/{y}.png"
@@ -29,5 +31,5 @@ enum class MapProvider(val displayName: String) {
 
     val tileMaxNativeZoom: Int get() = if (keyFreeProvider == OPEN_TOPO) 17 else 19
 
-    val isWebProvider: Boolean get() = this != OSM && this != GOOGLE_MAPS_NATIVE
+    val isWebProvider: Boolean get() = this != OSM && this != GOOGLE_MAPS_NATIVE && this != ISOMETRIC
 }

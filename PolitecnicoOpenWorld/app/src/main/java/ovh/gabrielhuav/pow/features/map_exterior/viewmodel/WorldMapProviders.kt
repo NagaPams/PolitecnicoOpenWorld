@@ -29,7 +29,11 @@ fun WorldMapViewModel.setMapProvider(requested: MapProvider) {
         provider.isWebProvider && currentZoom > ZOOM_ON_FOOT -> ZOOM_ON_FOOT
         else -> currentZoom
     }
-    _uiState.update { it.copy(mapProvider = provider, tileSource = ts, zoomLevel = newZoom) }
+    _uiState.update {
+        it.copy(mapProvider = provider, tileSource = ts, zoomLevel = newZoom,
+            isUserPanningMap = if (provider == MapProvider.ISOMETRIC) false else it.isUserPanningMap)
+    }
+    if (provider == MapProvider.ISOMETRIC) ensureCampusFootprintsLoaded()
 }
 
 /**
@@ -97,6 +101,7 @@ internal suspend fun WorldMapViewModel.preloadProvider(provider: MapProvider): B
 }
 
 internal fun WorldMapViewModel.tileUrlFor(provider: MapProvider, z: Int, x: Int, y: Int): String? {
+    if (provider == MapProvider.ISOMETRIC) return null
     val template = provider.webTileTemplate
     return template.replace("{z}", z.toString()).replace("{x}", x.toString()).replace("{y}", y.toString())
 }
@@ -130,6 +135,10 @@ fun WorldMapViewModel.prepareMapForEntry() {
     mapPrepStarted = true
     viewModelScope.launch {
         val provider = _uiState.value.mapProvider
+        if (provider == MapProvider.ISOMETRIC) {
+            _uiState.update { it.copy(mapLoadProgress = 1f, isMapReady = true) }
+            return@launch
+        }
         if (provider == MapProvider.GOOGLE_MAPS_NATIVE) {
             // SDK nativo de Google: las teselas las gestiona el SDK; progreso breve.
             for (i in 1..10) {
@@ -196,6 +205,7 @@ internal fun WorldMapViewModel.gateMapDownloadAfterTeleport() {
 internal suspend fun WorldMapViewModel.downloadGateTiles() = withContext(Dispatchers.IO) {
     val loc = _uiState.value.currentLocation ?: return@withContext
     val provider = _uiState.value.mapProvider
+    if (provider == MapProvider.ISOMETRIC) return@withContext
     if (provider == MapProvider.GOOGLE_MAPS_NATIVE) {
         // Mapa nativo de Google: las teselas las gestiona el SDK; solo simulamos
         // un breve progreso para mostrar la compuerta de forma consistente.

@@ -575,6 +575,30 @@ fun WorldMapScreen(
 
         // ───── CAPA 1: MAPA ────────────────────────────────────────────────────
         when (uiState.mapProvider) {
+            MapProvider.ISOMETRIC -> {
+                val objective = remember(uiState.currentObjective) {
+                    uiState.currentObjective?.let {
+                        ovh.gabrielhuav.pow.domain.models.geo.GeoPoint(it.targetLat, it.targetLon)
+                    }
+                }
+                ovh.gabrielhuav.pow.features.map_exterior.ui.iso.IsoWorldView(
+                    center = uiState.currentLocation,
+                    zoom = uiState.zoomLevel,
+                    roads = roadNetwork,
+                    footprints = uiState.campusFootprints,
+                    npcs = uiState.npcs,
+                    collectibles = allCollectibles,
+                    objective = objective,
+                    destination = uiState.destinationMarker,
+                    route = if (uiState.showDestinationRoute) uiState.routeWaypoints else emptyList(),
+                    missionRoute = uiState.campaignRouteWaypoints,
+                    isDriving = uiState.isDriving,
+                    vehicleHeading = uiState.vehicleRotation,
+                    fogVisionMeters = NPC_FOG_VISION_METERS,
+                    playerFacingRight = uiState.isPlayerFacingRight,
+                    vehicleColor = uiState.currentVehicleColor,
+                )
+            }
             MapProvider.OSM -> {
                 NativeOsmMap(
                     uiState = uiState,
@@ -633,7 +657,7 @@ fun WorldMapScreen(
         }
 
         // Prototipo de mapa cenital estilizado (huellas de OSM). Ver CampusFootprintLayer.
-        if (uiState.showCampusFootprints) {
+        if (uiState.showCampusFootprints && uiState.mapProvider != MapProvider.ISOMETRIC) {
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.CampusFootprintLayer(
                 footprints = uiState.campusFootprints,
                 center = uiState.currentLocation,
@@ -646,14 +670,24 @@ fun WorldMapScreen(
         // el panel (que se dibujan después). Con herramienta activa intercepta el toque:
         // el mapa NO se mueve y dibujas líneas/rectángulos. Con NONE deja pasar el gesto.
         if (uiState.showInteriorDebugOverlay) {
+            val isIsometric = uiState.mapProvider == MapProvider.ISOMETRIC
+            val debugWalls = remember(isIsometric, uiState.exteriorCollisions, uiState.debugEditWalls) {
+                if (isIsometric) uiState.exteriorCollisions?.walls.orEmpty() + uiState.debugEditWalls
+                else uiState.debugEditWalls
+            }
+            val debugBlocks = remember(isIsometric, uiState.exteriorCollisions, uiState.debugEditBlocks) {
+                if (isIsometric) uiState.exteriorCollisions?.polygons.orEmpty() + uiState.debugEditBlocks
+                else uiState.debugEditBlocks
+            }
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.InteriorDebugDrawSurface(
                 tool = uiState.debugEditTool,
-                walls = uiState.debugEditWalls,
-                blocks = uiState.debugEditBlocks,
+                walls = debugWalls,
+                blocks = debugBlocks,
                 navPed = uiState.debugEditNavPed,
                 navCar = uiState.debugEditNavCar,
                 center = uiState.currentLocation,
                 zoom = uiState.zoomLevel,
+                isIsometric = isIsometric,
                 onCommit = { t, pts -> viewModel.commitDebugStroke(t, pts) }
             )
         }
@@ -704,7 +738,7 @@ fun WorldMapScreen(
                 lastPlayerVisualDebug[0] = playerLayer
             }
         }
-        if (!uiState.isUserPanningMap) {
+        if (!uiState.isUserPanningMap && uiState.mapProvider != MapProvider.ISOMETRIC) {
             // MUERTE: al morir, el jugador queda como "fantasmita" (semitransparente),
             // igual que en el modo zombis.
             val ghostModifier = if (uiState.showWastedScreen)
@@ -1282,6 +1316,9 @@ fun WorldMapScreen(
         // ─── AVISO DE CAMBIO DE PROVEEDOR (precarga en segundo plano) ─────────
         val pending = uiState.pendingProvider
         if (pending != null) {
+            val pendingName = if (pending == MapProvider.ISOMETRIC) {
+                androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_provider_isometric)
+            } else pending.displayName
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -1292,11 +1329,11 @@ fun WorldMapScreen(
                 if (!uiState.pendingProviderReady) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         CircularProgressIndicator(Modifier.size(16.dp), Color(0xFFD4AF37), strokeWidth = 2.dp)
-                        Text(androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_preparing_model, pending.displayName), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_preparing_model, pendingName), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_model_ready, pending.displayName), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_model_ready, pendingName), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
