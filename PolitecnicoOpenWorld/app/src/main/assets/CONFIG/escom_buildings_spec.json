@@ -23,20 +23,18 @@
     {
       "id": 9000000,
       "material": "CONCRETE",
-      "windows": { "spacingM": 3.5 },
-      "doors": [ { "edge": 26, "t": 0.5, "widthM": 3.0, "state": "OPEN", "entry": "interiores_zombies" } ]
+      "windows": { "spacingM": 3.5 }
     },
     {
       "id": 9000001,
       "material": "CONCRETE",
-      "windows": { "spacingM": 3.5 },
-      "doors": [ { "edge": 10, "t": 0.5, "widthM": 3.0, "state": "OPEN", "entry": "interiores_zombies" } ]
+      "windows": { "spacingM": 3.5 }
     },
     {
       "id": 9000002,
       "material": "CONCRETE",
       "windows": { "spacingM": 3.5 },
-      "doors": [ { "edge": 43, "t": 0.5, "widthM": 3.0, "state": "OPEN", "entry": "interiores_zombies" } ]
+      "doors": [ { "edge": 8, "t": 0.57, "widthM": 3.0, "state": "OPEN", "entry": "interiores_zombies" } ]
     }
   ]
 }
