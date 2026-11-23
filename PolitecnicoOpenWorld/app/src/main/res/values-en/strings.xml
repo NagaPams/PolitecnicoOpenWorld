@@ -665,6 +665,10 @@
     <string name="vendor_drink_survival_desc">Fixes thirst and gives some energy.</string>
     <string name="vendor_serum_name">Serum</string>
     <string name="vendor_serum_desc">Cures the bite infection.</string>
+    <string name="pack_title">Survival pack</string>
+    <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
+    <string name="pack_craft_kit">Craft medkit (2 🥤 + 1 🍕)</string>
+    <string name="pack_use_kit">Use medkit (+40 HP)</string>
     <string name="vendor_boards_name">Planks</string>
     <string name="vendor_boards_desc">Material to barricade a building door.</string>
     <string name="door_menu_title">Door (planks: %1$d)</string>

@@ -412,6 +412,10 @@
     <string name="survival_not_needed">You do not need that right now</string>
     <string name="survival_item_used">✅ Item used</string>
     <string name="survival_boards_bought">🪵 Plank stored</string>
+    <string name="survival_container_looted">📦 Container looted</string>
+    <string name="survival_item_stored">🎒 Stored in your pack</string>
+    <string name="survival_kit_crafted">🩹 Medkit crafted</string>
+    <string name="survival_kit_used">🩹 Medkit used (+40 HP)</string>
     <string name="survival_boards_full">🪵 You cannot carry more planks</string>
     <string name="survival_door_opened">🚪 Door opened</string>
     <string name="survival_door_closed">🚪 Door closed</string>

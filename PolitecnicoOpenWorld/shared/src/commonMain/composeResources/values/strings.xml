@@ -412,6 +412,10 @@
     <string name="survival_not_needed">No lo necesitas ahora</string>
     <string name="survival_item_used">✅ Consumible usado</string>
     <string name="survival_boards_bought">🪵 Tablón guardado</string>
+    <string name="survival_container_looted">📦 Contenedor saqueado</string>
+    <string name="survival_item_stored">🎒 Guardado en la mochila</string>
+    <string name="survival_kit_crafted">🩹 Botiquín creado</string>
+    <string name="survival_kit_used">🩹 Botiquín usado (+40 HP)</string>
     <string name="survival_boards_full">🪵 No cargas más tablones</string>
     <string name="survival_door_opened">🚪 Puerta abierta</string>
     <string name="survival_door_closed">🚪 Puerta cerrada</string>

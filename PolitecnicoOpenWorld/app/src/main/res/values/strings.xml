@@ -667,6 +667,10 @@
     <string name="vendor_drink_survival_desc">Quita la sed y da algo de energía.</string>
     <string name="vendor_serum_name">Suero</string>
     <string name="vendor_serum_desc">Cura la infección por mordida.</string>
+    <string name="pack_title">Mochila de supervivencia</string>
+    <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
+    <string name="pack_craft_kit">Craftear botiquín (2 🥤 + 1 🍕)</string>
+    <string name="pack_use_kit">Usar botiquín (+40 HP)</string>
     <string name="vendor_boards_name">Tablones</string>
     <string name="vendor_boards_desc">Material para barricadar una puerta de edificio.</string>
     <string name="door_menu_title">Puerta (tablones: %1$d)</string>

@@ -120,6 +120,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     wasSurvivalNoiseActive = noiseActive
     if (!survivalManager.state.value.enabled || paused) {
         lastSurvivalUpdateMs = 0L
+        if (!survivalManager.state.value.enabled) clearSurvivalLoot()
         return
     }
     if (lastSurvivalUpdateMs == 0L) {
@@ -129,6 +130,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val elapsed = now - lastSurvivalUpdateMs
     if (elapsed < 1000L) return
     lastSurvivalUpdateMs = now
+    refreshSurvivalLoot()
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING
         s.playerAction == PlayerAction.RUN -> SurvivalActivity.RUNNING

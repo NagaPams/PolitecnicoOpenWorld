@@ -156,6 +156,7 @@ internal fun WorldMapViewModel.handleInteraction() {
         val nearby = collectiblesManager.state.value.nearbyCollectible ?: return
 
         when {
+            nearby.id.startsWith(ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot.ID_PREFIX) -> pickUpSurvivalLoot(nearby.id)
             nearby.id == "global_zombie_hand" -> toggleGlobalZombieMode()
             nearby.name == "Objeto Misterioso ESCOM" -> {
                 pendingZombieMinigame = true

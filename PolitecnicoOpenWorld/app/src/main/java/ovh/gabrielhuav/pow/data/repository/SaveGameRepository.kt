@@ -65,6 +65,9 @@ data class GameSaveData(
     val survivalBoards: Int = 0,
     // `id:ESTADO:vida;...` (DoorRules.encode); vacío = todas las puertas como en el esquema.
     val survivalDoors: String = "",
+    val survivalPizza: Int = 0,
+    val survivalRefresco: Int = 0,
+    val survivalKits: Int = 0,
     val savedAt: Long = 0L,
 )
 

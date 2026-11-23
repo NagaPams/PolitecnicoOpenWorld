@@ -41,6 +41,8 @@ import ovh.gabrielhuav.pow.platform.assets.PowAssets
 import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
+import ovh.gabrielhuav.pow.domain.models.survival.LootKind
+import ovh.gabrielhuav.pow.domain.models.survival.LootPoint
 import ovh.gabrielhuav.pow.domain.models.map.BuildingMaterial
 import ovh.gabrielhuav.pow.domain.models.map.CampusFootprint
 import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
@@ -214,6 +216,7 @@ fun IsoWorldView(
     playerMoveAngle: Float? = null,
     playerAction: PlayerAction = PlayerAction.IDLE,
     vehicleColor: Int? = null,
+    lootPoints: List<LootPoint> = emptyList(),
 ) {
     if (center == null) return
     val graphicsContext = LocalGraphicsContext.current
@@ -224,6 +227,7 @@ fun IsoWorldView(
     val zoomState by rememberUpdatedState(zoom)
     val npcState by rememberUpdatedState(npcs)
     val collectibleState by rememberUpdatedState(collectibles)
+    val lootState by rememberUpdatedState(lootPoints)
     val objectiveState by rememberUpdatedState(objective)
     val destinationState by rememberUpdatedState(destination)
     val routeState by rememberUpdatedState(route)
@@ -431,6 +435,17 @@ fun IsoWorldView(
                     val y = projection.projectY(item.latitude, item.longitude).toFloat()
                     if (x >= left && x <= right && y >= top && y <= bottom) {
                         drawCircle(Color(0xFFFFD35A), (projection.pixelsPerMeter * 0.65).toFloat(), Offset(x, y))
+                    }
+                }
+                val currentLoot = lootState
+                for (i in currentLoot.indices) {
+                    val loot = currentLoot[i]
+                    val x = projection.projectX(loot.latitude, loot.longitude).toFloat()
+                    val y = projection.projectY(loot.latitude, loot.longitude).toFloat()
+                    if (x >= left && x <= right && y >= top && y <= bottom) {
+                        val r = (projection.pixelsPerMeter * 0.5).toFloat()
+                        drawCircle(Color(0xCC101010), r * 1.35f, Offset(x, y))
+                        drawCircle(isoLootColor(loot.kind), r, Offset(x, y))
                     }
                 }
                 var actorIndex = 0
@@ -645,4 +660,13 @@ internal fun isoVehicleDirection(worldHeadingDegrees: Float): Pair<Int, Boolean>
         else -> 4
     }
     return view to (sector > 4)
+}
+
+/** Color del marcador de botín: pizza naranja, refresco azul, tablones café y suero verde. */
+private fun isoLootColor(kind: LootKind): Color = when (kind) {
+    LootKind.PIZZA -> Color(0xFFFF9A3C)
+    LootKind.REFRESCO -> Color(0xFF4FA8FF)
+    LootKind.TABLONES -> Color(0xFFB07A4A)
+    LootKind.SUERO -> Color(0xFF5BE08A)
+    LootKind.CONTENEDOR -> Color(0xFFE6C34A)
 }

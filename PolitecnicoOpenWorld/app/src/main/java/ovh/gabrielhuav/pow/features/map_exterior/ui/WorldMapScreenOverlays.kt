@@ -37,7 +37,9 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.dismissPrankedyDialog
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.dismissVideo
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onEscomDoorFadeComplete
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onHirePrankedy
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.craftSurvivalKit
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.worldInventoryUnlockedSlots
 
 /**
@@ -241,7 +243,10 @@ fun WorldMapOverlays(
         WorldInventoryDialog(
             inventoryKeys = viewModel.currentInteriorInventory,
             unlockedSlots = viewModel.worldInventoryUnlockedSlots(),
-            onDismiss = { viewModel.toggleWorldInventory(false) }
+            onDismiss = { viewModel.toggleWorldInventory(false) },
+            survivalPack = if (uiState.survivalMode) uiState.survivalPack else null,
+            onCraftKit = { viewModel.craftSurvivalKit() },
+            onUseKit = { viewModel.useSurvivalKit() },
         )
     }
 }

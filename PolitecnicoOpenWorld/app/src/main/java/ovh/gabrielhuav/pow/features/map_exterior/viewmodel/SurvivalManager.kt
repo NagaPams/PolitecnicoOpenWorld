@@ -9,6 +9,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalActivity
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalConsumeResult
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 
 data class SurvivalSubState(
@@ -18,6 +20,7 @@ data class SurvivalSubState(
     val boards: Int = 0,
     /** Solo puertas cuyo estado cambió respecto al esquema; clave `<huella>_e<arista>`. */
     val doors: Map<String, DoorRuntime> = emptyMap(),
+    val pack: SurvivalPack = SurvivalPack(),
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -42,8 +45,16 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.update { it.copy(boards = boards.coerceIn(0, MAX_BOARDS_CARRIED), doors = doors) }
     }
 
-    fun restore(needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0, doors: Map<String, DoorRuntime> = emptyMap()) {
+    fun setPack(pack: SurvivalPack) {
+        mutableState.update { it.copy(pack = SurvivalCrafting.sanitized(pack)) }
+    }
+
+    fun restore(
+        needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0,
+        doors: Map<String, DoorRuntime> = emptyMap(), pack: SurvivalPack = SurvivalPack(),
+    ) {
         mutableState.value = SurvivalSubState(
+            pack = SurvivalCrafting.sanitized(pack),
             boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
             doors = doors,
             enabled = mutableState.value.enabled,

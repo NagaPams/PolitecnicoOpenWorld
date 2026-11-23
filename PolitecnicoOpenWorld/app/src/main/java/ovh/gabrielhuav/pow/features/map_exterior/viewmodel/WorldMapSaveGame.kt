@@ -99,6 +99,9 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalInfectionMs = survivalManager.state.value.infection.elapsedMs,
         survivalBoards = survivalManager.state.value.boards,
         survivalDoors = ovh.gabrielhuav.pow.domain.models.map.DoorRules.encode(survivalManager.state.value.doors),
+        survivalPizza = survivalManager.state.value.pack.pizza,
+        survivalRefresco = survivalManager.state.value.pack.refresco,
+        survivalKits = survivalManager.state.value.pack.botiquin,
         saveType = saveType,
         savedAt = System.currentTimeMillis()
     )
@@ -151,6 +154,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         data.survivalBoards,
         // Gson deja en null el texto que un guardado viejo no trae.
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.map.DoorRules.decode(data.survivalDoors ?: ""),
+        ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits),
     )
     rebuildDoorCollisions()
     wantedManager.setWantedLevel(data.wantedLevel)

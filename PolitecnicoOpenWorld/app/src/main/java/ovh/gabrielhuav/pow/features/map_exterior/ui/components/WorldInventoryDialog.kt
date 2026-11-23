@@ -27,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +37,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.R
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.zombie.KeyDrop
 
 // ─── INVENTARIO EN EL MAPA GLOBAL (🆕 2026-07-13, mantener Y a pie) ───────────
@@ -46,7 +50,10 @@ import ovh.gabrielhuav.pow.domain.models.zombie.KeyDrop
 fun WorldInventoryDialog(
     inventoryKeys: List<String>,
     unlockedSlots: Int,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    survivalPack: SurvivalPack? = null,
+    onCraftKit: () -> Unit = {},
+    onUseKit: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -104,6 +111,26 @@ fun WorldInventoryDialog(
                     color = Color(0xFFB0BEC5), fontSize = 12.sp,
                     modifier = Modifier.widthIn(max = 260.dp)
                 )
+                // Mochila de supervivencia (solo con el modo encendido): guarda lo que no servía al recogerlo.
+                if (survivalPack != null) {
+                    Text(stringResource(R.string.pack_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        stringResource(R.string.pack_counts, survivalPack.pizza, survivalPack.refresco, survivalPack.botiquin),
+                        color = Color.White, fontSize = 14.sp,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onCraftKit,
+                            enabled = SurvivalCrafting.canCraftKit(survivalPack),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B1C3A), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_craft_kit), fontSize = 12.sp) }
+                        Button(
+                            onClick = onUseKit,
+                            enabled = survivalPack.botiquin > 0,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_use_kit), fontSize = 12.sp) }
+                    }
+                }
             }
             // ✕ CERRAR — esquina superior derecha del panel (mismo patrón que ZombieHud).
             Box(

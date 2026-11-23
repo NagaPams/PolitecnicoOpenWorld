@@ -600,6 +600,7 @@ fun WorldMapScreen(
                     playerMoveAngle = uiState.playerMoveAngle,
                     playerAction = uiState.playerAction,
                     vehicleColor = uiState.currentVehicleColor,
+                    lootPoints = uiState.survivalLoot,
                 )
             }
             MapProvider.OSM -> {

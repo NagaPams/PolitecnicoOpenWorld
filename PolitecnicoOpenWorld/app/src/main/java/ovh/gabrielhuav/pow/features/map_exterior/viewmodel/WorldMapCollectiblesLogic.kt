@@ -159,7 +159,7 @@ internal fun WorldMapViewModel.checkCollectibleProximity(playerLat: Double, play
             }
 
         // 3. Juntamos todo en un solo radar global
-        val allPossibleItems = baseItems + doorItems + specDoorItems + npcItems
+        val allPossibleItems = baseItems + doorItems + specDoorItems + npcItems + lootCollectibles
 
         val activeItem = allPossibleItems.minByOrNull {
             playerGeo.distanceToAsDouble(GeoPoint(it.latitude, it.longitude))

@@ -1,0 +1,173 @@
+package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
+
+import android.os.SystemClock
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
+import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
+import ovh.gabrielhuav.pow.domain.models.survival.LootKind
+import ovh.gabrielhuav.pow.domain.models.survival.LootPoint
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
+import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
+import ovh.gabrielhuav.pow.shared.recursos.survival_container_looted
+import ovh.gabrielhuav.pow.shared.recursos.survival_item_stored
+import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
+import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
+import ovh.gabrielhuav.pow.shared.recursos.survival_kit_used
+import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
+
+// Saqueo de consumibles sueltos (t09, modo supervivencia): los puntos salen de `SurvivalLoot` (determinista, sin
+// guardar), se anclan a la calle más cercana y se recogen con X; lo recogido tarda en reaparecer. Ver 04_MAP_EXTERIOR.md.
+
+private const val LOOT_COOLDOWN_MS = 10 * 60 * 1000L
+private const val CONTAINER_COOLDOWN_MS = 30 * 60 * 1000L
+/** Si no hay calle a menos de esto (grados, ~65 m) del centro de la celda, esa celda no trae botín. */
+private const val LOOT_MAX_SNAP_DEGREES = 0.0006
+
+private fun LootKind.survivalItem(): SurvivalItem = when (this) {
+    LootKind.PIZZA -> SurvivalItem.PIZZA
+    LootKind.REFRESCO -> SurvivalItem.REFRESCO
+    LootKind.SUERO -> SurvivalItem.SUERO
+    LootKind.TABLONES, LootKind.CONTENEDOR -> SurvivalItem.TABLONES
+}
+
+private fun cellKey(latitude: Double, longitude: Double): Long =
+    (SurvivalLoot.cellOf(latitude).toLong() shl 32) or (SurvivalLoot.cellOf(longitude).toLong() and 0xFFFFFFFFL)
+
+/** Una vez por segundo: recalcula los puntos al cambiar de celda o al reaparecer uno recogido. */
+internal fun WorldMapViewModel.refreshSurvivalLoot() {
+    val state = _uiState.value
+    val location = state.currentLocation
+    if (!survivalManager.state.value.enabled || location == null || !state.isRoadNetworkReady) {
+        clearSurvivalLoot()
+        return
+    }
+    val now = SystemClock.elapsedRealtime()
+    var respawned = false
+    val iterator = lootTaken.entries.iterator()
+    while (iterator.hasNext()) {
+        if (iterator.next().value <= now) {
+            iterator.remove()
+            respawned = true
+        }
+    }
+    val key = cellKey(location.latitude, location.longitude)
+    if (key == lootCellKey && !respawned) return
+    lootCellKey = key
+    val anchored = ArrayList<LootPoint>()
+    for (point in SurvivalLoot.around(location.latitude, location.longitude)) {
+        if (lootTaken.containsKey(point.id)) continue
+        val spot = getNearestPointOnNetwork(GeoPoint(point.latitude, point.longitude))
+        if (distance(spot, GeoPoint(point.latitude, point.longitude)) > LOOT_MAX_SNAP_DEGREES) continue
+        anchored.add(point.copy(latitude = spot.latitude, longitude = spot.longitude))
+    }
+    publishLoot(anchored)
+}
+
+internal fun WorldMapViewModel.clearSurvivalLoot() {
+    lootCellKey = Long.MIN_VALUE
+    if (_uiState.value.survivalLoot.isNotEmpty() || lootCollectibles.isNotEmpty()) publishLoot(emptyList())
+}
+
+private fun WorldMapViewModel.publishLoot(points: List<LootPoint>) {
+    lootCollectibles = points.map {
+        ActiveCollectible(id = it.id, name = it.kind.name, description = "Botín", assetPath = "", latitude = it.latitude, longitude = it.longitude)
+    }
+    _uiState.update { it.copy(survivalLoot = points) }
+}
+
+/** X junto a un punto de botín: aplica el consumible o guarda el tablón; si no sirve, no se gasta. */
+internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
+    val point = _uiState.value.survivalLoot.firstOrNull { it.id == id } ?: return
+    val item = point.kind.survivalItem()
+    val current = survivalManager.state.value
+    var taken = false
+    val message = when {
+        point.kind == LootKind.CONTENEDOR -> {
+            taken = lootContainer()
+            if (taken) Res.string.survival_container_looted else Res.string.survival_not_needed
+        }
+        item == SurvivalItem.TABLONES -> if (current.boards >= MAX_BOARDS_CARRIED) {
+            Res.string.survival_boards_full
+        } else {
+            survivalManager.addBoards(1)
+            taken = true
+            Res.string.survival_boards_bought
+        }
+        !SurvivalCrafting.worthUsingNow(item, current.needs, current.infection) -> {
+            // Lo que no hace falta ahora (comida/bebida) se guarda en la mochila para craftear; el suero no.
+            val stored = SurvivalCrafting.store(current.pack, item)
+            if (stored != null) {
+                survivalManager.setPack(stored)
+                taken = true
+                Res.string.survival_item_stored
+            } else {
+                Res.string.survival_not_needed
+            }
+        }
+        else -> {
+            val result = survivalManager.consume(item)
+            if (result.healthBonus > 0f) heal(result.healthBonus)
+            taken = true
+            Res.string.survival_item_used
+        }
+    }
+    if (taken) {
+        soundManager.playItem()
+        lootTaken[id] = SystemClock.elapsedRealtime() + if (point.kind == LootKind.CONTENEDOR) CONTAINER_COOLDOWN_MS else LOOT_COOLDOWN_MS
+        collectiblesManager.clearNearby()
+        lootCellKey = Long.MIN_VALUE
+        refreshSurvivalLoot()
+    }
+    viewModelScope.launch { showSurvivalPrompt(getString(message)) }
+}
+
+/**
+ * Un contenedor da un tablón (si hay lugar) y TODO lo que sirva ahora de comida, bebida y suero; false si no
+ * habría servido de nada (mochila llena y sin necesidades), para no gastarlo.
+ */
+private fun WorldMapViewModel.lootContainer(): Boolean {
+    var gave = false
+    if (survivalManager.state.value.boards < MAX_BOARDS_CARRIED) {
+        survivalManager.addBoards(1)
+        gave = true
+    }
+    for (item in arrayOf(SurvivalItem.PIZZA, SurvivalItem.REFRESCO, SurvivalItem.SUERO)) {
+        val state = survivalManager.state.value
+        if (!SurvivalCrafting.worthUsingNow(item, state.needs, state.infection)) {
+            SurvivalCrafting.store(state.pack, item)?.let {
+                survivalManager.setPack(it)
+                gave = true
+            }
+            continue
+        }
+        val result = survivalManager.consume(item)
+        if (result.healthBonus > 0f) heal(result.healthBonus)
+        gave = true
+    }
+    return gave
+}
+
+/** Crafteo desde el inventario: 2 refrescos + 1 pizza guardados = 1 botiquín. */
+internal fun WorldMapViewModel.craftSurvivalKit() {
+    val crafted = SurvivalCrafting.craftKit(survivalManager.state.value.pack) ?: return
+    survivalManager.setPack(crafted)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_kit_crafted)) }
+}
+
+/** Usa un botiquín guardado: cura [SurvivalCrafting.KIT_HEAL] de vida. */
+internal fun WorldMapViewModel.useSurvivalKit() {
+    val used = SurvivalCrafting.useKit(survivalManager.state.value.pack) ?: return
+    survivalManager.setPack(used)
+    soundManager.playItem()
+    heal(SurvivalCrafting.KIT_HEAL)
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_kit_used)) }
+}

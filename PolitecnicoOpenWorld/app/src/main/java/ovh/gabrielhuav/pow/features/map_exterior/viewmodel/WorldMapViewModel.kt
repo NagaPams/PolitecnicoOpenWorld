@@ -166,6 +166,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var lastSurvivalUpdateMs = 0L
     internal var lastSurvivalSettingCheckMs = 0L
     internal var doorEnterBypass = false
+    internal var lootCellKey = Long.MIN_VALUE
+    internal val lootTaken = HashMap<String, Long>()
+    internal var lootCollectibles: List<ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible> = emptyList()
     private val vehicleDodge = ovh.gabrielhuav.pow.domain.models.map.VehicleDodge()
     internal var wasSurvivalNoiseActive = false
 
@@ -193,6 +196,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalInfection = survival.infection,
                 survivalBoards = survival.boards,
                 doorStates = survival.doors,
+                survivalPack = survival.pack,
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,
                 debugEditWalls = designer.debugEditWalls,

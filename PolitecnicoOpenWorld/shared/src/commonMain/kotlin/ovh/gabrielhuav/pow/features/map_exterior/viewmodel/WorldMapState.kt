@@ -66,6 +66,9 @@ data class WorldMapState(
     val survivalBoards: Int = 0,
     val doorStates: Map<String, ovh.gabrielhuav.pow.domain.models.map.DoorRuntime> = emptyMap(),
     val doorMenuId: String? = null,
+    val survivalPack: ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(),
+    /** Botín suelto cercano (modo supervivencia, t09): solo para dibujarlo; lo calcula `refreshSurvivalLoot`. */
+    val survivalLoot: List<ovh.gabrielhuav.pow.domain.models.survival.LootPoint> = emptyList(),
     val currentLocation: GeoPoint? = null,
     val isLoadingLocation: Boolean = true,
     val zoomLevel: Double = ZOOM_LOADING,
