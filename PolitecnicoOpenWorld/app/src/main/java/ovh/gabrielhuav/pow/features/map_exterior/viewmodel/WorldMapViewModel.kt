@@ -807,33 +807,33 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             currentSpeed = roadClamp.speed
                             val finalLoc = roadClamp.location
 
-                                // La aduana se aplica DESPUÉS del ajuste de carretera: ese ajuste no
-                                // puede empujar la carrocería a través de una barda o edificio. Si el coche
-                                // ya estaba encimado y la calle queda detrás del edificio, reintenta con el
-                                // paso del rumbo para poder salir (ver resolveVehicleDrivingStep).
-                                val staticResolution = exteriorCollisions.resolveVehicleDrivingStep(
-                                    from = location,
-                                    headingTarget = tempLoc,
-                                    roadAdjustedTarget = finalLoc,
-                                    headingDegrees = currentRotation,
-                                    dimensions = vehicleModel.collisionDimensions,
+                            // La aduana se aplica DESPUÉS del ajuste de carretera: ese ajuste no
+                            // puede empujar la carrocería a través de una barda o edificio. Si el coche
+                            // ya estaba encimado y la calle queda detrás del edificio, reintenta con el
+                            // paso del rumbo para poder salir (ver resolveVehicleDrivingStep).
+                            val staticResolution = exteriorCollisions.resolveVehicleDrivingStep(
+                                from = location,
+                                headingTarget = tempLoc,
+                                roadAdjustedTarget = finalLoc,
+                                headingDegrees = currentRotation,
+                                dimensions = vehicleModel.collisionDimensions,
+                            )
+                            if (!staticResolution.reachedTarget) {
+                                logVehicleCollision(
+                                    when (staticResolution.blockedBy) {
+                                        ovh.gabrielhuav.pow.domain.models.map.CollisionReason.BUILDING -> "building"
+                                        ovh.gabrielhuav.pow.domain.models.map.CollisionReason.WALL -> "wall"
+                                        null -> "unknown"
+                                    },
                                 )
-                                if (!staticResolution.reachedTarget) {
-                                    logVehicleCollision(
-                                        when (staticResolution.blockedBy) {
-                                            ovh.gabrielhuav.pow.domain.models.map.CollisionReason.BUILDING -> "building"
-                                            ovh.gabrielhuav.pow.domain.models.map.CollisionReason.WALL -> "wall"
-                                            null -> "unknown"
-                                        },
+                                _uiState.update {
+                                    it.copy(
+                                        currentLocation = staticResolution.position,
+                                        vehicleSpeed = 0.0,
+                                        vehicleRotation = (currentRotation + 360) % 360f,
                                     )
-                                    _uiState.update {
-                                        it.copy(
-                                            currentLocation = staticResolution.position,
-                                            vehicleSpeed = 0.0,
-                                            vehicleRotation = (currentRotation + 360) % 360f,
-                                        )
-                                    }
-                                } else {
+                                }
+                            } else {
                                 // ATROPELLO: Lógica de esquive de 'main'
                                 val isAutoDodging = dodgeOffsetX != 0.0 || dodgeOffsetY != 0.0
                                 if (isAutoDodging) lastDodgeTime = System.currentTimeMillis()
@@ -858,7 +858,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                         vehicleRotation = (currentRotation + 360) % 360f
                                     )
                                 }
-                                }
+                            }
                         }
 
                         // GOLPES/MORDIDAS por CONTACTO: NPCs agresivos en embestida y ZOMBIS cercanos
