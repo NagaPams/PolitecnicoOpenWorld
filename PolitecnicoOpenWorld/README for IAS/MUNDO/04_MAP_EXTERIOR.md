@@ -230,9 +230,10 @@ O(candidatos cercanos).
 - `ensureIndex()` / `candidates(loc): List<Seg>` / `getNearestPointOnNetwork(t): GeoPoint` /
   `project(p, v, w): GeoPoint` (proyección punto-segmento).
 - `pack(r, c): Long`, `cell(v): Int` (celda de grid), `CELL` (tamaño de celda).
-- **Ruta de waypoints (greedy):** `calculateRouteOnNetwork(from, to, network)`, `buildRoadGraph`,
-  `nearestGraphNode`, `findRoadRoute` (BFS/greedy sobre grafo de nodos únicos), `rebuildRoadNodeGrid`,
-  `nearbyRoadNodes`. **Claves `Pair<Double,Double>`** (sin allocs de String por paso).
+- **Rutas por calles (A\*):** `buildRoadGraph`, `nearestGraphNode`, `findRoadRoute(from, to)` (A* sobre el grafo de
+  nodos únicos con heurística euclídea y tope de 6000 expansiones; sin camino cae a la línea recta; lo usa la policía),
+  `rebuildRoadNodeGrid`, `nearbyRoadNodes`. `calculateRouteOnNetwork` (la versión greedy) ya no existe.
+  **Claves `Pair<Double,Double>`** (sin allocs de String por paso).
 - `updateDestinationRoute()` dibuja polilínea azul punteada; el marker se auto-borra a `destinationArrivalThreshold` (20 m).
 - **🆕 Rescate anti-atasco (TP a metro sobre edificio):** `moveCharacter`/`moveCharacterByAngle` (MIEMBROS) tienen
   un guard que NO mueve si la calle más cercana al destino está a `> MAX_SNAP_DISTANCE_DEG` (~33 m) — evita "TP a
@@ -242,8 +243,11 @@ O(candidatos cercanos).
   arrastra al jugador `step*4` hacia la calle más cercana hasta engancharlo. En juego normal (jugador sobre la calle)
   no se dispara. Ver 09.
 
-> **Pendiente:** el router open-world sigue siendo **greedy** (no A*). El servidor zombi sí usa
-> Dijkstra (ver 08). / Open-world router is still greedy (no A*); the zombie server uses Dijkstra.
+> **Nota (2026-11-23):** el router open-world YA es A* (`findRoadRoute`); lo que NO tienen los zombis y policías cazadores
+> es pathfinding de rodeo de edificios: van en línea recta y solo deslizan por la pared (`slideAroundBarrier`). Una horda
+> que cruce el campus por calles necesitaría reutilizar `findRoadRoute`; no se implementa hasta que el juego lo pida.
+> Medido con tráfico a 120 km/h en el Motorola: mediana 21 ms, p90 29 ms, p99 40 ms, así que las asignaciones por tick de
+> `runOverNpcs` y `getNearestCarRoadPoint` no se tocan sin evidencia de GC. El servidor zombi sí usa Dijkstra (ver 08).
 
 ---
 
