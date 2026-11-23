@@ -5,6 +5,7 @@ import ovh.gabrielhuav.pow.domain.models.map.CircleCollider
 import ovh.gabrielhuav.pow.domain.models.map.ExteriorCollisionsConfig
 import ovh.gabrielhuav.pow.domain.models.map.Landmark
 import ovh.gabrielhuav.pow.domain.models.map.Npc
+import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.isInsideBarrier
 import ovh.gabrielhuav.pow.domain.models.map.resolveCirclePath
 import ovh.gabrielhuav.pow.domain.models.map.resolveNpcPath
@@ -63,5 +64,40 @@ internal fun NpcAiManager.collided(from: Npc, moved: Npc): Npc {
         to = moved.location,
         headingDegrees = (moved.rotationAngle + 90f) % 360f,
     )
-    return if (resolution.reachedTarget) moved else moved.copy(location = resolution.position)
+    if (resolution.reachedTarget) return moved
+    // Zombis y policías cazadores van en línea recta: contra una pared se quedaban pegados. Prueban desvíos y
+    // toman el que los deja más cerca de su objetivo (deslizan por la pared); sin salida, el último punto seguro.
+    if (moved.type == NpcType.ZOMBIE || moved.type == NpcType.POLICE_COP) {
+        val slid = collisions.slideAroundBarrier(from.location, moved.location)
+        if (slid != null) return moved.copy(location = slid)
+    }
+    return moved.copy(location = resolution.position)
+}
+
+private val SLIDE_ANGLES_DEGREES = doubleArrayOf(50.0, -50.0, 95.0, -95.0)
+
+/**
+ * Paso desviado ±50° o ±95° del directo [from]→[desired] que no cruza ninguna barrera, el que acaba más cerca
+ * de [desired]; null si todos están bloqueados (esquina cóncava). Sin allocaciones salvo el punto devuelto.
+ */
+internal fun ExteriorCollisionsConfig.slideAroundBarrier(from: GeoPoint, desired: GeoPoint): GeoPoint? {
+    val dLat = desired.latitude - from.latitude
+    val dLon = desired.longitude - from.longitude
+    var best: GeoPoint? = null
+    var bestDistance = Double.MAX_VALUE
+    for (angle in SLIDE_ANGLES_DEGREES) {
+        val rad = angle * kotlin.math.PI / 180.0
+        val cos = kotlin.math.cos(rad)
+        val sin = kotlin.math.sin(rad)
+        val candidate = GeoPoint(from.latitude + dLon * sin + dLat * cos, from.longitude + dLon * cos - dLat * sin)
+        if (!resolveCirclePath(from, candidate, CircleCollider(LOCAL_NPC_RADIUS_METERS)).reachedTarget) continue
+        val remainingLat = desired.latitude - candidate.latitude
+        val remainingLon = desired.longitude - candidate.longitude
+        val remaining = remainingLat * remainingLat + remainingLon * remainingLon
+        if (remaining < bestDistance) {
+            bestDistance = remaining
+            best = candidate
+        }
+    }
+    return best
 }
