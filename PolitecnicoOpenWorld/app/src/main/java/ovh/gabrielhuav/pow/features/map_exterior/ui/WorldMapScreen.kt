@@ -978,6 +978,35 @@ fun WorldMapScreen(
             }
         }
 
+        // Necesidades e infección (modo supervivencia): abajo al centro, entre el joystick y los botones, para que no
+        // queden detrás del joystick como en la columna izquierda (h14).
+        if (uiState.survivalMode) {
+            Column(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (uiState.survivalInfection.infected) {
+                    CacheChip(
+                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_infection),
+                        text = androidx.compose.ui.res.stringResource(
+                            if (uiState.survivalInfection.symptomatic) ovh.gabrielhuav.pow.R.string.wm_survival_symptoms
+                            else ovh.gabrielhuav.pow.R.string.wm_survival_incubating,
+                        ),
+                        color = Color(0xFFE53935),
+                        isLoading = false,
+                    )
+                }
+                CacheChip(
+                    label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
+                    text = "🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +
+                        "⚡ ${uiState.survivalNeeds.energy.toInt()}",
+                    color = Color(0xFF8BC34A),
+                    isLoading = false,
+                )
+            }
+        }
+
         Column(modifier = Modifier.align(Alignment.TopStart).padding(top = 64.dp, start = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             AnimatedVisibility(visible = uiState.showCacheWidget, enter = fadeIn(), exit = fadeOut()) { CacheStatusWidget(roadSource = uiState.roadSource, tileSource = uiState.tileSource, mapProvider = uiState.mapProvider) }
             AnimatedVisibility(visible = uiState.showFpsWidget, enter = fadeIn(), exit = fadeOut()) { CacheChip(label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_chip_performance), text = "$currentFps FPS", color = if (currentFps >= 24) Color(0xFF4CAF50) else Color(0xFFD32F2F), isLoading = false) }
@@ -1021,26 +1050,6 @@ fun WorldMapScreen(
                 color = if (uiState.nightAlpha > 0.05f) Color(0xFF7FB2FF) else Color(0xFFD4AF37),
                 isLoading = false
             )
-            if (uiState.survivalMode) {
-                CacheChip(
-                    label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
-                    text = "🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +
-                        "⚡ ${uiState.survivalNeeds.energy.toInt()}",
-                    color = Color(0xFF8BC34A),
-                    isLoading = false,
-                )
-                if (uiState.survivalInfection.infected) {
-                    CacheChip(
-                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_infection),
-                        text = androidx.compose.ui.res.stringResource(
-                            if (uiState.survivalInfection.symptomatic) ovh.gabrielhuav.pow.R.string.wm_survival_symptoms
-                            else ovh.gabrielhuav.pow.R.string.wm_survival_incubating,
-                        ),
-                        color = Color(0xFFE53935),
-                        isLoading = false,
-                    )
-                }
-            }
             // DINERO del jugador (coleccionables + recompensas de misión). Aparece al ganar el primero.
             AnimatedVisibility(visible = uiState.playerMoney > 0, enter = fadeIn(), exit = fadeOut()) {
                 CacheChip(

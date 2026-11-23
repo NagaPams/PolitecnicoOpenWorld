@@ -46,7 +46,7 @@ internal fun SettingsSwitch(
                 description,
                 color = Color.White.copy(alpha = 0.5f),
                 fontSize = 12.sp,
-                textAlign = TextAlign.Justify,
+                textAlign = TextAlign.Start,
             )
         }
 
