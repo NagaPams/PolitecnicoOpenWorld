@@ -120,7 +120,8 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     wasSurvivalNoiseActive = noiseActive
     if (!survivalManager.state.value.enabled || paused) {
         lastSurvivalUpdateMs = 0L
-        if (!survivalManager.state.value.enabled) clearSurvivalLoot()
+        // Sin supervivencia o en pausa (misión, escena, interior) no hay botín que ver ni recoger.
+        clearSurvivalLoot()
         return
     }
     if (lastSurvivalUpdateMs == 0L) {
@@ -146,7 +147,8 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
         }
     }
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
-    combatManager.updateHealth { health ->
-        survivalManager.tick(elapsed.coerceAtMost(1000L), true, false, activity, s.nightAlpha > 0.05f, health)
-    }
+    // El avance de necesidades corre fuera del bloqueo de vida; dentro solo se aplica el daño (h12).
+    val deltaMs = elapsed.coerceAtMost(1000L)
+    val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f) ?: return
+    combatManager.updateHealth { health -> survivalManager.healthAfter(health, advanced, deltaMs) }
 }

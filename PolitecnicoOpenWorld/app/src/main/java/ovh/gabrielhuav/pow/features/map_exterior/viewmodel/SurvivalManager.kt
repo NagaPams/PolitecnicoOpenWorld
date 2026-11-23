@@ -87,6 +87,24 @@ class SurvivalManager(enabled: Boolean = false) {
         return result
     }
 
+    /**
+     * Avanza necesidades e infección y devuelve el estado resultante, o null si no corre (apagado, en pausa o
+     * sin tiempo). NO toca la vida: así el cálculo va FUERA del bloqueo de vida (h12) y solo el daño se aplica dentro.
+     */
+    fun advance(deltaMs: Long, enabled: Boolean, paused: Boolean, activity: SurvivalActivity, night: Boolean): SurvivalSubState? {
+        if (!enabled || paused || deltaMs <= 0) return null
+        val current = mutableState.value
+        val infection = current.infection.advance(deltaMs)
+        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection)
+        val next = current.copy(needs = needs, infection = infection)
+        mutableState.value = next
+        return next
+    }
+
+    /** Vida tras el desgaste de [state] durante [deltaMs] (puro: cabe dentro de `updateHealth`). */
+    fun healthAfter(health: Float, state: SurvivalSubState, deltaMs: Long): Float =
+        SurvivalRules.healthAfterNeedsDamage(health.toDouble(), state.needs, deltaMs / 1000.0, state.infection).toFloat()
+
     fun tick(
         deltaMs: Long,
         enabled: Boolean,
@@ -95,12 +113,7 @@ class SurvivalManager(enabled: Boolean = false) {
         night: Boolean,
         health: Float,
     ): Float {
-        if (!enabled || paused || deltaMs <= 0) return health
-        val current = mutableState.value
-        val infection = current.infection.advance(deltaMs)
-        val seconds = deltaMs / 1000.0
-        val needs = SurvivalRules.advance(current.needs, activity, night, seconds, infection)
-        mutableState.value = current.copy(needs = needs, infection = infection)
-        return SurvivalRules.healthAfterNeedsDamage(health.toDouble(), needs, seconds, infection).toFloat()
+        val next = advance(deltaMs, enabled, paused, activity, night) ?: return health
+        return healthAfter(health, next, deltaMs)
     }
 }
