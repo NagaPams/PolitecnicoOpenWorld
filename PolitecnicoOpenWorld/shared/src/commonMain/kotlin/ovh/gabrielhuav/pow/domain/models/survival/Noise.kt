@@ -8,9 +8,17 @@ data class NoiseEvent(
     val rain: Boolean = false,
 ) {
     val radiusMeters: Double get() = NoiseRules.radiusFor(source, night) * (if (rain) WeatherRules.RAIN_NOISE_FACTOR else 1.0)
+    /** Hasta dónde lo oyen los zombis (migración, t18): los ruidos fuertes llegan más lejos que su radio normal. */
+    val hearingMeters: Double get() = radiusMeters * NoiseRules.migrationFactor(source)
 }
 
 object NoiseRules {
+    /** Disparos y claxon atraen zombis de mucho más lejos; el resto, solo a su radio. */
+    fun migrationFactor(source: NoiseSource): Double = when (source) {
+        NoiseSource.GUNSHOT, NoiseSource.HORN -> 1.8
+        else -> 1.0
+    }
+
     fun radiusFor(source: NoiseSource, night: Boolean): Double {
         val radius = when (source) {
             NoiseSource.WALKING -> 12.0

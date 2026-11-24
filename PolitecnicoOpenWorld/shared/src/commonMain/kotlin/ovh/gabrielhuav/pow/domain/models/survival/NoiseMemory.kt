@@ -57,7 +57,7 @@ class NoiseMemory(capacity: Int, private val lifetimeMs: Long) {
             val event = events[(head + offset) % events.size] ?: continue
             val north = (event.latitude - latitude) * 111_320.0
             val east = (event.longitude - longitude) * 111_320.0 * longitudeScale
-            val strength = event.radiusMeters - sqrt(north * north + east * east)
+            val strength = event.hearingMeters - sqrt(north * north + east * east)
             if (strength > best) {
                 best = strength
                 strongest = event

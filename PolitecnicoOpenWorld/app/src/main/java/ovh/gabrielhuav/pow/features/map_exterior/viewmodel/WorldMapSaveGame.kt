@@ -114,6 +114,7 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalActiveMs = survivalManager.state.value.activeMs,
         survivalSkills = ovh.gabrielhuav.pow.domain.models.survival.SkillRules.encode(survivalManager.state.value.skills),
         survivalOccupation = survivalManager.state.value.occupation.name,
+        survivalZoneKills = ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules.encode(zoneKills),
         saveType = saveType,
         savedAt = System.currentTimeMillis()
     )
@@ -183,6 +184,8 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.occupationOf(data.survivalOccupation ?: ""),
     )
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
+    zoneKills = @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules.decode(data.survivalZoneKills ?: "")
+    npcAiManager.zoneKills = zoneKills
     // Si la partida cargada ya estaba en apagón no se vuelve a avisar.
     blackoutAnnounced = ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(
         ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs),

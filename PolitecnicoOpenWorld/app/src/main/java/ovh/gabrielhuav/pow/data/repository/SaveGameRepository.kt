@@ -86,6 +86,8 @@ data class GameSaveData(
     // Habilidades ("combate,punteria,carpinteria" en XP) y oficio.
     val survivalSkills: String = "",
     val survivalOccupation: String = "",
+    // Bajas de zombis por zona ("clave:bajas;...").
+    val survivalZoneKills: String = "",
     val savedAt: Long = 0L,
 )
 

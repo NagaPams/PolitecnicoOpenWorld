@@ -55,3 +55,7 @@ internal fun NpcAiManager.hordeNoiseFor(id: String): NoiseEvent? =
 
 internal fun NpcAiManager.strongestSurvivalNoise(lat: Double, lon: Double, nowMs: Long): NoiseEvent? =
     survivalNoiseMemory.strongestAt(lat, lon, nowMs)
+
+/** ¿Nace un zombi en una zona ya despejada? Solo cuenta con supervivencia encendida (t18). */
+internal fun NpcAiManager.isClearedZone(npc: ovh.gabrielhuav.pow.domain.models.map.Npc): Boolean =
+    survivalNoiseEnabled && ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules.isCleared(zoneKills, npc.location.latitude, npc.location.longitude)

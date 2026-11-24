@@ -178,6 +178,8 @@ class NpcAiManager {
     val pendingPoliceShots = PowListaConcurrente<Pair<GeoPoint, GeoPoint>>()
 
     @Volatile var globalZombieMode: Boolean = false
+    /** Bajas de zombis por zona (t18): una zona despejada no genera zombis nuevos con supervivencia encendida. */
+    @Volatile var zoneKills: Map<Long, Int> = emptyMap()
     @Volatile var deviceTierFactor: Float = 1.0f
     @Volatile var urbanFactor: Float = 1.0f
     @Volatile var userPopulationFactor: Float = 1.0f
@@ -715,7 +717,7 @@ class NpcAiManager {
                 if (zombies.size < INITIAL_ZOMBIE_SEED && nonParkedAlive() < maxTotalNpcs) {
                     val closeWays = cachedWaysFiltered.get()
                     if (closeWays.isNotEmpty()) {
-                        spawnNpcOnRoad(playerLocation, closeWays, activeLandmarks)?.let {
+                        spawnNpcOnRoad(playerLocation, closeWays, activeLandmarks)?.takeUnless { isClearedZone(it) }?.let {
                             val role = rollZombieRole()
                             val hp = maxHealthForRole(role)
                             serverNpcs.add(it.copy(type = NpcType.ZOMBIE, speed = personSpeed * ZOMBIE_SPEED_MULT * speedMulForRole(role), trait = ovh.gabrielhuav.pow.domain.models.map.NpcTrait.AGGRESSIVE, visualConfig = null, zombieRole = role, health = hp, maxHealth = hp))
@@ -737,7 +739,7 @@ class NpcAiManager {
                         if (hordeWays.isNotEmpty()) {
                             var k = 0
                             while (k < HORDE_SIZE && nonParkedAlive() < maxTotalNpcs) {
-                                spawnNpcOnRoad(playerLocation, hordeWays, activeLandmarks)?.let {
+                                spawnNpcOnRoad(playerLocation, hordeWays, activeLandmarks)?.takeUnless { isClearedZone(it) }?.let {
                                     rememberHordeMember(it.id)
                                     val role = rollZombieRole()
                                     val hp = maxHealthForRole(role)

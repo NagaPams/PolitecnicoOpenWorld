@@ -428,6 +428,7 @@
     <string name="survival_craft_nailbat">🔨 Fabricaste un palo con clavos</string>
     <string name="survival_craft_interrupted">Se interrumpió el crafteo</string>
     <string name="survival_craft_zombies">No puedes fabricar con zombis cerca</string>
+    <string name="survival_zone_cleared">🧟 Zona despejada: ya no nacen más zombis aquí</string>
     <string name="survival_container_looted">📦 Contenedor saqueado</string>
     <string name="survival_item_stored">🎒 Guardado en la mochila</string>
     <string name="survival_kit_crafted">🩹 Botiquín creado</string>

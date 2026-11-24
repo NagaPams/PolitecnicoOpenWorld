@@ -430,6 +430,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var craftJob: kotlinx.coroutines.Job? = null
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
+    /** Bajas de zombis por zona (t18); se copia a `npcAiManager.zoneKills` y se guarda. */
+    internal var zoneKills: Map<Long, Int> = emptyMap()
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
     internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     internal var vehicleWreckAnnounced = false

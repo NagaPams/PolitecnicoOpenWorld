@@ -174,6 +174,7 @@ fun WorldMapViewModel.performPlayerAttack() {
                 onSkillUse(if (weapon.isFirearm) Skill.PUNTERIA else Skill.COMBATE)
                 val newHealth = (currentNpc.health - damage).coerceAtLeast(0f)
                 if (newHealth <= 0f) {
+                    if (currentNpc.type == NpcType.ZOMBIE) onZombieKilled(currentNpc.location)
                     npcHitStreak.remove(npcId)
                     relentlessNpcs.remove(npcId)
                     remoteEntities[npcId] = currentNpc.copy(health = 0f, isDying = true)

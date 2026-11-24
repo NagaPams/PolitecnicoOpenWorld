@@ -22,6 +22,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.Recipe
 import ovh.gabrielhuav.pow.domain.models.survival.RecipeRules
 import ovh.gabrielhuav.pow.domain.models.survival.Occupation
 import ovh.gabrielhuav.pow.domain.models.survival.Skill
+import ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules
+import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.survival.SleepCheck
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
@@ -43,6 +45,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_shop
 import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
+import ovh.gabrielhuav.pow.shared.recursos.survival_zone_cleared
 import ovh.gabrielhuav.pow.shared.recursos.survival_craft_interrupted
 import ovh.gabrielhuav.pow.shared.recursos.survival_craft_nailbat
 import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
@@ -110,6 +113,8 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     sleepUntilMs = 0L
     cancelCraft(announce = false)
     blackoutAnnounced = false
+    zoneKills = emptyMap()
+    npcAiManager.zoneKills = emptyMap()
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     vehicleWreckAnnounced = false
     survivalManager.resetForNewGame()
@@ -164,6 +169,15 @@ private fun WorldMapViewModel.announceBlackout() {
     } else if (!blackout) {
         blackoutAnnounced = false
     }
+}
+
+/** Un zombi murió a manos del jugador (t18): se anota en su zona y, al despejarla, se avisa. */
+internal fun WorldMapViewModel.onZombieKilled(at: GeoPoint) {
+    if (!survivalManager.state.value.enabled) return
+    val result = ZoneKillRules.record(zoneKills, at.latitude, at.longitude)
+    zoneKills = result.kills
+    npcAiManager.zoneKills = result.kills
+    if (result.justCleared) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_zone_cleared)) }
 }
 
 /** Usar una habilidad (t15): suma XP y avisa al subir de nivel. Solo con supervivencia encendida. */
