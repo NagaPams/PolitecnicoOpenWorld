@@ -426,6 +426,7 @@
     <string name="survival_bleeding">🩸 You are bleeding! Find a bandage</string>
     <string name="survival_bandaged">🩹 Bandage applied</string>
     <string name="survival_bandage_stored">🩹 Bandage stored</string>
+    <string name="survival_out_of_breath">🫁 Out of breath: you can only walk</string>
     <string name="survival_boards_full">🪵 You cannot carry more planks</string>
     <string name="survival_door_opened">🚪 Door opened</string>
     <string name="survival_door_closed">🚪 Door closed</string>

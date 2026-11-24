@@ -997,6 +997,14 @@ fun WorldMapScreen(
                         isLoading = false,
                     )
                 }
+                if (uiState.survivalStamina < 99.0) {
+                    CacheChip(
+                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_stamina),
+                        text = "🫁 ${uiState.survivalStamina.toInt()}",
+                        color = if (uiState.survivalStamina < ovh.gabrielhuav.pow.domain.models.survival.StaminaRules.RECOVER_AT) Color(0xFFE53935) else Color(0xFF4DD0E1),
+                        isLoading = false,
+                    )
+                }
                 if (uiState.survivalBleeding) {
                     CacheChip(
                         label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_bleeding),

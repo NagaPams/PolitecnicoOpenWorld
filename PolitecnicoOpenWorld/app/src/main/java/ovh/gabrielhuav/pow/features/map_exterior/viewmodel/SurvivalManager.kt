@@ -14,6 +14,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
+import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 
@@ -29,6 +30,8 @@ data class SurvivalSubState(
     /** Gasolina del coche (0-100); la fuente es `WorldMapViewModel.fuelTank` y aquí se publica cada segundo. */
     val fuel: Double = FuelRules.START,
     val bleeding: Boolean = false,
+    /** Aliento del jugador (0-100); la fuente es `WorldMapViewModel.stamina` y aquí se publica cada segundo. */
+    val stamina: Double = StaminaRules.MAX,
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -55,6 +58,11 @@ class SurvivalManager(enabled: Boolean = false) {
 
     fun setPack(pack: SurvivalPack) {
         mutableState.update { it.copy(pack = SurvivalCrafting.sanitized(pack)) }
+    }
+
+    fun setStamina(stamina: Double) {
+        val value = stamina.coerceIn(0.0, StaminaRules.MAX)
+        if (mutableState.value.stamina != value) mutableState.update { it.copy(stamina = value) }
     }
 
     fun setBleeding(bleeding: Boolean) {

@@ -11,6 +11,8 @@ import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
+import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
+import ovh.gabrielhuav.pow.domain.models.survival.StaminaState
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalActivity
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
@@ -24,6 +26,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_no_money
 import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
+import ovh.gabrielhuav.pow.shared.recursos.survival_out_of_breath
 
 internal fun survivalVisibilityPaused(mapVisible: Boolean, appResumed: Boolean): Boolean =
     !mapVisible || !appResumed
@@ -36,7 +39,24 @@ private fun WorldMapViewModel.survivalPaused(): Boolean {
         isMission2StoryActive() || isMission3StoryActive() || isSideMissionStoryActive()
 }
 
+/**
+ * Un paso a pie: ¿corre de verdad? Con supervivencia apagada es lo que pide el botón; encendida, correr gasta aliento
+ * y agotado solo se camina (t11).
+ */
+internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
+    val wantsRun = _uiState.value.isRunning
+    if (!survivalManager.state.value.enabled) return wantsRun
+    val before = staminaState
+    staminaState = StaminaRules.step(before, wantsRun)
+    staminaMovedThisSecond = true
+    if (staminaState.exhausted && !before.exhausted) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_out_of_breath)) }
+    }
+    return StaminaRules.runsNow(before, wantsRun)
+}
+
 fun WorldMapViewModel.resetSurvivalForNewGame() {
+    staminaState = StaminaState()
     survivalManager.resetForNewGame()
     fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
     fuelEmptyAnnounced = false
@@ -156,6 +176,9 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     }
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     survivalManager.setFuel(fuelTank)
+    if (!staminaMovedThisSecond) staminaState = StaminaRules.rest(staminaState, elapsed.coerceAtMost(1000L) / 1000.0)
+    staminaMovedThisSecond = false
+    survivalManager.setStamina(staminaState.value)
     // El avance de necesidades corre fuera del bloqueo de vida; dentro solo se aplica el daño (h12).
     val deltaMs = elapsed.coerceAtMost(1000L)
     val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f) ?: return
