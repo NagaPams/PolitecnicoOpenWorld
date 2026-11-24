@@ -71,6 +71,7 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
                 // re-subirte vuelves a conducirla con el skin de policía.
                 _uiState.update { it.copy(isDriving = true, currentVehicleModel = carNpc.carModel, currentVehicleColor = carNpc.carColor, vehicleRotation = exteriorCollisions.safeBoardingHeading(loc, (carNpc.rotationAngle + 90f) % 360f, carNpc.carModel.collisionDimensions), vehicleSpeed = 0.0, vehicleIsFirstTimeBoarded = false, isDrivingPoliceCar = carNpc.isPoliceSkin) }
                 logVehicleVisualTransition("board-civil")
+                onCarDoor(boarding = true)
                 // H (Modo Historia): si Prankedy es tu ACOMPAÑANTE (escolta), debe SUBIR contigo: corre
                 // hasta tu posición y el coche NO avanza hasta que se sube (lo completa runPrankedyTick).
                 if (prankedyManager.phase == ovh.gabrielhuav.pow.domain.models.ai.PrankedyPhase.HIRED &&
@@ -112,6 +113,7 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
                         isDrivingPoliceCar = true
                     ) }
                     logVehicleVisualTransition("board-patrol")
+                    onCarDoor(boarding = true)
                     prankedyManager.onVehicleInteraction()
                     updateNpcsState()
                 }
@@ -119,6 +121,7 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
         } else {
             if (exitVehicle(forced = false)) {
                 lastVehicleToggleMs = nowMs
+                onCarDoor(boarding = false)
             }
         }
     }

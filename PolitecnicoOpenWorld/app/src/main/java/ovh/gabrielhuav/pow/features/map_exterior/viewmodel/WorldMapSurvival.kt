@@ -10,6 +10,7 @@ import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
@@ -55,6 +56,13 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_out_of_breath)) }
     }
     return StaminaRules.runsNow(before, wantsRun)
+}
+
+/** Puerta del coche (t05): con supervivencia, subir o bajar hace ruido de puerta y subir deja el coche parado un momento. */
+internal fun WorldMapViewModel.onCarDoor(boarding: Boolean) {
+    if (!survivalManager.state.value.enabled) return
+    if (boarding) carDoorLockedUntilMs = CarDoorRules.lockedUntil(System.currentTimeMillis())
+    emitSurvivalNoise(NoiseSource.DOOR)
 }
 
 /** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */

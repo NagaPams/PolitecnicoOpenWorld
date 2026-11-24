@@ -6,6 +6,15 @@ import kotlin.math.abs
 // la velocidad; dañado a fondo el motor pierde fuerza y destruido deja de responder (como sin gasolina). Se repara con
 // tablones. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
+/** Puerta del coche (t05): subir lleva un momento y hace ruido; mientras tanto el coche no arranca. */
+object CarDoorRules {
+    const val LOCK_MS = 700L
+
+    fun lockedUntil(nowMs: Long): Long = nowMs + LOCK_MS
+
+    fun isLocked(nowMs: Long, lockedUntilMs: Long): Boolean = nowMs < lockedUntilMs
+}
+
 object VehicleHealthRules {
     const val MAX = 100.0
     /** Daño de un choque contra pared o edificio a velocidad máxima. */

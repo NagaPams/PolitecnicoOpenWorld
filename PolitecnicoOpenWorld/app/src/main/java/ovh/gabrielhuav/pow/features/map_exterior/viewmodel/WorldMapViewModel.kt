@@ -418,6 +418,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
     internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     internal var vehicleWreckAnnounced = false
+    /** Hasta cuándo el coche no arranca tras subir (puerta, t05). */
+    @Volatile internal var carDoorLockedUntilMs = 0L
     internal var lastVehicleCrashMs = 0L
     /** Aliento a pie en modo supervivencia (t11); no se guarda. */
     internal var staminaState = ovh.gabrielhuav.pow.domain.models.survival.StaminaState()
@@ -760,6 +762,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             // Sin gasolina (supervivencia) el motor no responde al acelerador.
                             val fuelOn = survivalManager.state.value.enabled
                             val engineDead = fuelOn && (ovh.gabrielhuav.pow.domain.models.survival.FuelRules.isEmpty(fuelTank) ||
+                                ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules.isLocked(System.currentTimeMillis(), carDoorLockedUntilMs) ||
                                 ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.isWrecked(vehicleHealth))
                             val speedCap = if (fuelOn) MAX_SPEED * ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.speedFactor(vehicleHealth) else MAX_SPEED
                             // Velocidad y rumbo: paso puro en :shared (VehicleDriving, t37).
