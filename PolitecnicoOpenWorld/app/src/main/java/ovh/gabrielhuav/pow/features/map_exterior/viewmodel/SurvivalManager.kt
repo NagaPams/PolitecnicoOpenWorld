@@ -18,6 +18,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
+import ovh.gabrielhuav.pow.domain.models.survival.Weather
+import ovh.gabrielhuav.pow.domain.models.survival.WeatherRules
 
 data class SurvivalSubState(
     val enabled: Boolean = false,
@@ -35,6 +37,10 @@ data class SurvivalSubState(
     val stamina: Double = StaminaRules.MAX,
     /** Salud del coche (0-100); la fuente es `WorldMapViewModel.vehicleHealth` y aquí se publica cada segundo. */
     val vehicleHealth: Double = VehicleHealthRules.MAX,
+    /** Clima actual (t13): sale del reloj de juego, no se guarda. */
+    val weather: Weather = Weather.CLEAR,
+    /** Tiempo de supervivencia activa acumulado (ms); de aquí sale el día en que va el jugador. */
+    val activeMs: Long = 0L,
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -72,6 +78,14 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.update { it.copy(needs = SurvivalNeeds(needs.hunger.coerceIn(0.0, 100.0), needs.thirst.coerceIn(0.0, 100.0), needs.energy.coerceIn(0.0, 100.0))) }
     }
 
+    fun setWeather(weather: Weather) {
+        if (mutableState.value.weather != weather) mutableState.update { it.copy(weather = weather) }
+    }
+
+    fun addActiveMs(ms: Long) {
+        if (ms > 0L) mutableState.update { it.copy(activeMs = it.activeMs + ms) }
+    }
+
     fun setStamina(stamina: Double) {
         val value = stamina.coerceIn(0.0, StaminaRules.MAX)
         if (mutableState.value.stamina != value) mutableState.update { it.copy(stamina = value) }
@@ -94,13 +108,14 @@ class SurvivalManager(enabled: Boolean = false) {
         needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0,
         doors: Map<String, DoorRuntime> = emptyMap(), pack: SurvivalPack = SurvivalPack(),
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
-        bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX,
+        bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
             bleeding = bleeding,
             vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),
+            activeMs = activeMs.coerceAtLeast(0L),
             pack = SurvivalCrafting.sanitized(pack),
             boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
             doors = doors,
@@ -142,7 +157,7 @@ class SurvivalManager(enabled: Boolean = false) {
         if (!enabled || paused || deltaMs <= 0) return null
         val current = mutableState.value
         val infection = current.infection.advance(deltaMs)
-        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection)
+        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather))
         val next = current.copy(needs = needs, infection = infection)
         mutableState.value = next
         return next

@@ -90,6 +90,7 @@ object SurvivalRules {
         night: Boolean,
         seconds: Double,
         infection: InfectionState? = null,
+        thirstScale: Double = 1.0,
     ): SurvivalNeeds {
         if (!seconds.isFinite() || seconds <= 0.0) return needs
         val multiplier = when (activity) {
@@ -108,7 +109,7 @@ object SurvivalRules {
         }
         return SurvivalNeeds(
             hunger = (needs.hunger - seconds * HUNGER_RATE * multiplier).coerceIn(0.0, 100.0),
-            thirst = (needs.thirst - seconds * THIRST_RATE * multiplier).coerceIn(0.0, 100.0),
+            thirst = (needs.thirst - seconds * THIRST_RATE * multiplier * thirstScale).coerceIn(0.0, 100.0),
             energy = energy.coerceIn(0.0, 100.0),
         )
     }

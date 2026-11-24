@@ -2,8 +2,12 @@ package ovh.gabrielhuav.pow.domain.models.survival
 
 enum class NoiseSource { WALKING, RUNNING, MELEE, GUNSHOT, ENGINE, HORN, DOOR }
 
-data class NoiseEvent(val latitude: Double, val longitude: Double, val source: NoiseSource, val night: Boolean) {
-    val radiusMeters: Double get() = NoiseRules.radiusFor(source, night)
+data class NoiseEvent(
+    val latitude: Double, val longitude: Double, val source: NoiseSource, val night: Boolean,
+    /** Con lluvia el ruido llega menos lejos (t13). */
+    val rain: Boolean = false,
+) {
+    val radiusMeters: Double get() = NoiseRules.radiusFor(source, night) * (if (rain) WeatherRules.RAIN_NOISE_FACTOR else 1.0)
 }
 
 object NoiseRules {

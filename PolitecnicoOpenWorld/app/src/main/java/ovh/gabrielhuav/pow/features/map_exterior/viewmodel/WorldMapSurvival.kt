@@ -14,6 +14,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.SleepCheck
+import ovh.gabrielhuav.pow.domain.models.survival.Weather
+import ovh.gabrielhuav.pow.domain.models.survival.WeatherRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
@@ -99,7 +101,7 @@ internal fun WorldMapViewModel.emitSurvivalNoise(source: NoiseSource) {
     if (!survivalManager.state.value.enabled || !isServerDelegatedHost || survivalPaused()) return
     val state = _uiState.value
     val location = state.currentLocation ?: return
-    npcAiManager.queueSurvivalNoise(NoiseEvent(location.latitude, location.longitude, source, state.nightAlpha > 0.05f))
+    npcAiManager.queueSurvivalNoise(NoiseEvent(location.latitude, location.longitude, source, state.nightAlpha > 0.05f, survivalManager.state.value.weather == Weather.RAIN))
 }
 
 internal fun WorldMapViewModel.showSurvivalPrompt(text: String) {
@@ -245,6 +247,9 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     lastSurvivalUpdateMs = now
     refreshSurvivalLoot()
     updateSleep()
+    val clockNow = System.currentTimeMillis()
+    survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))
+    survivalManager.addActiveMs(elapsed.coerceAtMost(1000L))
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING
         s.playerAction == PlayerAction.RUN -> SurvivalActivity.RUNNING

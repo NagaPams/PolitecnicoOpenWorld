@@ -81,6 +81,8 @@ data class GameSaveData(
     val survivalBandages: Int = 0,
     // Salud del coche (0-100).
     val survivalVehicleHealth: Double = 100.0,
+    // Tiempo de supervivencia activa (ms): de aquí sale el día.
+    val survivalActiveMs: Long = 0L,
     val savedAt: Long = 0L,
 )
 

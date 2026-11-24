@@ -71,6 +71,9 @@ data class WorldMapState(
     val survivalBleeding: Boolean = false,
     val survivalStamina: Double = 100.0,
     val survivalVehicleHealth: Double = 100.0,
+    /** Clima y día de supervivencia (t13); los publica `SurvivalManager`. */
+    val survivalWeather: ovh.gabrielhuav.pow.domain.models.survival.Weather = ovh.gabrielhuav.pow.domain.models.survival.Weather.CLEAR,
+    val survivalDay: Int = 1,
     val survivalArsenal: ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal = ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal(),
     /** Botín suelto cercano (modo supervivencia, t09): solo para dibujarlo; lo calcula `refreshSurvivalLoot`. */
     val survivalLoot: List<ovh.gabrielhuav.pow.domain.models.survival.LootPoint> = emptyList(),

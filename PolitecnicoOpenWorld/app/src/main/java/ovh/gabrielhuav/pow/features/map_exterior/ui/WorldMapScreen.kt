@@ -807,6 +807,18 @@ fun WorldMapScreen(
             )
         }
 
+        // Clima (t13): velo gris azulado con lluvia y gris claro con niebla; solo con supervivencia.
+        if (uiState.survivalMode && uiState.survivalWeather != ovh.gabrielhuav.pow.domain.models.survival.Weather.CLEAR) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        if (uiState.survivalWeather == ovh.gabrielhuav.pow.domain.models.survival.Weather.RAIN) Color(0xFF1B2A3A).copy(alpha = 0.22f)
+                        else Color(0xFFC5CBD1).copy(alpha = 0.32f)
+                    )
+            )
+        }
+
         // ─── BARRA DE VIDA FIJA (HUD) ────────────────────────────────────────────
         // Siempre visible (como en el modo zombis) para que se vea cuánta vida tienes
         // y cuándo te hacen daño. Arriba a la izquierda, bajo el botón de Ajustes.
@@ -1029,7 +1041,11 @@ fun WorldMapScreen(
                 }
                 CacheChip(
                     label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
-                    text = "🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +
+                    text = "📅 ${uiState.survivalDay}" + when (uiState.survivalWeather) {
+                        ovh.gabrielhuav.pow.domain.models.survival.Weather.RAIN -> " 🌧️"
+                        ovh.gabrielhuav.pow.domain.models.survival.Weather.FOG -> " 🌫️"
+                        else -> ""
+                    } + "  🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +
                         "⚡ ${uiState.survivalNeeds.energy.toInt()}",
                     color = Color(0xFF8BC34A),
                     isLoading = false,
