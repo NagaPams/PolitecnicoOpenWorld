@@ -15,10 +15,13 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_stored
+import ovh.gabrielhuav.pow.shared.recursos.survival_car_repaired
+import ovh.gabrielhuav.pow.shared.recursos.survival_car_wrecked
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_filled
@@ -40,6 +43,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
 private const val LOOT_COOLDOWN_MS = 10 * 60 * 1000L
 private const val CONTAINER_COOLDOWN_MS = 30 * 60 * 1000L
 private const val CONTAINER_BULLETS = 2
+private const val VEHICLE_CRASH_COOLDOWN_MS = 400L
 /** Si no hay calle a menos de esto (grados, ~65 m) del centro de la celda, esa celda no trae botín. */
 private const val LOOT_MAX_SNAP_DEGREES = 0.0006
 
@@ -227,6 +231,32 @@ internal fun WorldMapViewModel.useBandage() {
     survivalManager.setBleeding(false)
     soundManager.playItem()
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bandaged)) }
+}
+
+/** Un choque a [speed]: baja la salud del coche (con enfriamiento) y avisa una vez al destruirse. */
+internal fun WorldMapViewModel.damageVehicle(speed: Double, againstWall: Boolean) {
+    val now = SystemClock.elapsedRealtime()
+    if (now - lastVehicleCrashMs < VEHICLE_CRASH_COOLDOWN_MS) return
+    val after = VehicleHealthRules.crash(vehicleHealth, speed, MAX_SPEED, againstWall)
+    if (after == vehicleHealth) return
+    lastVehicleCrashMs = now
+    vehicleHealth = after
+    if (VehicleHealthRules.isWrecked(after) && !vehicleWreckAnnounced) {
+        vehicleWreckAnnounced = true
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_wrecked)) }
+    }
+}
+
+/** Repara el coche con un tablón (desde el inventario): +[VehicleHealthRules.REPAIR_PER_BOARD] % de salud. */
+internal fun WorldMapViewModel.repairVehicle() {
+    val state = survivalManager.state.value
+    if (state.boards <= 0 || vehicleHealth >= VehicleHealthRules.MAX) return
+    survivalManager.addBoards(-1)
+    vehicleHealth = VehicleHealthRules.repair(vehicleHealth)
+    vehicleWreckAnnounced = false
+    survivalManager.setVehicleHealth(vehicleHealth)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_repaired)) }
 }
 
 /** Un paso del bucle de conducción: baja el tanque y avisa una vez al quedarse sin gasolina. */

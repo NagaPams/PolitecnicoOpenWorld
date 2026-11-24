@@ -65,6 +65,9 @@ fun WorldInventoryDialog(
     onUseFuelCan: () -> Unit = {},
     bleeding: Boolean = false,
     onUseBandage: () -> Unit = {},
+    carHealth: Double = 100.0,
+    boards: Int = 0,
+    onRepairCar: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -144,6 +147,12 @@ fun WorldInventoryDialog(
                     }
                 }
                 if (survivalPack != null) {
+                    Text(stringResource(R.string.car_health_counts, carHealth.toInt(), boards), color = Color.White, fontSize = 14.sp)
+                    Button(
+                        onClick = onRepairCar,
+                        enabled = boards > 0 && carHealth < 100.0,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF455A64), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_repair_car), fontSize = 12.sp) }
                     Text(stringResource(R.string.bandage_counts, survivalPack.vendas), color = Color.White, fontSize = 14.sp)
                     Button(
                         onClick = onUseBandage,

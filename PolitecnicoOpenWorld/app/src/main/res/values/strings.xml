@@ -686,6 +686,9 @@
     <string name="bandage_counts">🩹 Vendas %1$d</string>
     <string name="pack_use_bandage">Vendarse</string>
     <string name="wm_survival_stamina">Aliento</string>
+    <string name="wm_survival_car">Coche</string>
+    <string name="car_health_counts">🚗 Coche %1$d%% · Tablones %2$d</string>
+    <string name="pack_repair_car">Reparar coche (1 tablón)</string>
     <string name="vendor_boards_name">Tablones</string>
     <string name="vendor_boards_desc">Material para barricadar una puerta de edificio.</string>
     <string name="door_menu_title">Puerta (tablones: %1$d)</string>

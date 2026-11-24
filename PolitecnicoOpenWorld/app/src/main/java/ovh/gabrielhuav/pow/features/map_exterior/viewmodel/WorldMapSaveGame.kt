@@ -110,6 +110,7 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalFuelCans = survivalManager.state.value.pack.bidones,
         survivalBleeding = survivalManager.state.value.bleeding,
         survivalBandages = survivalManager.state.value.pack.vendas,
+        survivalVehicleHealth = vehicleHealth,
         saveType = saveType,
         savedAt = System.currentTimeMillis()
     )
@@ -172,7 +173,9 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         ),
         data.survivalFuel,
         data.survivalBleeding,
+        data.survivalVehicleHealth,
     )
+    vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
     fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.sanitized(data.survivalFuel)
     rebuildDoorCollisions()
     wantedManager.setWantedLevel(data.wantedLevel)

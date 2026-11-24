@@ -79,6 +79,8 @@ data class GameSaveData(
     // Sangrado activo y vendas guardadas.
     val survivalBleeding: Boolean = false,
     val survivalBandages: Int = 0,
+    // Salud del coche (0-100).
+    val survivalVehicleHealth: Double = 100.0,
     val savedAt: Long = 0L,
 )
 

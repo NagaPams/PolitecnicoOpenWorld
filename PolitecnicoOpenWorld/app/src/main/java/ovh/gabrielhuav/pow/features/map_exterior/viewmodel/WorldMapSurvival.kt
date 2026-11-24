@@ -66,6 +66,8 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     grabbedUntilMs = 0L
+    vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
+    vehicleWreckAnnounced = false
     survivalManager.resetForNewGame()
     fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
     fuelEmptyAnnounced = false
@@ -189,6 +191,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     }
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     survivalManager.setFuel(fuelTank)
+    survivalManager.setVehicleHealth(vehicleHealth)
     if (!staminaMovedThisSecond) staminaState = StaminaRules.rest(staminaState, elapsed.coerceAtMost(1000L) / 1000.0)
     staminaMovedThisSecond = false
     survivalManager.setStamina(staminaState.value)

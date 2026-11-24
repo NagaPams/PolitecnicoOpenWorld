@@ -15,6 +15,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
+import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 
@@ -32,6 +33,8 @@ data class SurvivalSubState(
     val bleeding: Boolean = false,
     /** Aliento del jugador (0-100); la fuente es `WorldMapViewModel.stamina` y aquí se publica cada segundo. */
     val stamina: Double = StaminaRules.MAX,
+    /** Salud del coche (0-100); la fuente es `WorldMapViewModel.vehicleHealth` y aquí se publica cada segundo. */
+    val vehicleHealth: Double = VehicleHealthRules.MAX,
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -60,6 +63,11 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.update { it.copy(pack = SurvivalCrafting.sanitized(pack)) }
     }
 
+    fun setVehicleHealth(health: Double) {
+        val value = VehicleHealthRules.sanitized(health)
+        if (mutableState.value.vehicleHealth != value) mutableState.update { it.copy(vehicleHealth = value) }
+    }
+
     fun setStamina(stamina: Double) {
         val value = stamina.coerceIn(0.0, StaminaRules.MAX)
         if (mutableState.value.stamina != value) mutableState.update { it.copy(stamina = value) }
@@ -82,12 +90,13 @@ class SurvivalManager(enabled: Boolean = false) {
         needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0,
         doors: Map<String, DoorRuntime> = emptyMap(), pack: SurvivalPack = SurvivalPack(),
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
-        bleeding: Boolean = false,
+        bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
             bleeding = bleeding,
+            vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),
             pack = SurvivalCrafting.sanitized(pack),
             boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
             doors = doors,

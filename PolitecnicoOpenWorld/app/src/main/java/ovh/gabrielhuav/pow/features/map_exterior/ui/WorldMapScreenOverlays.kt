@@ -39,6 +39,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onEscomDoorFadeComple
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onHirePrankedy
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.craftSurvivalKit
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.equipSurvivalWeapon
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicle
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useBandage
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
@@ -256,6 +257,9 @@ fun WorldMapOverlays(
             onUseFuelCan = { viewModel.useFuelCan() },
             bleeding = uiState.survivalBleeding,
             onUseBandage = { viewModel.useBandage() },
+            carHealth = uiState.survivalVehicleHealth,
+            boards = uiState.survivalBoards,
+            onRepairCar = { viewModel.repairVehicle() },
         )
     }
 }

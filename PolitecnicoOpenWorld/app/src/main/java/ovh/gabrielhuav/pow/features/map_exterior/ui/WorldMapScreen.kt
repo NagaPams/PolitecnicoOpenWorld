@@ -1015,6 +1015,12 @@ fun WorldMapScreen(
                 }
                 if (uiState.isDriving) {
                     CacheChip(
+                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_car),
+                        text = "🚗 ${uiState.survivalVehicleHealth.toInt()}%",
+                        color = if (uiState.survivalVehicleHealth < 35.0) Color(0xFFE53935) else Color(0xFF90A4AE),
+                        isLoading = false,
+                    )
+                    CacheChip(
                         label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_fuel),
                         text = "⛽ ${uiState.survivalFuel.toInt()}%",
                         color = if (uiState.survivalFuel < 15.0) Color(0xFFE53935) else Color(0xFFFFB300),

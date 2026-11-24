@@ -201,6 +201,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalFuel = survival.fuel,
                 survivalBleeding = survival.bleeding,
                 survivalStamina = survival.stamina,
+                survivalVehicleHealth = survival.vehicleHealth,
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,
                 debugEditWalls = designer.debugEditWalls,
@@ -414,6 +415,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var fuelEmptyAnnounced = false
     /** Hasta cuándo te sujeta un zombi (t02); frena los pasos a pie. */
     @Volatile internal var grabbedUntilMs = 0L
+    /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
+    internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
+    internal var vehicleWreckAnnounced = false
+    internal var lastVehicleCrashMs = 0L
     /** Aliento a pie en modo supervivencia (t11); no se guarda. */
     internal var staminaState = ovh.gabrielhuav.pow.domain.models.survival.StaminaState()
     @Volatile internal var staminaMovedThisSecond = false
@@ -754,7 +759,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
 
                             // Sin gasolina (supervivencia) el motor no responde al acelerador.
                             val fuelOn = survivalManager.state.value.enabled
-                            val engineDead = fuelOn && ovh.gabrielhuav.pow.domain.models.survival.FuelRules.isEmpty(fuelTank)
+                            val engineDead = fuelOn && (ovh.gabrielhuav.pow.domain.models.survival.FuelRules.isEmpty(fuelTank) ||
+                                ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.isWrecked(vehicleHealth))
+                            val speedCap = if (fuelOn) MAX_SPEED * ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.speedFactor(vehicleHealth) else MAX_SPEED
                             // Velocidad y rumbo: paso puro en :shared (VehicleDriving, t37).
                             val driven = ovh.gabrielhuav.pow.domain.models.map.VehicleDriving.step(
                                 ovh.gabrielhuav.pow.domain.models.map.DriveState(currentSpeed, currentRotation),
@@ -763,7 +770,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                     steerLeft = isSteeringLeftPressed, steerRight = isSteeringRightPressed,
                                     holdForBoarding = prankedyBoarding, reverseOnly = forceWalkNearEscom,
                                 ),
-                                MAX_SPEED, ACCELERATION, BRAKING_FRICTION,
+                                speedCap, ACCELERATION, BRAKING_FRICTION,
                             )
                             currentSpeed = driven.speed
                             currentRotation = driven.rotationDegrees
@@ -835,6 +842,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                 dimensions = vehicleModel.collisionDimensions,
                             )
                             if (!staticResolution.reachedTarget) {
+                                if (fuelOn) damageVehicle(currentSpeed, againstWall = true)
                                 logVehicleCollision(
                                     when (staticResolution.blockedBy) {
                                         ovh.gabrielhuav.pow.domain.models.map.CollisionReason.BUILDING -> "building"
@@ -866,7 +874,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                         exteriorCollisions, location, pushedLocation, currentRotation, vehicleModel.collisionDimensions,
                                     ).reachedTarget
                                 ) location else pushedLocation
-                                if (trafficImpact != null) currentSpeed *= trafficImpact.playerSpeedMultiplier
+                                if (trafficImpact != null) {
+                                    if (fuelOn) damageVehicle(currentSpeed, againstWall = false)
+                                    currentSpeed *= trafficImpact.playerSpeedMultiplier
+                                }
                                 _uiState.update {
                                     it.copy(
                                         currentLocation = resolvedLocation,
