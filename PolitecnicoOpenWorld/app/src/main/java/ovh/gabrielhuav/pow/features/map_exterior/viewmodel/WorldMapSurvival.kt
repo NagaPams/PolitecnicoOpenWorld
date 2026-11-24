@@ -15,7 +15,11 @@ import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules
 import ovh.gabrielhuav.pow.domain.models.survival.DayRules
+import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
+import ovh.gabrielhuav.pow.domain.models.survival.Occupation
+import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.SleepCheck
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
 import ovh.gabrielhuav.pow.domain.models.survival.WeatherRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
@@ -35,6 +39,11 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_shop
 import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
+import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
+import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
+import ovh.gabrielhuav.pow.shared.recursos.survival_skill_combate
+import ovh.gabrielhuav.pow.shared.recursos.survival_skill_punteria
+import ovh.gabrielhuav.pow.shared.recursos.survival_skill_up
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_no_money
 import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
@@ -144,6 +153,38 @@ private fun WorldMapViewModel.announceBlackout() {
     } else if (!blackout) {
         blackoutAnnounced = false
     }
+}
+
+/** Usar una habilidad (t15): suma XP y avisa al subir de nivel. Solo con supervivencia encendida. */
+internal fun WorldMapViewModel.onSkillUse(skill: Skill, amount: Int = 1) {
+    if (!survivalManager.state.value.enabled) return
+    val level = survivalManager.gainSkill(skill, amount) ?: return
+    viewModelScope.launch {
+        val name = getString(
+            when (skill) {
+                Skill.COMBATE -> Res.string.survival_skill_combate
+                Skill.PUNTERIA -> Res.string.survival_skill_punteria
+                Skill.CARPINTERIA -> Res.string.survival_skill_carpinteria
+            },
+        )
+        showSurvivalPrompt(getString(Res.string.survival_skill_up, name, level))
+    }
+}
+
+/** Nivel actual de una habilidad (0 si el modo está apagado). */
+internal fun WorldMapViewModel.skillLevel(skill: Skill): Int =
+    if (survivalManager.state.value.enabled) ovh.gabrielhuav.pow.domain.models.survival.SkillRules.levelOf(survivalManager.state.value.skills, skill) else 0
+
+/** Elige oficio desde el inventario (una vez): da un punto de partida y un extra pequeño. */
+internal fun WorldMapViewModel.chooseSurvivalOccupation(occupation: Occupation) {
+    if (!survivalManager.state.value.enabled || !survivalManager.chooseOccupation(occupation)) return
+    when (occupation) {
+        Occupation.SOLDADO -> survivalManager.setArsenal(WeaponRules.addAmmo(survivalManager.state.value.arsenal, AmmoKind.BALAS, 6))
+        Occupation.CARPINTERO -> survivalManager.addBoards(2)
+        else -> Unit
+    }
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_occupation_chosen)) }
 }
 
 /** Distancia en metros al zombi vivo más cercano, o `Double.MAX_VALUE` si no hay. */

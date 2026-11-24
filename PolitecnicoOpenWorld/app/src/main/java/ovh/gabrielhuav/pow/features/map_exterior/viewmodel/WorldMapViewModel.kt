@@ -206,6 +206,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalStamina = survival.stamina,
                 survivalVehicleHealth = survival.vehicleHealth,
                 survivalWeather = survival.weather,
+                survivalSkills = survival.skills,
+                survivalOccupation = survival.occupation,
                 survivalDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(survival.activeMs),
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,

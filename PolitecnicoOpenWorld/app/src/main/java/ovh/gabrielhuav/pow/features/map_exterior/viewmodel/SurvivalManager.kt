@@ -19,6 +19,10 @@ import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
+import ovh.gabrielhuav.pow.domain.models.survival.Occupation
+import ovh.gabrielhuav.pow.domain.models.survival.Skill
+import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalSkills
 import ovh.gabrielhuav.pow.domain.models.survival.WeatherRules
 
 data class SurvivalSubState(
@@ -39,6 +43,9 @@ data class SurvivalSubState(
     val vehicleHealth: Double = VehicleHealthRules.MAX,
     /** Clima actual (t13): sale del reloj de juego, no se guarda. */
     val weather: Weather = Weather.CLEAR,
+    /** XP de habilidades y oficio elegido (t15). */
+    val skills: SurvivalSkills = SurvivalSkills(),
+    val occupation: Occupation = Occupation.NINGUNO,
     /** Tiempo de supervivencia activa acumulado (ms); de aquí sale el día en que va el jugador. */
     val activeMs: Long = 0L,
 )
@@ -78,6 +85,28 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.update { it.copy(needs = SurvivalNeeds(needs.hunger.coerceIn(0.0, 100.0), needs.thirst.coerceIn(0.0, 100.0), needs.energy.coerceIn(0.0, 100.0))) }
     }
 
+    /** Suma XP a una habilidad; devuelve el nivel nuevo si subió de nivel. */
+    fun gainSkill(skill: Skill, amount: Int): Int? {
+        var levelUp: Int? = null
+        mutableState.update { current ->
+            val gain = SkillRules.gain(current.skills, skill, amount)
+            levelUp = gain.levelUp
+            current.copy(skills = gain.skills)
+        }
+        return levelUp
+    }
+
+    /** Elige oficio (una sola vez); false si ya había uno. */
+    fun chooseOccupation(occupation: Occupation): Boolean {
+        var chosen = false
+        mutableState.update { current ->
+            val skills = SkillRules.choose(current.occupation, occupation, current.skills)
+            chosen = skills != null
+            if (skills != null) current.copy(skills = skills, occupation = occupation) else current
+        }
+        return chosen
+    }
+
     fun setWeather(weather: Weather) {
         if (mutableState.value.weather != weather) mutableState.update { it.copy(weather = weather) }
     }
@@ -109,6 +138,7 @@ class SurvivalManager(enabled: Boolean = false) {
         doors: Map<String, DoorRuntime> = emptyMap(), pack: SurvivalPack = SurvivalPack(),
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
         bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
+        skills: SurvivalSkills = SurvivalSkills(), occupation: Occupation = Occupation.NINGUNO,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
@@ -116,6 +146,8 @@ class SurvivalManager(enabled: Boolean = false) {
             bleeding = bleeding,
             vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),
             activeMs = activeMs.coerceAtLeast(0L),
+            skills = skills,
+            occupation = occupation,
             pack = SurvivalCrafting.sanitized(pack),
             boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
             doors = doors,

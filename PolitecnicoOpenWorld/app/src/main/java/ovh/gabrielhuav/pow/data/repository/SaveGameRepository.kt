@@ -83,6 +83,9 @@ data class GameSaveData(
     val survivalVehicleHealth: Double = 100.0,
     // Tiempo de supervivencia activa (ms): de aquí sale el día.
     val survivalActiveMs: Long = 0L,
+    // Habilidades ("combate,punteria,carpinteria" en XP) y oficio.
+    val survivalSkills: String = "",
+    val survivalOccupation: String = "",
     val savedAt: Long = 0L,
 )
 

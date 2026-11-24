@@ -11,6 +11,8 @@ import ovh.gabrielhuav.pow.domain.models.map.DoorRules
 import ovh.gabrielhuav.pow.domain.models.map.DoorRuntime
 import ovh.gabrielhuav.pow.domain.models.map.DoorState
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
+import ovh.gabrielhuav.pow.domain.models.survival.Skill
+import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
 import ovh.gabrielhuav.pow.domain.models.map.cargarColisionesConHuellas
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_door_barricaded
@@ -64,7 +66,12 @@ internal fun WorldMapViewModel.performDoorAction(action: DoorAction) {
     }
     val current = survivalManager.state.value
     val result = DoorRules.apply(action, doorRuntime(doorId), current.boards) ?: return
-    val doors = current.doors + (doorId to result.first)
+    // Carpintería (t15): la barricada nueva aguanta más según el nivel, y construirla da XP.
+    val built = if (action == DoorAction.BARRICADE) {
+        onSkillUse(Skill.CARPINTERIA, 3)
+        result.first.copy(health = result.first.health * SkillRules.barricadeFactor(skillLevel(Skill.CARPINTERIA)))
+    } else result.first
+    val doors = current.doors + (doorId to built)
     survivalManager.setDoors(result.second, doors)
     soundManager.playItem()
     rebuildDoorCollisions()

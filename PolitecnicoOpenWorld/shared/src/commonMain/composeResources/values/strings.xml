@@ -420,6 +420,11 @@
     <string name="survival_sleep_rested">No tienes sueño</string>
     <string name="survival_blackout_started">🔌 Se fue la luz: las noches serán más oscuras y la tienda cerró</string>
     <string name="survival_blackout_shop">Sin luz: la tienda no vende</string>
+    <string name="survival_skill_up">📈 %1$s: nivel %2$d</string>
+    <string name="survival_skill_combate">Combate</string>
+    <string name="survival_skill_punteria">Puntería</string>
+    <string name="survival_skill_carpinteria">Carpintería</string>
+    <string name="survival_occupation_chosen">🎓 Oficio elegido</string>
     <string name="survival_container_looted">📦 Contenedor saqueado</string>
     <string name="survival_item_stored">🎒 Guardado en la mochila</string>
     <string name="survival_kit_crafted">🩹 Botiquín creado</string>

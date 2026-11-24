@@ -74,6 +74,8 @@ data class WorldMapState(
     /** Clima y día de supervivencia (t13); los publica `SurvivalManager`. */
     val survivalWeather: ovh.gabrielhuav.pow.domain.models.survival.Weather = ovh.gabrielhuav.pow.domain.models.survival.Weather.CLEAR,
     val survivalDay: Int = 1,
+    val survivalSkills: ovh.gabrielhuav.pow.domain.models.survival.SurvivalSkills = ovh.gabrielhuav.pow.domain.models.survival.SurvivalSkills(),
+    val survivalOccupation: ovh.gabrielhuav.pow.domain.models.survival.Occupation = ovh.gabrielhuav.pow.domain.models.survival.Occupation.NINGUNO,
     val survivalArsenal: ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal = ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal(),
     /** Botín suelto cercano (modo supervivencia, t09): solo para dibujarlo; lo calcula `refreshSurvivalLoot`. */
     val survivalLoot: List<ovh.gabrielhuav.pow.domain.models.survival.LootPoint> = emptyList(),

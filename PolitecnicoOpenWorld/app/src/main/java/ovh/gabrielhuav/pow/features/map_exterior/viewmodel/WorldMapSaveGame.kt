@@ -112,6 +112,8 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalBandages = survivalManager.state.value.pack.vendas,
         survivalVehicleHealth = vehicleHealth,
         survivalActiveMs = survivalManager.state.value.activeMs,
+        survivalSkills = ovh.gabrielhuav.pow.domain.models.survival.SkillRules.encode(survivalManager.state.value.skills),
+        survivalOccupation = survivalManager.state.value.occupation.name,
         saveType = saveType,
         savedAt = System.currentTimeMillis()
     )
@@ -176,6 +178,9 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         data.survivalBleeding,
         data.survivalVehicleHealth,
         data.survivalActiveMs,
+        // Gson deja en null el texto que un guardado viejo no trae.
+        @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.decode(data.survivalSkills ?: ""),
+        @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.occupationOf(data.survivalOccupation ?: ""),
     )
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
     // Si la partida cargada ya estaba en apagón no se vuelve a avisar.

@@ -324,7 +324,8 @@ internal fun WorldMapViewModel.repairVehicle() {
     val state = survivalManager.state.value
     if (state.boards <= 0 || vehicleHealth >= VehicleHealthRules.MAX) return
     survivalManager.addBoards(-1)
-    vehicleHealth = VehicleHealthRules.repair(vehicleHealth)
+    vehicleHealth = (VehicleHealthRules.repair(vehicleHealth) + ovh.gabrielhuav.pow.domain.models.survival.SkillRules.repairBonus(skillLevel(ovh.gabrielhuav.pow.domain.models.survival.Skill.CARPINTERIA))).coerceAtMost(VehicleHealthRules.MAX)
+    onSkillUse(ovh.gabrielhuav.pow.domain.models.survival.Skill.CARPINTERIA, 2)
     vehicleWreckAnnounced = false
     survivalManager.setVehicleHealth(vehicleHealth)
     soundManager.playItem()

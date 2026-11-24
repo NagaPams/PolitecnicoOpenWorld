@@ -39,7 +39,11 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.R
+import ovh.gabrielhuav.pow.domain.models.survival.Occupation
+import ovh.gabrielhuav.pow.domain.models.survival.Skill
+import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalSkills
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
@@ -71,6 +75,9 @@ fun WorldInventoryDialog(
     onRepairCar: () -> Unit = {},
     energy: Double = 100.0,
     onSleep: () -> Unit = {},
+    skills: SurvivalSkills = SurvivalSkills(),
+    occupation: Occupation = Occupation.NINGUNO,
+    onChooseOccupation: (Occupation) -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -173,6 +180,35 @@ fun WorldInventoryDialog(
                         enabled = energy < SleepRules.TOO_RESTED_AT,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF283593), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_sleep), fontSize = 12.sp) }
+                    // Habilidades y oficio (t15): suben con el uso; el oficio se elige una sola vez.
+                    Text(stringResource(R.string.skills_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    for (skill in Skill.entries) {
+                        val name = stringResource(
+                            when (skill) {
+                                Skill.COMBATE -> R.string.skill_combate
+                                Skill.PUNTERIA -> R.string.skill_punteria
+                                Skill.CARPINTERIA -> R.string.skill_carpinteria
+                            },
+                        )
+                        Text(
+                            stringResource(R.string.skill_line, name, SkillRules.levelOf(skills, skill), skills.xpOf(skill)),
+                            color = Color.White, fontSize = 13.sp,
+                        )
+                    }
+                    if (occupation == Occupation.NINGUNO) {
+                        Text(stringResource(R.string.occupation_pick), color = Color(0xFFB0BEC5), fontSize = 12.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            for (option in listOf(Occupation.BOXEADOR, Occupation.SOLDADO, Occupation.CARPINTERO)) {
+                                Button(
+                                    onClick = { onChooseOccupation(option) },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF37474F), contentColor = Color.White),
+                                ) { Text(stringResource(occupationNameRes(option)), fontSize = 12.sp) }
+                            }
+                        }
+                    } else {
+                        Text(stringResource(R.string.occupation_current, stringResource(occupationNameRes(occupation))), color = Color.White, fontSize = 13.sp)
+                    }
                 }
                 // Armas (solo con el modo encendido): toca una para equiparla; las de fuego piden munición.
                 if (arsenal != null) {
@@ -239,4 +275,11 @@ private fun WorldInventoryItemIcon(assetPath: String, modifier: Modifier = Modif
     } else {
         Text("🔑", fontSize = 24.sp)
     }
+}
+
+private fun occupationNameRes(occupation: Occupation): Int = when (occupation) {
+    Occupation.NINGUNO -> R.string.occupation_none
+    Occupation.BOXEADOR -> R.string.occupation_boxeador
+    Occupation.SOLDADO -> R.string.occupation_soldado
+    Occupation.CARPINTERO -> R.string.occupation_carpintero
 }

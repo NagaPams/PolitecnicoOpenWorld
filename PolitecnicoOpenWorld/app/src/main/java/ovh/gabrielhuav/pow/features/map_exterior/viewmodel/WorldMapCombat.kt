@@ -27,6 +27,7 @@ import ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint
 import ovh.gabrielhuav.pow.domain.models.map.offsetMeters
 import ovh.gabrielhuav.pow.domain.models.survival.ShotOutcome
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponCatalog
+import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import org.jetbrains.compose.resources.getString
@@ -55,7 +56,10 @@ fun WorldMapViewModel.performPlayerAttack() {
         if (shot.outcome == ShotOutcome.BROKE) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_weapon_broke)) }
     }
     val radius = if (weapon.kind == WeaponKind.PUNOS) ATTACK_RADIUS else WeaponRules.rangeDegrees(weapon)
-    val damage = weapon.damage
+    // Con supervivencia el daño crece con el nivel de la habilidad (puntería con armas de fuego, combate con el resto).
+    val damage = if (survivalManager.state.value.enabled) {
+        weapon.damage * ovh.gabrielhuav.pow.domain.models.survival.SkillRules.damageFactor(skillLevel(if (weapon.isFirearm) Skill.PUNTERIA else Skill.COMBATE)).toFloat()
+    } else weapon.damage
     // Las armas de fuego solo pegan al objetivo más cercano; los barridos de policía/Prankedy son del cuerpo a cuerpo.
     val sweepRadius = if (weapon.isFirearm) 0.0 else radius
     if (weapon.isFirearm) {
@@ -167,6 +171,7 @@ fun WorldMapViewModel.performPlayerAttack() {
                     provokeApocalypsePolice(playerLoc)
                 }
                 if (currentNpc.type == NpcType.ZOMBIE) grabbedUntilMs = 0L // un golpe al zombi te suelta (t02)
+                onSkillUse(if (weapon.isFirearm) Skill.PUNTERIA else Skill.COMBATE)
                 val newHealth = (currentNpc.health - damage).coerceAtLeast(0f)
                 if (newHealth <= 0f) {
                     npcHitStreak.remove(npcId)
