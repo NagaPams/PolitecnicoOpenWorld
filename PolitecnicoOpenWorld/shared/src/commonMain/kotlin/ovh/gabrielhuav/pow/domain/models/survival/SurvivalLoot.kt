@@ -7,9 +7,10 @@ import kotlin.math.floor
 // se recogieron (con enfriamiento). Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Tipo de botín. Los valores nuevos van AL FINAL. */
-enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR }
+enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION }
 
-data class LootPoint(val id: String, val kind: LootKind, val latitude: Double, val longitude: Double)
+/** [variant] (0..9) decide qué arma o munición exacta es, estable por celda. */
+data class LootPoint(val id: String, val kind: LootKind, val latitude: Double, val longitude: Double, val variant: Int = 0)
 
 object SurvivalLoot {
     /** Lado de la celda en grados (~40 m). */
@@ -25,6 +26,11 @@ object SurvivalLoot {
     private const val REFRESCO_UPTO = 64
     private const val TABLONES_UPTO = 84
     private const val SUERO_UPTO = 92
+    // El 8 % que antes era todo contenedor: 3 % contenedor, 3 % munición, 1 % arma blanca, 1 % arma de fuego.
+    private const val CONTENEDOR_UPTO = 95
+    private const val MUNICION_UPTO = 98
+    private const val ARMA_BLANCA_UPTO = 99
+    private const val VARIANTS = 10
 
     fun cellOf(degrees: Double): Int = floor(degrees / CELL_DEGREES).toInt()
 
@@ -37,9 +43,23 @@ object SurvivalLoot {
             roll < REFRESCO_UPTO -> LootKind.REFRESCO
             roll < TABLONES_UPTO -> LootKind.TABLONES
             roll < SUERO_UPTO -> LootKind.SUERO
-            else -> LootKind.CONTENEDOR
+            roll < CONTENEDOR_UPTO -> LootKind.CONTENEDOR
+            roll < MUNICION_UPTO -> LootKind.MUNICION
+            roll < ARMA_BLANCA_UPTO -> LootKind.ARMA_BLANCA
+            else -> LootKind.ARMA_FUEGO
         }
     }
+
+    /** Arma exacta de un punto de armas; la munición usa [variant] para elegir entre balas y cartuchos. */
+    fun weaponFor(kind: LootKind, variant: Int): WeaponKind? = when (kind) {
+        LootKind.ARMA_BLANCA -> when (variant % 3) { 0 -> WeaponKind.PALO; 1 -> WeaponKind.BATE; else -> WeaponKind.CUCHILLO }
+        LootKind.ARMA_FUEGO -> if (variant < 7) WeaponKind.PISTOLA else WeaponKind.ESCOPETA
+        else -> null
+    }
+
+    /** Munición de un punto de munición: balas casi siempre, cartuchos una de cada cuatro (y cuántas). */
+    fun ammoFor(variant: Int): Pair<AmmoKind, Int> =
+        if (variant < 7) AmmoKind.BALAS to 6 else AmmoKind.CARTUCHOS to 4
 
     /** Puntos de botín en las celdas alrededor de ([latitude], [longitude]); el id es estable por celda. */
     fun around(latitude: Double, longitude: Double): List<LootPoint> {
@@ -49,7 +69,8 @@ object SurvivalLoot {
         for (cy in centerLat - RADIUS_CELLS..centerLat + RADIUS_CELLS) {
             for (cx in centerLon - RADIUS_CELLS..centerLon + RADIUS_CELLS) {
                 val kind = kindAt(cy, cx) ?: continue
-                out.add(LootPoint("$ID_PREFIX${cy}_$cx", kind, (cy + 0.5) * CELL_DEGREES, (cx + 0.5) * CELL_DEGREES))
+                val variant = (hash(cy, cx) / (DENSITY * ROLL_RANGE)) % VARIANTS
+                out.add(LootPoint("$ID_PREFIX${cy}_$cx", kind, (cy + 0.5) * CELL_DEGREES, (cx + 0.5) * CELL_DEGREES, variant))
             }
         }
         return out

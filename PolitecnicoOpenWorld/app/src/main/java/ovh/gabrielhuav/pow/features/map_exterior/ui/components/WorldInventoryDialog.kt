@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -38,7 +40,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.R
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
+import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponCatalog
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
 import ovh.gabrielhuav.pow.domain.models.zombie.KeyDrop
 
 // ─── INVENTARIO EN EL MAPA GLOBAL (🆕 2026-07-13, mantener Y a pie) ───────────
@@ -54,6 +59,8 @@ fun WorldInventoryDialog(
     survivalPack: SurvivalPack? = null,
     onCraftKit: () -> Unit = {},
     onUseKit: () -> Unit = {},
+    arsenal: SurvivalArsenal? = null,
+    onEquip: (WeaponKind) -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -63,14 +70,15 @@ fun WorldInventoryDialog(
             ) { onDismiss() },
         contentAlignment = Alignment.Center
     ) {
-        Box {
+        Box(modifier = Modifier.systemBarsPadding()) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .background(Color(0xFF1E1E24), RoundedCornerShape(16.dp))
                     .border(1.dp, Color(0xFFD4AF37), RoundedCornerShape(16.dp))
-                    .padding(24.dp)
+                    .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 Text(
                     stringResource(R.string.zhud_inventory),
@@ -131,6 +139,25 @@ fun WorldInventoryDialog(
                         ) { Text(stringResource(R.string.pack_use_kit), fontSize = 12.sp) }
                     }
                 }
+                // Armas (solo con el modo encendido): toca una para equiparla; las de fuego piden munición.
+                if (arsenal != null) {
+                    Text(stringResource(R.string.weapons_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.weapons_ammo, arsenal.balas, arsenal.cartuchos), color = Color.White, fontSize = 14.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (kind in listOf(WeaponKind.PUNOS) + arsenal.weapons.map { it.kind }) {
+                            val uses = arsenal.weapons.firstOrNull { it.kind == kind }?.uses ?: 0
+                            val name = stringResource(weaponNameRes(kind))
+                            Button(
+                                onClick = { onEquip(kind) },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (kind == arsenal.equipped) Color(0xFFD4AF37) else Color(0xFF3A3A44),
+                                    contentColor = if (kind == arsenal.equipped) Color.Black else Color.White,
+                                ),
+                            ) { Text(if (WeaponCatalog.of(kind).durability > 0) "$name $uses" else name, fontSize = 12.sp) }
+                        }
+                    }
+                }
             }
             // ✕ CERRAR — esquina superior derecha del panel (mismo patrón que ZombieHud).
             Box(
@@ -144,6 +171,15 @@ fun WorldInventoryDialog(
             ) { Text("✕", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
         }
     }
+}
+
+private fun weaponNameRes(kind: WeaponKind): Int = when (kind) {
+    WeaponKind.PUNOS -> R.string.weapon_punos
+    WeaponKind.PALO -> R.string.weapon_palo
+    WeaponKind.BATE -> R.string.weapon_bate
+    WeaponKind.CUCHILLO -> R.string.weapon_cuchillo
+    WeaponKind.PISTOLA -> R.string.weapon_pistola
+    WeaponKind.ESCOPETA -> R.string.weapon_escopeta
 }
 
 // Icono del ítem: carga la IMAGEN REAL del asset (PNG submuestreado); si falla, cae a un 🔑.

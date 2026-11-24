@@ -7,12 +7,17 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
+import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
 import ovh.gabrielhuav.pow.domain.models.survival.LootKind
 import ovh.gabrielhuav.pow.domain.models.survival.LootPoint
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
+import ovh.gabrielhuav.pow.shared.recursos.survival_weapon_found
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
@@ -28,6 +33,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
 
 private const val LOOT_COOLDOWN_MS = 10 * 60 * 1000L
 private const val CONTAINER_COOLDOWN_MS = 30 * 60 * 1000L
+private const val CONTAINER_BULLETS = 2
 /** Si no hay calle a menos de esto (grados, ~65 m) del centro de la celda, esa celda no trae botín. */
 private const val LOOT_MAX_SNAP_DEGREES = 0.0006
 
@@ -35,7 +41,7 @@ private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
-    LootKind.TABLONES, LootKind.CONTENEDOR -> SurvivalItem.TABLONES
+    LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -90,6 +96,24 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
     val current = survivalManager.state.value
     var taken = false
     val message = when {
+        point.kind == LootKind.ARMA_BLANCA || point.kind == LootKind.ARMA_FUEGO -> {
+            val weapon = SurvivalLoot.weaponFor(point.kind, point.variant)
+            if (weapon != null) {
+                survivalManager.setArsenal(WeaponRules.pickUp(current.arsenal, weapon))
+                taken = true
+            }
+            Res.string.survival_weapon_found
+        }
+        point.kind == LootKind.MUNICION -> {
+            val (ammo, count) = SurvivalLoot.ammoFor(point.variant)
+            if (current.arsenal.ammoOf(ammo) >= WeaponRules.MAX_AMMO) {
+                Res.string.survival_not_needed
+            } else {
+                survivalManager.setArsenal(WeaponRules.addAmmo(current.arsenal, ammo, count))
+                taken = true
+                Res.string.survival_ammo_found
+            }
+        }
         point.kind == LootKind.CONTENEDOR -> {
             taken = lootContainer()
             if (taken) Res.string.survival_container_looted else Res.string.survival_not_needed
@@ -139,6 +163,11 @@ private fun WorldMapViewModel.lootContainer(): Boolean {
         survivalManager.addBoards(1)
         gave = true
     }
+    val arsenal = survivalManager.state.value.arsenal
+    if (arsenal.balas < WeaponRules.MAX_AMMO) {
+        survivalManager.setArsenal(WeaponRules.addAmmo(arsenal, AmmoKind.BALAS, CONTAINER_BULLETS))
+        gave = true
+    }
     for (item in arrayOf(SurvivalItem.PIZZA, SurvivalItem.REFRESCO, SurvivalItem.SUERO)) {
         val state = survivalManager.state.value
         if (!SurvivalCrafting.worthUsingNow(item, state.needs, state.infection)) {
@@ -153,6 +182,13 @@ private fun WorldMapViewModel.lootContainer(): Boolean {
         gave = true
     }
     return gave
+}
+
+/** Equipa un arma que el jugador ya tiene (desde el inventario). */
+internal fun WorldMapViewModel.equipSurvivalWeapon(kind: WeaponKind) {
+    val equipped = WeaponRules.equip(survivalManager.state.value.arsenal, kind) ?: return
+    survivalManager.setArsenal(equipped)
+    soundManager.playItem()
 }
 
 /** Crafteo desde el inventario: 2 refrescos + 1 pizza guardados = 1 botiquín. */

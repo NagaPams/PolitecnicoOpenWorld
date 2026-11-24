@@ -25,6 +25,14 @@ import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.CarModel
 import ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint
 import ovh.gabrielhuav.pow.domain.models.map.offsetMeters
+import ovh.gabrielhuav.pow.domain.models.survival.ShotOutcome
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponCatalog
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
+import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
+import org.jetbrains.compose.resources.getString
+import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.survival_no_ammo
+import ovh.gabrielhuav.pow.shared.recursos.survival_weapon_broke
 import ovh.gabrielhuav.pow.domain.models.map.resolveTrafficImpact
 import ovh.gabrielhuav.pow.domain.models.map.TrafficImpactResolution
 import kotlin.math.cos
@@ -32,12 +40,33 @@ import kotlin.math.sin
 
 fun WorldMapViewModel.performPlayerAttack() {
     val now = System.currentTimeMillis()
-    if (now - lastAttackTime < ATTACK_COOLDOWN_MS) return
+    // Con supervivencia encendida pega el arma equipada (t01); apagada, siempre los puños de antes.
+    val arsenal = survivalManager.state.value.arsenal
+    val weapon = if (survivalManager.state.value.enabled) WeaponRules.active(arsenal) else WeaponCatalog.of(WeaponKind.PUNOS)
+    if (now - lastAttackTime < weapon.cooldownMs) return
     lastAttackTime = now
-    soundManager.playPunch()
-    emitSurvivalNoise(ovh.gabrielhuav.pow.domain.models.survival.NoiseSource.MELEE)
+    if (weapon.kind != WeaponKind.PUNOS) {
+        val shot = WeaponRules.consumeShot(arsenal)
+        if (shot.outcome == ShotOutcome.NO_AMMO) {
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_no_ammo)) }
+            return
+        }
+        survivalManager.setArsenal(shot.arsenal)
+        if (shot.outcome == ShotOutcome.BROKE) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_weapon_broke)) }
+    }
+    val radius = if (weapon.kind == WeaponKind.PUNOS) ATTACK_RADIUS else WeaponRules.rangeDegrees(weapon)
+    val damage = weapon.damage
+    // Las armas de fuego solo pegan al objetivo más cercano; los barridos de policía/Prankedy son del cuerpo a cuerpo.
+    val sweepRadius = if (weapon.isFirearm) 0.0 else radius
+    if (weapon.isFirearm) {
+        soundManager.playShoot()
+        emitSurvivalNoise(ovh.gabrielhuav.pow.domain.models.survival.NoiseSource.GUNSHOT)
+    } else {
+        soundManager.playPunch()
+        emitSurvivalNoise(ovh.gabrielhuav.pow.domain.models.survival.NoiseSource.MELEE)
+    }
     viewModelScope.launch(Dispatchers.Default) {
-        delay(300L)
+        delay(if (weapon.isFirearm) 60L else 300L)
         val playerLoc = _uiState.value.currentLocation ?: return@launch
         // PRANKEDY hostil: el jugador puede defenderse golpeándolo. Si lo mata, desaparece
         // y reaparece tras un tiempo (lo gestiona PrankedyManager; el render lo oculta al
@@ -47,8 +76,8 @@ fun WorldMapViewModel.performPlayerAttack() {
         // sí puedes golpearlo para defenderte.
         if (prankedyManager.phase != ovh.gabrielhuav.pow.domain.models.ai.PrankedyPhase.HIRED) {
             prankedyManager.location?.let { pkLoc ->
-                if (distance(playerLoc, pkLoc) <= ATTACK_RADIUS) {
-                    prankedyManager.takeDamage(PLAYER_PUNCH_DAMAGE)
+                if (distance(playerLoc, pkLoc) <= sweepRadius) {
+                    prankedyManager.takeDamage(damage)
                     viewModelScope.launch(Dispatchers.Main) { fireImpactEffect() }
                 }
             }
@@ -60,7 +89,7 @@ fun WorldMapViewModel.performPlayerAttack() {
         }
         // También puedes golpear a los POLICÍAS a pie cercanos (mueren si llegan a 0).
         val deadCops = policeManager.playerHitPolice(
-            playerLoc.latitude, playerLoc.longitude, ATTACK_RADIUS, PLAYER_PUNCH_DAMAGE
+            playerLoc.latitude, playerLoc.longitude, sweepRadius, damage
         )
         if (deadCops.isNotEmpty()) {
             viewModelScope.launch(Dispatchers.Main) { fireImpactEffect(); updateNpcsState() }
@@ -76,7 +105,7 @@ fun WorldMapViewModel.performPlayerAttack() {
         // viven en `campaignEscortPolice`, NO en policeManager ni en remoteEntities, así que antes
         // no se les podía golpear (R6/R8). Aquí sí los dañamos (mueren si llegan a 0).
         val deadCampaignCops = campaignEscortPolice.playerHitCops(
-            playerLoc.latitude, playerLoc.longitude, ATTACK_RADIUS, PLAYER_PUNCH_DAMAGE
+            playerLoc.latitude, playerLoc.longitude, sweepRadius, damage
         )
         if (deadCampaignCops.isNotEmpty()) {
             viewModelScope.launch(Dispatchers.Main) { fireImpactEffect(); updateNpcsState() }
@@ -89,8 +118,8 @@ fun WorldMapViewModel.performPlayerAttack() {
             var hitCop = false
             remoteEntities.entries.toList().forEach { (id, n) ->
                 if (n.type == ovh.gabrielhuav.pow.domain.models.map.NpcType.POLICE_COP &&
-                    distance(playerLoc, n.location) <= ATTACK_RADIUS) {
-                    val nh = (n.health - PLAYER_PUNCH_DAMAGE).coerceAtLeast(0f)
+                    distance(playerLoc, n.location) <= sweepRadius) {
+                    val nh = (n.health - damage).coerceAtLeast(0f)
                     if (nh <= 0f) {
                         remoteEntities.remove(id)
                         try { webSocketManager?.sendMessage(jsonOf(mapOf("type" to "NPC_DESTROY", "npcId" to id))) } catch (_: Exception) {}
@@ -109,7 +138,7 @@ fun WorldMapViewModel.performPlayerAttack() {
             .filter {
                 !it.value.isDying &&
                         (it.value.type == NpcType.PERSON || it.value.type == ovh.gabrielhuav.pow.domain.models.map.NpcType.ZOMBIE) &&
-                        distance(playerLoc, it.value.location) <= ATTACK_RADIUS
+                        distance(playerLoc, it.value.location) <= radius
             }
             .minByOrNull { distance(playerLoc, it.value.location) }
         if (targetNpcEntry != null) {
@@ -123,7 +152,7 @@ fun WorldMapViewModel.performPlayerAttack() {
                             mapOf(
                                 "type" to "PLAYER_DAMAGE",
                                 "targetId" to npcId,
-                                "damage" to PLAYER_PUNCH_DAMAGE
+                                "damage" to damage
                             )
                         )
                     )
@@ -137,7 +166,6 @@ fun WorldMapViewModel.performPlayerAttack() {
                 if (_uiState.value.globalZombieMode && currentNpc.type == NpcType.PERSON) {
                     provokeApocalypsePolice(playerLoc)
                 }
-                val damage = PLAYER_PUNCH_DAMAGE
                 val newHealth = (currentNpc.health - damage).coerceAtLeast(0f)
                 if (newHealth <= 0f) {
                     npcHitStreak.remove(npcId)

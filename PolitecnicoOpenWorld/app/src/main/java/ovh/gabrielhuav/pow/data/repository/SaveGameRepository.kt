@@ -68,6 +68,11 @@ data class GameSaveData(
     val survivalPizza: Int = 0,
     val survivalRefresco: Int = 0,
     val survivalKits: Int = 0,
+    // Armas `NOMBRE:usos;...` (WeaponRules.encode), la equipada (WeaponKind.name) y la munición.
+    val survivalWeapons: String = "",
+    val survivalEquipped: String = "PUNOS",
+    val survivalBalas: Int = 0,
+    val survivalCartuchos: Int = 0,
     val savedAt: Long = 0L,
 )
 

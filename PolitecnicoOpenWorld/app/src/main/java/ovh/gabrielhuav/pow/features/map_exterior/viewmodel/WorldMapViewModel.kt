@@ -197,6 +197,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalBoards = survival.boards,
                 doorStates = survival.doors,
                 survivalPack = survival.pack,
+                survivalArsenal = survival.arsenal,
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,
                 debugEditWalls = designer.debugEditWalls,

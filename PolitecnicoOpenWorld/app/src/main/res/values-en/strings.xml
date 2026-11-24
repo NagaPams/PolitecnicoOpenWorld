@@ -669,6 +669,14 @@
     <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
     <string name="pack_craft_kit">Craft medkit (2 🥤 + 1 🍕)</string>
     <string name="pack_use_kit">Use medkit (+40 HP)</string>
+    <string name="weapons_title">Weapons</string>
+    <string name="weapons_ammo">Bullets %1$d · Shells %2$d</string>
+    <string name="weapon_punos">Fists</string>
+    <string name="weapon_palo">Stick</string>
+    <string name="weapon_bate">Bat</string>
+    <string name="weapon_cuchillo">Knife</string>
+    <string name="weapon_pistola">Pistol</string>
+    <string name="weapon_escopeta">Shotgun</string>
     <string name="vendor_boards_name">Planks</string>
     <string name="vendor_boards_desc">Material to barricade a building door.</string>
     <string name="door_menu_title">Door (planks: %1$d)</string>

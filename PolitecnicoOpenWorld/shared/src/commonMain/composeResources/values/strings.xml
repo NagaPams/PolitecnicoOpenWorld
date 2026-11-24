@@ -416,6 +416,10 @@
     <string name="survival_item_stored">🎒 Guardado en la mochila</string>
     <string name="survival_kit_crafted">🩹 Botiquín creado</string>
     <string name="survival_kit_used">🩹 Botiquín usado (+40 HP)</string>
+    <string name="survival_weapon_found">🔫 Arma recogida</string>
+    <string name="survival_ammo_found">🔫 Munición recogida</string>
+    <string name="survival_no_ammo">🔫 Sin munición</string>
+    <string name="survival_weapon_broke">💥 Tu arma se rompió</string>
     <string name="survival_boards_full">🪵 No cargas más tablones</string>
     <string name="survival_door_opened">🚪 Puerta abierta</string>
     <string name="survival_door_closed">🚪 Puerta cerrada</string>
