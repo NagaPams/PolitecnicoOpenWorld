@@ -48,6 +48,10 @@ class NpcAiManager {
 
     /** Lado (+1/-1) por el que cada zombi/cazador rodea la pared que lo bloquea; se olvida al avanzar libre. Ver NpcStaticCollision.kt. */
     internal val slideSides = HashMap<String, Int>()
+    /** Camino local (A*) de los zombis/cazadores atorados, la cuenta de pasos atorados y cuándo pueden pedir otro. Ver LocalPathfinder.kt. */
+    internal val localPaths = HashMap<String, FollowPath>()
+    internal val stuckSteps = HashMap<String, Int>()
+    internal val nextPathAtMs = HashMap<String, Long>()
 
     companion object {
         const val CAR_SPEED = 0.000008
@@ -849,8 +853,11 @@ class NpcAiManager {
                     }
                 }
             }
+            // Los cuerpos a pie no se encimen con el jugador ni entre sí (NpcSeparation.kt).
+            val separated = updated.toMutableList()
+            separateBodies(separated, pLat0, pLon0)
             serverNpcs.clear()
-            serverNpcs.addAll(updated)
+            serverNpcs.addAll(separated)
         }
     }
 

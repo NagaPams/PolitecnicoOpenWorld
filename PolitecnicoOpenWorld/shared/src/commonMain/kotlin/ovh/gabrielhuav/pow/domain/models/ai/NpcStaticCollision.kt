@@ -9,6 +9,7 @@ import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.isInsideBarrier
 import ovh.gabrielhuav.pow.domain.models.map.resolveCirclePath
 import ovh.gabrielhuav.pow.domain.models.map.resolveNpcPath
+import ovh.gabrielhuav.pow.platform.tiempo.ahoraMs
 
 // Colisión ESTÁTICA de los NPC que siguen el navGraph local del campus (`moveLocalNpc`): peatones, gatos y
 // coches que salen del estacionamiento. Esas vías se dibujaron sobre el mapa sin conocer los edificios de OSM
@@ -57,6 +58,11 @@ internal fun NpcAiManager.localNodeFree(landmark: Landmark, node: LocalNode): Bo
 internal fun NpcAiManager.collided(from: Npc, moved: Npc): Npc {
     val collisions = exteriorCollisions ?: return moved
     if (moved.location == from.location) return moved
+    val chaser = moved.type == NpcType.ZOMBIE || moved.type == NpcType.POLICE_COP
+    if (chaser && localPaths.isNotEmpty()) {
+        val stepped = followLocalPath(collisions, from, moved)
+        if (stepped != null) return stepped
+    }
     val resolution = collisions.resolveNpcPath(
         type = moved.type,
         carModel = moved.carModel,
@@ -66,12 +72,20 @@ internal fun NpcAiManager.collided(from: Npc, moved: Npc): Npc {
     )
     if (resolution.reachedTarget) {
         if (slideSides.isNotEmpty()) slideSides.remove(from.id)
+        if (stuckSteps.isNotEmpty()) stuckSteps.remove(from.id)
         return moved
     }
     // Zombis y policías cazadores van en línea recta: contra una pared se quedaban pegados. Prueban desvíos y
     // toman el que los deja más cerca de su objetivo (deslizan por la pared); sin salida, el último punto seguro.
-    if (moved.type == NpcType.ZOMBIE || moved.type == NpcType.POLICE_COP) {
+    if (chaser) {
         val slid = slideAround(from.id, from.location, moved.location)
+        val stuck = (stuckSteps[from.id] ?: 0) + 1
+        if (stuckSteps.size >= MAX_REMEMBERED_SIDES) stuckSteps.clear()
+        stuckSteps[from.id] = stuck
+        // Atorado (sin desvío, o dando vueltas a la pared demasiado tiempo): A* local hacia el jugador.
+        if ((slid == null || stuck >= STUCK_STEPS_BEFORE_PATH) && startLocalPath(collisions, from)) {
+            followLocalPath(collisions, from, moved)?.let { return it }
+        }
         if (slid != null) return moved.copy(location = slid)
     }
     return moved.copy(location = resolution.position)
@@ -82,6 +96,57 @@ private val SLIDE_ANGLES_DEGREES = doubleArrayOf(50.0, -50.0, 95.0, -95.0)
 private val FOLLOW_ANGLES_DEGREES = doubleArrayOf(50.0, 95.0, 140.0)
 private val BOTH_SIDES = intArrayOf(1, -1)
 private const val MAX_REMEMBERED_SIDES = 256
+/** Pasos seguidos contra una pared antes de pedir un camino A* (≈ 1 s de vueltas). */
+private const val STUCK_STEPS_BEFORE_PATH = 30
+private const val PATH_COOLDOWN_MS = 3_000L
+private const val PATH_LIFETIME_MS = 12_000L
+/** ~0,8 m en grados: un punto del camino se da por alcanzado a esta distancia. */
+private const val WAYPOINT_ARRIVE_DEGREES = 0.0000072
+
+/** Camino local de un NPC: puntos cada ~1 m, el siguiente por alcanzar y cuándo caduca. */
+internal class FollowPath(val points: List<GeoPoint>, var index: Int, val expiresMs: Long)
+
+/** Pide un camino A* del NPC al jugador; false si no toca (enfriamiento) o no hay camino. */
+private fun NpcAiManager.startLocalPath(collisions: ExteriorCollisionsConfig, npc: Npc): Boolean {
+    val now = ahoraMs()
+    if (now < (nextPathAtMs[npc.id] ?: 0L)) return false
+    if (nextPathAtMs.size >= MAX_REMEMBERED_SIDES) { nextPathAtMs.clear(); localPaths.clear() }
+    nextPathAtMs[npc.id] = now + PATH_COOLDOWN_MS
+    val goal = GeoPoint(aggroPlayerLat, aggroPlayerLon)
+    val points = LocalPathfinder.find(collisions, npc.location, goal) ?: return false
+    if (points.isEmpty()) return false
+    localPaths[npc.id] = FollowPath(points, 0, now + PATH_LIFETIME_MS)
+    slideSides.remove(npc.id)
+    stuckSteps.remove(npc.id)
+    return true
+}
+
+/** Un paso por el camino local del NPC, del mismo largo que [moved]; null si no hay camino vigente o se bloquea. */
+private fun NpcAiManager.followLocalPath(collisions: ExteriorCollisionsConfig, from: Npc, moved: Npc): Npc? {
+    val path = localPaths[from.id] ?: return null
+    if (ahoraMs() > path.expiresMs) { localPaths.remove(from.id); return null }
+    while (path.index < path.points.size) {
+        val wp = path.points[path.index]
+        val dLat = wp.latitude - from.location.latitude
+        val dLon = wp.longitude - from.location.longitude
+        if (kotlin.math.sqrt(dLat * dLat + dLon * dLon) >= WAYPOINT_ARRIVE_DEGREES) break
+        path.index++
+    }
+    if (path.index >= path.points.size) { localPaths.remove(from.id); return null }
+    val wp = path.points[path.index]
+    val toLat = wp.latitude - from.location.latitude
+    val toLon = wp.longitude - from.location.longitude
+    val toLen = kotlin.math.sqrt(toLat * toLat + toLon * toLon)
+    val stepLat = moved.location.latitude - from.location.latitude
+    val stepLon = moved.location.longitude - from.location.longitude
+    val stepLen = kotlin.math.sqrt(stepLat * stepLat + stepLon * stepLon).coerceAtMost(toLen)
+    val next = GeoPoint(from.location.latitude + toLat / toLen * stepLen, from.location.longitude + toLon / toLen * stepLen)
+    if (!collisions.resolveCirclePath(from.location, next, CircleCollider(LOCAL_NPC_RADIUS_METERS)).reachedTarget) {
+        localPaths.remove(from.id)
+        return null
+    }
+    return moved.copy(location = next)
+}
 
 /**
  * Rodeo de una pared con MEMORIA de lado (t17): la primera vez elige el desvío más cercano al objetivo
