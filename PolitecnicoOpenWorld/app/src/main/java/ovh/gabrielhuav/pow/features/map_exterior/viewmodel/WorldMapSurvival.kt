@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
+import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalActivity
@@ -17,6 +18,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_bitten
+import ovh.gabrielhuav.pow.shared.recursos.survival_bleeding
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
@@ -62,6 +64,10 @@ internal fun WorldMapViewModel.showSurvivalPrompt(text: String) {
 /** Mordida de zombi: con modo supervivencia activo puede iniciar la infección (una sola vez). */
 internal fun WorldMapViewModel.onZombieBite() {
     if (!survivalManager.state.value.enabled || survivalPaused()) return
+    if (BleedingRules.bleedsOnBite(Random.nextDouble()) && !survivalManager.state.value.bleeding) {
+        survivalManager.setBleeding(true)
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding)) }
+    }
     if (!SurvivalRules.biteInfects(Random.nextDouble())) return
     if (survivalManager.infect()) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bitten)) }

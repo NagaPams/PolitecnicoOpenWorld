@@ -997,6 +997,14 @@ fun WorldMapScreen(
                         isLoading = false,
                     )
                 }
+                if (uiState.survivalBleeding) {
+                    CacheChip(
+                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_bleeding),
+                        text = "🩸",
+                        color = Color(0xFFB71C1C),
+                        isLoading = false,
+                    )
+                }
                 if (uiState.isDriving) {
                     CacheChip(
                         label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_fuel),

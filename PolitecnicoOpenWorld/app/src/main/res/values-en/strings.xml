@@ -680,6 +680,9 @@
     <string name="fuel_counts">⛽ Jerrycans %1$d · Tank %2$d%%</string>
     <string name="pack_use_fuel">Refuel (+40 %)</string>
     <string name="wm_survival_fuel">Fuel</string>
+    <string name="wm_survival_bleeding">Bleeding</string>
+    <string name="bandage_counts">🩹 Bandages %1$d</string>
+    <string name="pack_use_bandage">Bandage up</string>
     <string name="vendor_boards_name">Planks</string>
     <string name="vendor_boards_desc">Material to barricade a building door.</string>
     <string name="door_menu_title">Door (planks: %1$d)</string>

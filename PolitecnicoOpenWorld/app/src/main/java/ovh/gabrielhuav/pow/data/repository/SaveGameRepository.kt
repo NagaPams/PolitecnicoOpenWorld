@@ -76,6 +76,9 @@ data class GameSaveData(
     // Gasolina del coche (0-100) y bidones guardados.
     val survivalFuel: Double = 70.0,
     val survivalFuelCans: Int = 0,
+    // Sangrado activo y vendas guardadas.
+    val survivalBleeding: Boolean = false,
+    val survivalBandages: Int = 0,
     val savedAt: Long = 0L,
 )
 

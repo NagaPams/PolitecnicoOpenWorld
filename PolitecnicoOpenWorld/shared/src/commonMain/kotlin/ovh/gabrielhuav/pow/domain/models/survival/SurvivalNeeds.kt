@@ -30,7 +30,7 @@ data class SurvivalConsumeResult(
 object SurvivalRules {
     private const val CRITICAL_THRESHOLD = 15.0
     private const val LOW_THRESHOLD = 35.0
-    private const val HEALTH_FLOOR = 10.0
+    const val HEALTH_FLOOR = 10.0
     const val BITE_INFECTION_PROBABILITY = 0.25
 
     // Ritmo provisional (por segundo de juego): hambre ~55 min, sed ~37 min y energía ~45 min en

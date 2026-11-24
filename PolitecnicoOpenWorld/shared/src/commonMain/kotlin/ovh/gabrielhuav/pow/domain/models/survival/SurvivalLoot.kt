@@ -7,7 +7,7 @@ import kotlin.math.floor
 // se recogieron (con enfriamiento). Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Tipo de botín. Los valores nuevos van AL FINAL. */
-enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA }
+enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA, VENDA }
 
 /** [variant] (0..9) decide qué arma o munición exacta es, estable por celda. */
 data class LootPoint(val id: String, val kind: LootKind, val latitude: Double, val longitude: Double, val variant: Int = 0)
@@ -24,8 +24,9 @@ object SurvivalLoot {
     // Pesos (de 100): comida y bebida abundan, el suero es raro.
     private const val PIZZA_UPTO = 30
     private const val REFRESCO_UPTO = 60
-    private const val TABLONES_UPTO = 78
-    private const val SUERO_UPTO = 86
+    private const val TABLONES_UPTO = 75
+    private const val SUERO_UPTO = 83
+    private const val VENDA_UPTO = 86
     // El resto: 3 % contenedor, 4 % gasolina, 4 % munición, 1 % arma blanca, 2 % arma de fuego.
     private const val CONTENEDOR_UPTO = 89
     private const val GASOLINA_UPTO = 93
@@ -44,6 +45,7 @@ object SurvivalLoot {
             roll < REFRESCO_UPTO -> LootKind.REFRESCO
             roll < TABLONES_UPTO -> LootKind.TABLONES
             roll < SUERO_UPTO -> LootKind.SUERO
+            roll < VENDA_UPTO -> LootKind.VENDA
             roll < CONTENEDOR_UPTO -> LootKind.CONTENEDOR
             roll < GASOLINA_UPTO -> LootKind.GASOLINA
             roll < MUNICION_UPTO -> LootKind.MUNICION

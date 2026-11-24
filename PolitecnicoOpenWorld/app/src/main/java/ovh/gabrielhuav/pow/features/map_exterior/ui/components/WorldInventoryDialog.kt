@@ -63,6 +63,8 @@ fun WorldInventoryDialog(
     onEquip: (WeaponKind) -> Unit = {},
     fuel: Double = 0.0,
     onUseFuelCan: () -> Unit = {},
+    bleeding: Boolean = false,
+    onUseBandage: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -142,6 +144,12 @@ fun WorldInventoryDialog(
                     }
                 }
                 if (survivalPack != null) {
+                    Text(stringResource(R.string.bandage_counts, survivalPack.vendas), color = Color.White, fontSize = 14.sp)
+                    Button(
+                        onClick = onUseBandage,
+                        enabled = survivalPack.vendas > 0 && bleeding,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E1B1B), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_use_bandage), fontSize = 12.sp) }
                     Text(stringResource(R.string.fuel_counts, survivalPack.bidones, fuel.toInt()), color = Color.White, fontSize = 14.sp)
                     Button(
                         onClick = onUseFuelCan,

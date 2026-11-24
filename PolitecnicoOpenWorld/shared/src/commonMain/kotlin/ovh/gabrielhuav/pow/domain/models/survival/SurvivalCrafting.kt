@@ -4,7 +4,7 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // momento (hambre llena, p. ej.) se guarda en vez de perderse; 2 refrescos + 1 pizza = 1 botiquín (+40 HP).
 // Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
-data class SurvivalPack(val pizza: Int = 0, val refresco: Int = 0, val botiquin: Int = 0, val bidones: Int = 0)
+data class SurvivalPack(val pizza: Int = 0, val refresco: Int = 0, val botiquin: Int = 0, val bidones: Int = 0, val vendas: Int = 0)
 
 object SurvivalCrafting {
     const val MAX_PER_ITEM = 5
@@ -44,6 +44,6 @@ object SurvivalCrafting {
     /** Valores de un guardado (viejo o editado a mano) dentro de rango. */
     fun sanitized(pack: SurvivalPack): SurvivalPack = SurvivalPack(
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
-        pack.bidones.coerceIn(0, FuelRules.MAX_CANS),
+        pack.bidones.coerceIn(0, FuelRules.MAX_CANS), pack.vendas.coerceIn(0, MAX_PER_ITEM),
     )
 }

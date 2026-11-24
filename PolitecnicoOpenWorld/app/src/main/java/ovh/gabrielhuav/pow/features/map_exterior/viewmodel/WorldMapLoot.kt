@@ -18,6 +18,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
+import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_stored
+import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_filled
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_stored
@@ -46,7 +48,7 @@ private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -108,6 +110,19 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 taken = true
             }
             Res.string.survival_weapon_found
+        }
+        point.kind == LootKind.VENDA -> {
+            if (current.bleeding) {
+                survivalManager.setBleeding(false)
+                taken = true
+                Res.string.survival_bandaged
+            } else if (current.pack.vendas < SurvivalCrafting.MAX_PER_ITEM) {
+                survivalManager.setPack(current.pack.copy(vendas = current.pack.vendas + 1))
+                taken = true
+                Res.string.survival_bandage_stored
+            } else {
+                Res.string.survival_not_needed
+            }
         }
         point.kind == LootKind.GASOLINA -> {
             val driving = _uiState.value.isDriving
@@ -204,6 +219,16 @@ private fun WorldMapViewModel.lootContainer(): Boolean {
     return gave
 }
 
+/** Usa una venda guardada: detiene el sangrado. */
+internal fun WorldMapViewModel.useBandage() {
+    val state = survivalManager.state.value
+    if (state.pack.vendas <= 0 || !state.bleeding) return
+    survivalManager.setPack(state.pack.copy(vendas = state.pack.vendas - 1))
+    survivalManager.setBleeding(false)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bandaged)) }
+}
+
 /** Un paso del bucle de conducción: baja el tanque y avisa una vez al quedarse sin gasolina. */
 internal fun WorldMapViewModel.burnFuel(speed: Double) {
     fuelTank = FuelRules.burn(fuelTank, speed, MAX_SPEED)
@@ -244,6 +269,7 @@ internal fun WorldMapViewModel.craftSurvivalKit() {
 internal fun WorldMapViewModel.useSurvivalKit() {
     val used = SurvivalCrafting.useKit(survivalManager.state.value.pack) ?: return
     survivalManager.setPack(used)
+    survivalManager.setBleeding(false)
     soundManager.playItem()
     heal(SurvivalCrafting.KIT_HEAL)
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_kit_used)) }

@@ -12,6 +12,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
@@ -27,6 +28,7 @@ data class SurvivalSubState(
     val arsenal: SurvivalArsenal = SurvivalArsenal(),
     /** Gasolina del coche (0-100); la fuente es `WorldMapViewModel.fuelTank` y aquí se publica cada segundo. */
     val fuel: Double = FuelRules.START,
+    val bleeding: Boolean = false,
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -55,6 +57,10 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.update { it.copy(pack = SurvivalCrafting.sanitized(pack)) }
     }
 
+    fun setBleeding(bleeding: Boolean) {
+        if (mutableState.value.bleeding != bleeding) mutableState.update { it.copy(bleeding = bleeding) }
+    }
+
     fun setFuel(fuel: Double) {
         val value = FuelRules.sanitized(fuel)
         if (mutableState.value.fuel != value) mutableState.update { it.copy(fuel = value) }
@@ -68,10 +74,12 @@ class SurvivalManager(enabled: Boolean = false) {
         needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0,
         doors: Map<String, DoorRuntime> = emptyMap(), pack: SurvivalPack = SurvivalPack(),
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
+        bleeding: Boolean = false,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
+            bleeding = bleeding,
             pack = SurvivalCrafting.sanitized(pack),
             boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
             doors = doors,
@@ -120,8 +128,11 @@ class SurvivalManager(enabled: Boolean = false) {
     }
 
     /** Vida tras el desgaste de [state] durante [deltaMs] (puro: cabe dentro de `updateHealth`). */
-    fun healthAfter(health: Float, state: SurvivalSubState, deltaMs: Long): Float =
-        SurvivalRules.healthAfterNeedsDamage(health.toDouble(), state.needs, deltaMs / 1000.0, state.infection).toFloat()
+    fun healthAfter(health: Float, state: SurvivalSubState, deltaMs: Long): Float {
+        val afterNeeds = SurvivalRules.healthAfterNeedsDamage(health.toDouble(), state.needs, deltaMs / 1000.0, state.infection)
+        val afterBleeding = if (state.bleeding) BleedingRules.healthAfter(afterNeeds, deltaMs / 1000.0) else afterNeeds
+        return afterBleeding.toFloat()
+    }
 
     fun tick(
         deltaMs: Long,

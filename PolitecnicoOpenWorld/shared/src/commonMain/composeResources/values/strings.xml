@@ -423,6 +423,9 @@
     <string name="survival_fuel_stored">⛽ Bidón guardado</string>
     <string name="survival_fuel_filled">⛽ Tanque rellenado</string>
     <string name="survival_fuel_empty">⛽ Sin gasolina</string>
+    <string name="survival_bleeding">🩸 ¡Estás sangrando! Busca una venda</string>
+    <string name="survival_bandaged">🩹 Venda aplicada</string>
+    <string name="survival_bandage_stored">🩹 Venda guardada</string>
     <string name="survival_boards_full">🪵 No cargas más tablones</string>
     <string name="survival_door_opened">🚪 Puerta abierta</string>
     <string name="survival_door_closed">🚪 Puerta cerrada</string>
