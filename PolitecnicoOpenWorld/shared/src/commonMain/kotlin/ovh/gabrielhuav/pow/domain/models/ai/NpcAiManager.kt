@@ -183,7 +183,9 @@ class NpcAiManager {
     @Volatile var deviceTierFactor: Float = 1.0f
     @Volatile var urbanFactor: Float = 1.0f
     @Volatile var userPopulationFactor: Float = 1.0f
-    private val popFactor get() = deviceTierFactor * urbanFactor * userPopulationFactor
+    /** Recorte por poca memoria (t21); 1 = sin recorte. */
+    @Volatile var memoryFactor: Float = 1.0f
+    private val popFactor get() = deviceTierFactor * urbanFactor * userPopulationFactor * memoryFactor
 
     // @Volatile: se asigna desde el hilo de carga y se lee desde el de la IA (antes un NPC podía no verlo).
     @Volatile internal var exteriorCollisions: ovh.gabrielhuav.pow.domain.models.map.ExteriorCollisionsConfig? = null
