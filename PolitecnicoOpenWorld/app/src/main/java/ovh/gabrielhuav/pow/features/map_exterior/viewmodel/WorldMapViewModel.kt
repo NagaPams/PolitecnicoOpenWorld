@@ -422,6 +422,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     @Volatile internal var grabbedUntilMs = 0L
     /** Hasta cuándo el jugador duerme (t12); mientras tanto no se mueve. */
     @Volatile internal var sleepUntilMs = 0L
+    /** Ya se avisó del apagón en esta partida (t14). */
+    internal var blackoutAnnounced = false
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
     internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     internal var vehicleWreckAnnounced = false

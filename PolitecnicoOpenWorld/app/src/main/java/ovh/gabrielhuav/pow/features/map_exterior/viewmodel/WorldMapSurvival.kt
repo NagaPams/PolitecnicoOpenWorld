@@ -13,6 +13,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
+import ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules
+import ovh.gabrielhuav.pow.domain.models.survival.DayRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepCheck
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
 import ovh.gabrielhuav.pow.domain.models.survival.WeatherRules
@@ -30,6 +32,8 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_bitten
 import ovh.gabrielhuav.pow.shared.recursos.survival_bleeding
 import ovh.gabrielhuav.pow.shared.recursos.survival_grabbed
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
+import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_shop
+import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_no_money
@@ -86,6 +90,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     grabbedUntilMs = 0L
     sleepUntilMs = 0L
+    blackoutAnnounced = false
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     vehicleWreckAnnounced = false
     survivalManager.resetForNewGame()
@@ -127,6 +132,17 @@ internal fun WorldMapViewModel.onZombieBite() {
     if (!SurvivalRules.biteInfects(Random.nextDouble())) return
     if (survivalManager.infect()) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bitten)) }
+    }
+}
+
+/** Avisa una vez cuando empieza el apagón; si el día vuelve a bajar (partida nueva o cargada) se rearma. */
+private fun WorldMapViewModel.announceBlackout() {
+    val blackout = BlackoutRules.active(DayRules.daysSurvived(survivalManager.state.value.activeMs))
+    if (blackout && !blackoutAnnounced) {
+        blackoutAnnounced = true
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_blackout_started)) }
+    } else if (!blackout) {
+        blackoutAnnounced = false
     }
 }
 
@@ -183,6 +199,10 @@ private fun WorldMapViewModel.updateSleep() {
 /** Compra en la tienda del campus con modo supervivencia: cobra solo si el consumible sirve. */
 internal fun WorldMapViewModel.buySurvivalItem(itemName: String) {
     val item = SurvivalItem.fromName(itemName) ?: return
+    if (BlackoutRules.active(DayRules.daysSurvived(survivalManager.state.value.activeMs))) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_blackout_shop)) }
+        return
+    }
     val price = SurvivalRules.priceOf(item)
     if (item == SurvivalItem.TABLONES) {
         buyBoards(price)
@@ -250,6 +270,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val clockNow = System.currentTimeMillis()
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))
     survivalManager.addActiveMs(elapsed.coerceAtMost(1000L))
+    announceBlackout()
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING
         s.playerAction == PlayerAction.RUN -> SurvivalActivity.RUNNING

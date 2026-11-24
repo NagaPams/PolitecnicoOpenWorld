@@ -803,7 +803,7 @@ fun WorldMapScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF091126).copy(alpha = uiState.nightAlpha))
+                    .background(Color(0xFF091126).copy(alpha = if (uiState.survivalMode) ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.veilAlpha(uiState.nightAlpha, uiState.survivalDay) else uiState.nightAlpha))
             )
         }
 
@@ -1041,7 +1041,7 @@ fun WorldMapScreen(
                 }
                 CacheChip(
                     label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
-                    text = "📅 ${uiState.survivalDay}" + when (uiState.survivalWeather) {
+                    text = "📅 ${uiState.survivalDay}" + (if (ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(uiState.survivalDay)) " 🔌" else "") + when (uiState.survivalWeather) {
                         ovh.gabrielhuav.pow.domain.models.survival.Weather.RAIN -> " 🌧️"
                         ovh.gabrielhuav.pow.domain.models.survival.Weather.FOG -> " 🌫️"
                         else -> ""

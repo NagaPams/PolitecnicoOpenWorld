@@ -45,6 +45,20 @@ object WeatherRules {
     }
 }
 
+/** Apagón (t14): pasado cierto día de supervivencia se va la luz y la tienda del campus deja de vender. */
+object BlackoutRules {
+    const val FROM_DAY = 4
+    /** Sin alumbrado las noches se ven más oscuras: el velo nocturno se multiplica por esto. */
+    const val NIGHT_VEIL_FACTOR = 1.5f
+    const val MAX_VEIL = 0.6f
+
+    fun active(day: Int): Boolean = day >= FROM_DAY
+
+    /** Alpha del velo nocturno con o sin apagón; el día (alpha 0) no se oscurece. */
+    fun veilAlpha(nightAlpha: Float, day: Int): Float =
+        if (active(day)) (nightAlpha * NIGHT_VEIL_FACTOR).coerceAtMost(MAX_VEIL) else nightAlpha
+}
+
 object DayRules {
     /** Un día de juego dura 24 min reales (el mismo ciclo del reloj del mundo). */
     const val DAY_MS = 24 * 60 * 1000L

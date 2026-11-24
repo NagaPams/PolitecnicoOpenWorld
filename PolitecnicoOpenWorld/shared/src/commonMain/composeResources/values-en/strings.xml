@@ -418,6 +418,8 @@
     <string name="survival_sleep_woken">⚠️ Something woke you up!</string>
     <string name="survival_sleep_zombies">You can't sleep with zombies nearby</string>
     <string name="survival_sleep_rested">You are not sleepy</string>
+    <string name="survival_blackout_started">🔌 The power is out: nights will be darker and the shop has closed</string>
+    <string name="survival_blackout_shop">No power: the shop is not selling</string>
     <string name="survival_container_looted">📦 Container looted</string>
     <string name="survival_item_stored">🎒 Stored in your pack</string>
     <string name="survival_kit_crafted">🩹 Medkit crafted</string>

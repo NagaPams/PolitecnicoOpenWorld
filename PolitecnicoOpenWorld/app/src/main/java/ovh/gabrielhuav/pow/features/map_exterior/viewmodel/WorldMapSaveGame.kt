@@ -178,6 +178,10 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         data.survivalActiveMs,
     )
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
+    // Si la partida cargada ya estaba en apagón no se vuelve a avisar.
+    blackoutAnnounced = ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(
+        ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs),
+    )
     fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.sanitized(data.survivalFuel)
     rebuildDoorCollisions()
     wantedManager.setWantedLevel(data.wantedLevel)
