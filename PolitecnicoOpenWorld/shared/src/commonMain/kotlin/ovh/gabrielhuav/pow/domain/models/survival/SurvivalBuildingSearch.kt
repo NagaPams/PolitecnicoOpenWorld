@@ -26,8 +26,8 @@ object BuildingSearchRules {
     const val COOLDOWN_MS = 30 * 60 * 1000L
     /** Cuánto se separa el punto de registro de la pared, hacia afuera. */
     const val OUTSIDE_METERS = 2.0
-    /** Los techos dibujados a mano del campus (id ≥ esto, `source=art`) no son lugares reales. */
-    private const val ART_ID_FROM = 9_000_000L
+    /** Los techos dibujados a mano del campus (`source=art`, ids 9 000 000..9 000 099) no son lugares reales. */
+    private val ART_IDS = 9_000_000L..9_000_099L
     private const val MIN_EDGE_METERS = 3.0
     private const val METERS_PER_DEGREE = 111_320.0
 
@@ -65,7 +65,7 @@ object BuildingSearchRules {
     fun searchable(footprints: List<CampusFootprint>): List<SearchableBuilding> {
         val out = ArrayList<SearchableBuilding>()
         for (fp in footprints) {
-            if ((fp.kind != FootprintKind.BUILDING && fp.kind != FootprintKind.ROOF) || fp.doors.isNotEmpty() || fp.id >= ART_ID_FROM) continue
+            if ((fp.kind != FootprintKind.BUILDING && fp.kind != FootprintKind.ROOF) || fp.doors.isNotEmpty() || fp.id in ART_IDS) continue
             val point = outsidePoint(fp.points) ?: continue
             out.add(SearchableBuilding(fp.id, profileFor(fp.name), point.latitude, point.longitude))
         }
