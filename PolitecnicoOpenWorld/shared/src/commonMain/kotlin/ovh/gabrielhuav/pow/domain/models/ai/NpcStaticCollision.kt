@@ -64,17 +64,71 @@ internal fun NpcAiManager.collided(from: Npc, moved: Npc): Npc {
         to = moved.location,
         headingDegrees = (moved.rotationAngle + 90f) % 360f,
     )
-    if (resolution.reachedTarget) return moved
+    if (resolution.reachedTarget) {
+        if (slideSides.isNotEmpty()) slideSides.remove(from.id)
+        return moved
+    }
     // Zombis y policías cazadores van en línea recta: contra una pared se quedaban pegados. Prueban desvíos y
     // toman el que los deja más cerca de su objetivo (deslizan por la pared); sin salida, el último punto seguro.
     if (moved.type == NpcType.ZOMBIE || moved.type == NpcType.POLICE_COP) {
-        val slid = collisions.slideAroundBarrier(from.location, moved.location)
+        val slid = slideAround(from.id, from.location, moved.location)
         if (slid != null) return moved.copy(location = slid)
     }
     return moved.copy(location = resolution.position)
 }
 
 private val SLIDE_ANGLES_DEGREES = doubleArrayOf(50.0, -50.0, 95.0, -95.0)
+/** Ángulos que prueba el seguimiento de pared por el lado recordado: de suave a casi dar la vuelta. */
+private val FOLLOW_ANGLES_DEGREES = doubleArrayOf(50.0, 95.0, 140.0)
+private val BOTH_SIDES = intArrayOf(1, -1)
+private const val MAX_REMEMBERED_SIDES = 256
+
+/**
+ * Rodeo de una pared con MEMORIA de lado (t17): la primera vez elige el desvío más cercano al objetivo
+ * ([slideAroundBarrier]) y recuerda de qué lado fue; los pasos siguientes siguen por ese mismo lado (50°, 95° y
+ * 140°) y solo cambian de lado si ese está cerrado. Sin memoria el zombi vacilaba entre los dos lados en una
+ * esquina cóncava (pared en U) y se quedaba atorado. La memoria se borra al volver a avanzar en línea recta.
+ */
+internal fun NpcAiManager.slideAround(id: String, from: GeoPoint, desired: GeoPoint): GeoPoint? {
+    val collisions = exteriorCollisions ?: return null
+    val remembered = slideSides[id] ?: 0
+    if (remembered == 0) {
+        val best = collisions.slideAroundBarrier(from, desired) ?: return null
+        if (slideSides.size >= MAX_REMEMBERED_SIDES) slideSides.clear()
+        slideSides[id] = slideSideOf(from, desired, best)
+        return best
+    }
+    for (turn in BOTH_SIDES) {
+        val side = remembered * turn
+        for (angle in FOLLOW_ANGLES_DEGREES) {
+            val candidate = collisions.slideStep(from, desired, side * angle) ?: continue
+            if (side != remembered) slideSides[id] = side
+            return candidate
+        }
+    }
+    slideSides.remove(id)
+    return null
+}
+
+/** +1 si [chosen] se desvió con ángulo positivo respecto a [from]→[desired], -1 si negativo. */
+private fun slideSideOf(from: GeoPoint, desired: GeoPoint, chosen: GeoPoint): Int {
+    val dLat = desired.latitude - from.latitude
+    val dLon = desired.longitude - from.longitude
+    val cLat = chosen.latitude - from.latitude
+    val cLon = chosen.longitude - from.longitude
+    return if (dLat * cLon - dLon * cLat < 0.0) 1 else -1
+}
+
+/** Paso desviado [angleDegrees] del directo [from]→[desired]; null si cruza una barrera. */
+internal fun ExteriorCollisionsConfig.slideStep(from: GeoPoint, desired: GeoPoint, angleDegrees: Double): GeoPoint? {
+    val dLat = desired.latitude - from.latitude
+    val dLon = desired.longitude - from.longitude
+    val rad = angleDegrees * kotlin.math.PI / 180.0
+    val cos = kotlin.math.cos(rad)
+    val sin = kotlin.math.sin(rad)
+    val candidate = GeoPoint(from.latitude + dLon * sin + dLat * cos, from.longitude + dLon * cos - dLat * sin)
+    return if (resolveCirclePath(from, candidate, CircleCollider(LOCAL_NPC_RADIUS_METERS)).reachedTarget) candidate else null
+}
 
 /**
  * Paso desviado ±50° o ±95° del directo [from]→[desired] que no cruza ninguna barrera, el que acaba más cerca

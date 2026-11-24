@@ -46,6 +46,9 @@ import ovh.gabrielhuav.pow.platform.concurrencia.PowConjuntoConcurrente
  */
 class NpcAiManager {
 
+    /** Lado (+1/-1) por el que cada zombi/cazador rodea la pared que lo bloquea; se olvida al avanzar libre. Ver NpcStaticCollision.kt. */
+    internal val slideSides = HashMap<String, Int>()
+
     companion object {
         const val CAR_SPEED = 0.000008
         const val PERSON_SPEED = 0.0000015
