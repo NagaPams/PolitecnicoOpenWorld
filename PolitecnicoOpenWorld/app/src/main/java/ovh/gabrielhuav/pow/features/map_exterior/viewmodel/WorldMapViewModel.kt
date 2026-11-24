@@ -168,6 +168,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var doorEnterBypass = false
     internal var lootCellKey = Long.MIN_VALUE
     internal val lootTaken = HashMap<String, Long>()
+    /** Edificios registrables (t06), calculados una vez de las huellas del campus. */
+    internal var searchBuildings: List<ovh.gabrielhuav.pow.domain.models.survival.SearchableBuilding>? = null
+    internal var buildingFootprintsAsked = false
     internal var lootCollectibles: List<ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible> = emptyList()
     private val vehicleDodge = ovh.gabrielhuav.pow.domain.models.map.VehicleDodge()
     internal var wasSurvivalNoiseActive = false

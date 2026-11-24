@@ -3,11 +3,14 @@ package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 import android.os.SystemClock
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.update
+import kotlin.math.abs
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
 import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
+import ovh.gabrielhuav.pow.domain.models.survival.BuildingSearchRules
+import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.LootKind
 import ovh.gabrielhuav.pow.domain.models.survival.LootPoint
@@ -30,6 +33,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_weapon_found
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
+import ovh.gabrielhuav.pow.shared.recursos.survival_building_searched
 import ovh.gabrielhuav.pow.shared.recursos.survival_container_looted
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_stored
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
@@ -46,13 +50,15 @@ private const val CONTAINER_BULLETS = 2
 private const val VEHICLE_CRASH_COOLDOWN_MS = 400L
 /** Si no hay calle a menos de esto (grados, ~65 m) del centro de la celda, esa celda no trae botín. */
 private const val LOOT_MAX_SNAP_DEGREES = 0.0006
+/** Los edificios registrables se muestran a menos de esto (grados, ~110 m) del jugador. */
+private const val BUILDING_VISIBLE_DEGREES = 0.001
 
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -66,6 +72,7 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
         clearSurvivalLoot()
         return
     }
+    ensureSearchBuildings()
     val now = SystemClock.elapsedRealtime()
     var respawned = false
     val iterator = lootTaken.entries.iterator()
@@ -85,7 +92,30 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
         if (distance(spot, GeoPoint(point.latitude, point.longitude)) > LOOT_MAX_SNAP_DEGREES) continue
         anchored.add(point.copy(latitude = spot.latitude, longitude = spot.longitude))
     }
+    searchBuildings?.let { buildings ->
+        for (b in buildings) {
+            if (abs(b.latitude - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(b.longitude - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+            val id = "${BuildingSearchRules.ID_PREFIX}${b.id}"
+            if (lootTaken.containsKey(id)) continue
+            anchored.add(LootPoint(id, LootKind.EDIFICIO, b.latitude, b.longitude, b.profile.ordinal))
+        }
+    }
     publishLoot(anchored)
+}
+
+/** Calcula una vez los edificios registrables de las huellas (las pide al cargador si aún no están). */
+private fun WorldMapViewModel.ensureSearchBuildings() {
+    if (searchBuildings != null) return
+    val footprints = _uiState.value.campusFootprints
+    if (footprints.isEmpty()) {
+        if (!buildingFootprintsAsked) {
+            buildingFootprintsAsked = true
+            ensureCampusFootprintsLoaded()
+        }
+        return
+    }
+    searchBuildings = BuildingSearchRules.searchable(footprints)
+    lootCellKey = Long.MIN_VALUE
 }
 
 internal fun WorldMapViewModel.clearSurvivalLoot() {
@@ -153,6 +183,10 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 Res.string.survival_ammo_found
             }
         }
+        point.kind == LootKind.EDIFICIO -> {
+            taken = searchBuilding(point)
+            if (taken) Res.string.survival_building_searched else Res.string.survival_not_needed
+        }
         point.kind == LootKind.CONTENEDOR -> {
             taken = lootContainer()
             if (taken) Res.string.survival_container_looted else Res.string.survival_not_needed
@@ -184,7 +218,7 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
     }
     if (taken) {
         soundManager.playItem()
-        lootTaken[id] = SystemClock.elapsedRealtime() + if (point.kind == LootKind.CONTENEDOR) CONTAINER_COOLDOWN_MS else LOOT_COOLDOWN_MS
+        lootTaken[id] = SystemClock.elapsedRealtime() + when (point.kind) { LootKind.CONTENEDOR -> CONTAINER_COOLDOWN_MS; LootKind.EDIFICIO -> BuildingSearchRules.COOLDOWN_MS; else -> LOOT_COOLDOWN_MS }
         collectiblesManager.clearNearby()
         lootCellKey = Long.MIN_VALUE
         refreshSurvivalLoot()
@@ -208,17 +242,55 @@ private fun WorldMapViewModel.lootContainer(): Boolean {
         gave = true
     }
     for (item in arrayOf(SurvivalItem.PIZZA, SurvivalItem.REFRESCO, SurvivalItem.SUERO)) {
-        val state = survivalManager.state.value
-        if (!SurvivalCrafting.worthUsingNow(item, state.needs, state.infection)) {
-            SurvivalCrafting.store(state.pack, item)?.let {
-                survivalManager.setPack(it)
+        if (grantConsumable(item)) gave = true
+    }
+    return gave
+}
+
+/** Da un consumible: se usa si hace falta ahora y, si no, se guarda en la mochila; false si no cupo. */
+private fun WorldMapViewModel.grantConsumable(item: SurvivalItem): Boolean {
+    val state = survivalManager.state.value
+    if (!SurvivalCrafting.worthUsingNow(item, state.needs, state.infection)) {
+        val stored = SurvivalCrafting.store(state.pack, item) ?: return false
+        survivalManager.setPack(stored)
+        return true
+    }
+    val result = survivalManager.consume(item)
+    if (result.healthBonus > 0f) heal(result.healthBonus)
+    return true
+}
+
+/** Registra un edificio (t06): da lo que corresponde a su tipo de lugar; false si no cupo nada (no se gasta). */
+private fun WorldMapViewModel.searchBuilding(point: LootPoint): Boolean {
+    val profile = BuildingSearchRules.profileOf(point.variant)
+    val buildingId = point.id.removePrefix(BuildingSearchRules.ID_PREFIX).toLongOrNull() ?: return false
+    var gave = false
+    for (gain in BuildingSearchRules.gainsFor(profile, buildingId)) {
+        val current = survivalManager.state.value
+        when (gain) {
+            SearchGain.PIZZA -> if (grantConsumable(SurvivalItem.PIZZA)) gave = true
+            SearchGain.REFRESCO -> if (grantConsumable(SurvivalItem.REFRESCO)) gave = true
+            SearchGain.SUERO -> if (grantConsumable(SurvivalItem.SUERO)) gave = true
+            SearchGain.TABLON -> if (current.boards < MAX_BOARDS_CARRIED) {
+                survivalManager.addBoards(1)
                 gave = true
             }
-            continue
+            SearchGain.VENDA -> if (current.bleeding) {
+                survivalManager.setBleeding(false)
+                gave = true
+            } else if (current.pack.vendas < SurvivalCrafting.MAX_PER_ITEM) {
+                survivalManager.setPack(current.pack.copy(vendas = current.pack.vendas + 1))
+                gave = true
+            }
+            SearchGain.BIDON -> if (current.pack.bidones < FuelRules.MAX_CANS) {
+                survivalManager.setPack(current.pack.copy(bidones = current.pack.bidones + 1))
+                gave = true
+            }
+            SearchGain.BALAS -> if (current.arsenal.balas < WeaponRules.MAX_AMMO) {
+                survivalManager.setArsenal(WeaponRules.addAmmo(current.arsenal, AmmoKind.BALAS, CONTAINER_BULLETS))
+                gave = true
+            }
         }
-        val result = survivalManager.consume(item)
-        if (result.healthBonus > 0f) heal(result.healthBonus)
-        gave = true
     }
     return gave
 }
