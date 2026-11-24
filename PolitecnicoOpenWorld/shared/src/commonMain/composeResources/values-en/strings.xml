@@ -420,6 +420,9 @@
     <string name="survival_ammo_found">🔫 Ammo picked up</string>
     <string name="survival_no_ammo">🔫 Out of ammo</string>
     <string name="survival_weapon_broke">💥 Your weapon broke</string>
+    <string name="survival_fuel_stored">⛽ Jerrycan stored</string>
+    <string name="survival_fuel_filled">⛽ Tank refilled</string>
+    <string name="survival_fuel_empty">⛽ Out of fuel</string>
     <string name="survival_boards_full">🪵 You cannot carry more planks</string>
     <string name="survival_door_opened">🚪 Door opened</string>
     <string name="survival_door_closed">🚪 Door closed</string>

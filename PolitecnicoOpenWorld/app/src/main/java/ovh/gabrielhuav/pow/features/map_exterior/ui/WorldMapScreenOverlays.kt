@@ -39,6 +39,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onEscomDoorFadeComple
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onHirePrankedy
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.craftSurvivalKit
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.equipSurvivalWeapon
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.worldInventoryUnlockedSlots
@@ -250,6 +251,8 @@ fun WorldMapOverlays(
             onUseKit = { viewModel.useSurvivalKit() },
             arsenal = if (uiState.survivalMode) uiState.survivalArsenal else null,
             onEquip = { viewModel.equipSurvivalWeapon(it) },
+            fuel = uiState.survivalFuel,
+            onUseFuelCan = { viewModel.useFuelCan() },
         )
     }
 }

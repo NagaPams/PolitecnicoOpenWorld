@@ -7,7 +7,7 @@ import kotlin.math.floor
 // se recogieron (con enfriamiento). Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Tipo de botín. Los valores nuevos van AL FINAL. */
-enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION }
+enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA }
 
 /** [variant] (0..9) decide qué arma o munición exacta es, estable por celda. */
 data class LootPoint(val id: String, val kind: LootKind, val latitude: Double, val longitude: Double, val variant: Int = 0)
@@ -22,14 +22,15 @@ object SurvivalLoot {
     private const val DENSITY = 5
     private const val ROLL_RANGE = 100
     // Pesos (de 100): comida y bebida abundan, el suero es raro.
-    private const val PIZZA_UPTO = 32
-    private const val REFRESCO_UPTO = 64
-    private const val TABLONES_UPTO = 84
-    private const val SUERO_UPTO = 92
-    // El 8 % que antes era todo contenedor: 3 % contenedor, 3 % munición, 1 % arma blanca, 1 % arma de fuego.
-    private const val CONTENEDOR_UPTO = 95
-    private const val MUNICION_UPTO = 98
-    private const val ARMA_BLANCA_UPTO = 99
+    private const val PIZZA_UPTO = 30
+    private const val REFRESCO_UPTO = 60
+    private const val TABLONES_UPTO = 78
+    private const val SUERO_UPTO = 86
+    // El resto: 3 % contenedor, 4 % gasolina, 4 % munición, 1 % arma blanca, 2 % arma de fuego.
+    private const val CONTENEDOR_UPTO = 89
+    private const val GASOLINA_UPTO = 93
+    private const val MUNICION_UPTO = 97
+    private const val ARMA_BLANCA_UPTO = 98
     private const val VARIANTS = 10
 
     fun cellOf(degrees: Double): Int = floor(degrees / CELL_DEGREES).toInt()
@@ -44,6 +45,7 @@ object SurvivalLoot {
             roll < TABLONES_UPTO -> LootKind.TABLONES
             roll < SUERO_UPTO -> LootKind.SUERO
             roll < CONTENEDOR_UPTO -> LootKind.CONTENEDOR
+            roll < GASOLINA_UPTO -> LootKind.GASOLINA
             roll < MUNICION_UPTO -> LootKind.MUNICION
             roll < ARMA_BLANCA_UPTO -> LootKind.ARMA_BLANCA
             else -> LootKind.ARMA_FUEGO

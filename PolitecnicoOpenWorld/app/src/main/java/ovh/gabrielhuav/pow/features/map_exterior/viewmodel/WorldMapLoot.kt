@@ -8,6 +8,7 @@ import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
 import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
+import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.LootKind
 import ovh.gabrielhuav.pow.domain.models.survival.LootPoint
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
@@ -17,6 +18,9 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
+import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
+import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_filled
+import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_stored
 import ovh.gabrielhuav.pow.shared.recursos.survival_weapon_found
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
@@ -41,7 +45,8 @@ private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
-    LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION -> SurvivalItem.TABLONES
+    LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
+    LootKind.GASOLINA -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -103,6 +108,21 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 taken = true
             }
             Res.string.survival_weapon_found
+        }
+        point.kind == LootKind.GASOLINA -> {
+            val driving = _uiState.value.isDriving
+            if (driving && fuelTank < FuelRules.USE_NOW_BELOW) {
+                fuelTank = FuelRules.refill(fuelTank)
+                fuelEmptyAnnounced = false
+                taken = true
+                Res.string.survival_fuel_filled
+            } else if (current.pack.bidones < FuelRules.MAX_CANS) {
+                survivalManager.setPack(current.pack.copy(bidones = current.pack.bidones + 1))
+                taken = true
+                Res.string.survival_fuel_stored
+            } else {
+                Res.string.survival_not_needed
+            }
         }
         point.kind == LootKind.MUNICION -> {
             val (ammo, count) = SurvivalLoot.ammoFor(point.variant)
@@ -182,6 +202,27 @@ private fun WorldMapViewModel.lootContainer(): Boolean {
         gave = true
     }
     return gave
+}
+
+/** Un paso del bucle de conducción: baja el tanque y avisa una vez al quedarse sin gasolina. */
+internal fun WorldMapViewModel.burnFuel(speed: Double) {
+    fuelTank = FuelRules.burn(fuelTank, speed, MAX_SPEED)
+    if (FuelRules.isEmpty(fuelTank) && !fuelEmptyAnnounced) {
+        fuelEmptyAnnounced = true
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_empty)) }
+    }
+}
+
+/** Usa un bidón guardado (desde el inventario): +[FuelRules.CAN_FILL] % de tanque. */
+internal fun WorldMapViewModel.useFuelCan() {
+    val pack = survivalManager.state.value.pack
+    if (pack.bidones <= 0 || fuelTank >= FuelRules.MAX) return
+    survivalManager.setPack(pack.copy(bidones = pack.bidones - 1))
+    fuelTank = FuelRules.refill(fuelTank)
+    fuelEmptyAnnounced = false
+    survivalManager.setFuel(fuelTank)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_filled)) }
 }
 
 /** Equipa un arma que el jugador ya tiene (desde el inventario). */

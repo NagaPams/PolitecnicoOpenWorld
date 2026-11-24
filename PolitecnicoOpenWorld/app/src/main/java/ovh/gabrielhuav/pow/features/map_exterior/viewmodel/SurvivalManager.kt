@@ -12,6 +12,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 
@@ -24,6 +25,8 @@ data class SurvivalSubState(
     val doors: Map<String, DoorRuntime> = emptyMap(),
     val pack: SurvivalPack = SurvivalPack(),
     val arsenal: SurvivalArsenal = SurvivalArsenal(),
+    /** Gasolina del coche (0-100); la fuente es `WorldMapViewModel.fuelTank` y aquí se publica cada segundo. */
+    val fuel: Double = FuelRules.START,
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -52,6 +55,11 @@ class SurvivalManager(enabled: Boolean = false) {
         mutableState.update { it.copy(pack = SurvivalCrafting.sanitized(pack)) }
     }
 
+    fun setFuel(fuel: Double) {
+        val value = FuelRules.sanitized(fuel)
+        if (mutableState.value.fuel != value) mutableState.update { it.copy(fuel = value) }
+    }
+
     fun setArsenal(arsenal: SurvivalArsenal) {
         mutableState.update { it.copy(arsenal = WeaponRules.sanitized(arsenal)) }
     }
@@ -59,10 +67,11 @@ class SurvivalManager(enabled: Boolean = false) {
     fun restore(
         needs: SurvivalNeeds, infected: Boolean, elapsedMs: Long, boards: Int = 0,
         doors: Map<String, DoorRuntime> = emptyMap(), pack: SurvivalPack = SurvivalPack(),
-        arsenal: SurvivalArsenal = SurvivalArsenal(),
+        arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
+            fuel = FuelRules.sanitized(fuel),
             pack = SurvivalCrafting.sanitized(pack),
             boards = boards.coerceIn(0, MAX_BOARDS_CARRIED),
             doors = doors,

@@ -997,6 +997,14 @@ fun WorldMapScreen(
                         isLoading = false,
                     )
                 }
+                if (uiState.isDriving) {
+                    CacheChip(
+                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_fuel),
+                        text = "⛽ ${uiState.survivalFuel.toInt()}%",
+                        color = if (uiState.survivalFuel < 15.0) Color(0xFFE53935) else Color(0xFFFFB300),
+                        isLoading = false,
+                    )
+                }
                 CacheChip(
                     label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
                     text = "🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +

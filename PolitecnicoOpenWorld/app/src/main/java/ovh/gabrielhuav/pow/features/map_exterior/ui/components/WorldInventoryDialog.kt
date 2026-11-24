@@ -61,6 +61,8 @@ fun WorldInventoryDialog(
     onUseKit: () -> Unit = {},
     arsenal: SurvivalArsenal? = null,
     onEquip: (WeaponKind) -> Unit = {},
+    fuel: Double = 0.0,
+    onUseFuelCan: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -138,6 +140,14 @@ fun WorldInventoryDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White),
                         ) { Text(stringResource(R.string.pack_use_kit), fontSize = 12.sp) }
                     }
+                }
+                if (survivalPack != null) {
+                    Text(stringResource(R.string.fuel_counts, survivalPack.bidones, fuel.toInt()), color = Color.White, fontSize = 14.sp)
+                    Button(
+                        onClick = onUseFuelCan,
+                        enabled = survivalPack.bidones > 0 && fuel < 100.0,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B4A1C), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_use_fuel), fontSize = 12.sp) }
                 }
                 // Armas (solo con el modo encendido): toca una para equiparla; las de fuego piden munición.
                 if (arsenal != null) {

@@ -198,6 +198,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 doorStates = survival.doors,
                 survivalPack = survival.pack,
                 survivalArsenal = survival.arsenal,
+                survivalFuel = survival.fuel,
                 showInteriorDebugOverlay = designer.showInteriorDebugOverlay,
                 debugEditTool = designer.debugEditTool,
                 debugEditWalls = designer.debugEditWalls,
@@ -406,6 +407,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // RECOMPENSA de la Misión 3: primera arma de fuego (desbloquea RANGED en interiores de
     // campaña). PERSISTIDA en GameSaveData.hasFirearm.
     internal var hasFirearm = false
+    /** Gasolina del coche en modo supervivencia (t03); se publica al manager cada segundo. */
+    internal var fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
+    internal var fuelEmptyAnnounced = false
 
     // ─── REJUGAR MISIONES (registro de misiones) — lógica en WorldMapMissionLog.kt ────
     // Id de la misión ✔ COMPLETADA que se está REJUGANDO, o null. TRANSITORIO: NO se persiste
@@ -741,11 +745,14 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                     ovh.gabrielhuav.pow.domain.models.campaign.MissionCatalog.ESCOM_FORCEWALK_LON)
                                 ) <= ovh.gabrielhuav.pow.domain.models.campaign.MissionCatalog.ESCOM_FORCEWALK_RADIUS_M
 
+                            // Sin gasolina (supervivencia) el motor no responde al acelerador.
+                            val fuelOn = survivalManager.state.value.enabled
+                            val engineDead = fuelOn && ovh.gabrielhuav.pow.domain.models.survival.FuelRules.isEmpty(fuelTank)
                             // Velocidad y rumbo: paso puro en :shared (VehicleDriving, t37).
                             val driven = ovh.gabrielhuav.pow.domain.models.map.VehicleDriving.step(
                                 ovh.gabrielhuav.pow.domain.models.map.DriveState(currentSpeed, currentRotation),
                                 ovh.gabrielhuav.pow.domain.models.map.DriveInput(
-                                    gas = isGasPressed, brake = isBrakePressed,
+                                    gas = isGasPressed && !engineDead, brake = isBrakePressed,
                                     steerLeft = isSteeringLeftPressed, steerRight = isSteeringRightPressed,
                                     holdForBoarding = prankedyBoarding, reverseOnly = forceWalkNearEscom,
                                 ),
@@ -753,6 +760,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             )
                             currentSpeed = driven.speed
                             currentRotation = driven.rotationDegrees
+                            if (fuelOn) burnFuel(currentSpeed)
 
                             val angleRad = Math.toRadians(currentRotation.toDouble())
                             val dx = kotlin.math.sin(angleRad) * currentSpeed

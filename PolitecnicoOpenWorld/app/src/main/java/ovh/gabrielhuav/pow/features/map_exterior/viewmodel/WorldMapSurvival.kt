@@ -36,6 +36,8 @@ private fun WorldMapViewModel.survivalPaused(): Boolean {
 
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     survivalManager.resetForNewGame()
+    fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
+    fuelEmptyAnnounced = false
     rebuildDoorCollisions()
     npcAiManager.setSurvivalNoiseEnabled(false)
     wasSurvivalNoiseActive = false
@@ -147,6 +149,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
         }
     }
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
+    survivalManager.setFuel(fuelTank)
     // El avance de necesidades corre fuera del bloqueo de vida; dentro solo se aplica el daño (h12).
     val deltaMs = elapsed.coerceAtMost(1000L)
     val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f) ?: return

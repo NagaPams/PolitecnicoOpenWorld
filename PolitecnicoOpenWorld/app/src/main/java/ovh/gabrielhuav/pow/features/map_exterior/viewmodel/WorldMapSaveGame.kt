@@ -106,6 +106,8 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalEquipped = survivalManager.state.value.arsenal.equipped.name,
         survivalBalas = survivalManager.state.value.arsenal.balas,
         survivalCartuchos = survivalManager.state.value.arsenal.cartuchos,
+        survivalFuel = fuelTank,
+        survivalFuelCans = survivalManager.state.value.pack.bidones,
         saveType = saveType,
         savedAt = System.currentTimeMillis()
     )
@@ -158,7 +160,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         data.survivalBoards,
         // Gson deja en null el texto que un guardado viejo no trae.
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.map.DoorRules.decode(data.survivalDoors ?: ""),
-        ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits),
+        ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans),
         ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal(
             weapons = @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.WeaponRules.decode(data.survivalWeapons ?: ""),
             equipped = ovh.gabrielhuav.pow.domain.models.survival.WeaponKind.entries
@@ -166,7 +168,9 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
             balas = data.survivalBalas,
             cartuchos = data.survivalCartuchos,
         ),
+        data.survivalFuel,
     )
+    fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.sanitized(data.survivalFuel)
     rebuildDoorCollisions()
     wantedManager.setWantedLevel(data.wantedLevel)
     campaignManager.setCompletedMissions(restoredCompleted)
