@@ -98,7 +98,7 @@ internal fun WorldMapViewModel.updateBarricadeWear(seconds: Double) {
         val at = locations[id] ?: continue
         var zombies = 0
         for (npc in remoteEntities.values) {
-            if (npc.type == NpcType.ZOMBIE && npc.health > 0f && distance(at, npc.location) <= DoorRules.ZOMBIE_REACH_METERS) zombies++
+            if (npc.type == NpcType.ZOMBIE && npc.health > 0f && at.distanceToAsDouble(npc.location) <= DoorRules.ZOMBIE_REACH_METERS) zombies++
         }
         if (zombies == 0) continue
         val next = DoorRules.damaged(door, zombies, seconds)
