@@ -425,6 +425,9 @@
     <string name="survival_skill_punteria">Aim</string>
     <string name="survival_skill_carpinteria">Carpentry</string>
     <string name="survival_occupation_chosen">🎓 Occupation chosen</string>
+    <string name="survival_craft_nailbat">🔨 You made a nail bat</string>
+    <string name="survival_craft_interrupted">Crafting was interrupted</string>
+    <string name="survival_craft_zombies">You can't craft with zombies nearby</string>
     <string name="survival_container_looted">📦 Container looted</string>
     <string name="survival_item_stored">🎒 Stored in your pack</string>
     <string name="survival_kit_crafted">🩹 Medkit crafted</string>

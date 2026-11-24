@@ -362,10 +362,7 @@ internal fun WorldMapViewModel.equipSurvivalWeapon(kind: WeaponKind) {
 
 /** Crafteo desde el inventario: 2 refrescos + 1 pizza guardados = 1 botiquín. */
 internal fun WorldMapViewModel.craftSurvivalKit() {
-    val crafted = SurvivalCrafting.craftKit(survivalManager.state.value.pack) ?: return
-    survivalManager.setPack(crafted)
-    soundManager.playItem()
-    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_kit_crafted)) }
+    startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.BOTIQUIN)
 }
 
 /** Usa un botiquín guardado: cura [SurvivalCrafting.KIT_HEAL] de vida. */

@@ -206,6 +206,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalStamina = survival.stamina,
                 survivalVehicleHealth = survival.vehicleHealth,
                 survivalWeather = survival.weather,
+                survivalCraft = survival.craft,
                 survivalSkills = survival.skills,
                 survivalOccupation = survival.occupation,
                 survivalDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(survival.activeMs),
@@ -424,6 +425,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     @Volatile internal var grabbedUntilMs = 0L
     /** Hasta cuándo el jugador duerme (t12); mientras tanto no se mueve. */
     @Volatile internal var sleepUntilMs = 0L
+    /** Crafteo con tiempo (t16): hasta cuándo dura y la corrutina que lo termina. */
+    @Volatile internal var craftUntilMs = 0L
+    internal var craftJob: kotlinx.coroutines.Job? = null
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */

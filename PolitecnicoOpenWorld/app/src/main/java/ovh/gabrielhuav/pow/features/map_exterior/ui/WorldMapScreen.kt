@@ -819,6 +819,25 @@ fun WorldMapScreen(
             )
         }
 
+        // Barra de acción del crafteo (t16): avanza sola con el reloj, sin depender del tick de 1 Hz.
+        uiState.survivalCraft?.let { craft ->
+            var craftProgress by remember(craft.startedMs) { mutableStateOf(0f) }
+            LaunchedEffect(craft.startedMs) {
+                while (craftProgress < 1f) {
+                    craftProgress = ((System.currentTimeMillis() - craft.startedMs).toFloat() / craft.durationMs).coerceIn(0f, 1f)
+                    kotlinx.coroutines.delay(50L)
+                }
+            }
+            Box(modifier = Modifier.align(Alignment.Center).padding(top = 120.dp).width(220.dp)) {
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { craftProgress },
+                    modifier = Modifier.fillMaxWidth().height(10.dp),
+                    color = Color(0xFFD4AF37),
+                    trackColor = Color(0x88000000),
+                )
+            }
+        }
+
         // ─── BARRA DE VIDA FIJA (HUD) ────────────────────────────────────────────
         // Siempre visible (como en el modo zombis) para que se vea cuánta vida tienes
         // y cuándo te hacen daño. Arriba a la izquierda, bajo el botón de Ajustes.

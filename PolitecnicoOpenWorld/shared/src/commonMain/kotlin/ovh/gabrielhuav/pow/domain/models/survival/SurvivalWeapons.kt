@@ -4,7 +4,7 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // cuerpo se desgastan; las de fuego gastan munición y hacen ruido de disparo. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Los valores nuevos van AL FINAL (se guardan por nombre). */
-enum class WeaponKind { PUNOS, PALO, BATE, CUCHILLO, PISTOLA, ESCOPETA }
+enum class WeaponKind { PUNOS, PALO, BATE, CUCHILLO, PISTOLA, ESCOPETA, PALO_CLAVOS }
 
 enum class AmmoKind { BALAS, CARTUCHOS }
 
@@ -29,6 +29,7 @@ object WeaponCatalog {
         WeaponKind.CUCHILLO to WeaponSpec(WeaponKind.CUCHILLO, 30f, 8.0, 800L, null, 24),
         WeaponKind.PISTOLA to WeaponSpec(WeaponKind.PISTOLA, 35f, 28.0, 700L, AmmoKind.BALAS, 0),
         WeaponKind.ESCOPETA to WeaponSpec(WeaponKind.ESCOPETA, 80f, 16.0, 1500L, AmmoKind.CARTUCHOS, 0),
+        WeaponKind.PALO_CLAVOS to WeaponSpec(WeaponKind.PALO_CLAVOS, 35f, 10.0, 1100L, null, 22),
     )
 
     fun of(kind: WeaponKind): WeaponSpec = specs.getValue(kind)

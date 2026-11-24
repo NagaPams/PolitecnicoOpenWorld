@@ -690,6 +690,8 @@
     <string name="occupation_boxeador">Boxer</string>
     <string name="occupation_soldado">Soldier</string>
     <string name="occupation_carpintero">Carpenter</string>
+    <string name="pack_craft_nailbat">Nail bat (2 boards)</string>
+    <string name="weapon_palo_clavos">Nail bat</string>
     <string name="pack_sleep">Sleep (+energy)</string>
     <string name="wm_survival_fuel">Fuel</string>
     <string name="wm_survival_bleeding">Bleeding</string>

@@ -42,6 +42,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.equipSurvivalWeapon
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicle
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useBandage
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.chooseSurvivalOccupation
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startCraft
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startSleep
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
@@ -267,6 +268,7 @@ fun WorldMapOverlays(
             skills = uiState.survivalSkills,
             occupation = uiState.survivalOccupation,
             onChooseOccupation = { viewModel.chooseSurvivalOccupation(it) },
+            onCraftNailBat = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.PALO_CLAVOS) },
         )
     }
 }

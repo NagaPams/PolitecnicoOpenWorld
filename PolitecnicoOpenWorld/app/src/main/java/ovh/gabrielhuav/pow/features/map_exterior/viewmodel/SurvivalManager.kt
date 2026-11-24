@@ -19,6 +19,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
+import ovh.gabrielhuav.pow.domain.models.survival.CraftProgress
 import ovh.gabrielhuav.pow.domain.models.survival.Occupation
 import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
@@ -48,6 +49,8 @@ data class SurvivalSubState(
     val occupation: Occupation = Occupation.NINGUNO,
     /** Tiempo de supervivencia activa acumulado (ms); de aquí sale el día en que va el jugador. */
     val activeMs: Long = 0L,
+    /** Crafteo en curso (t16); no se guarda. */
+    val craft: CraftProgress? = null,
 )
 
 internal const val MAX_BOARDS_CARRIED = 9
@@ -105,6 +108,10 @@ class SurvivalManager(enabled: Boolean = false) {
             if (skills != null) current.copy(skills = skills, occupation = occupation) else current
         }
         return chosen
+    }
+
+    fun setCraft(craft: CraftProgress?) {
+        mutableState.update { it.copy(craft = craft) }
     }
 
     fun setWeather(weather: Weather) {

@@ -40,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.R
 import ovh.gabrielhuav.pow.domain.models.survival.Occupation
+import ovh.gabrielhuav.pow.domain.models.survival.RecipeRules
 import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
@@ -78,6 +79,7 @@ fun WorldInventoryDialog(
     skills: SurvivalSkills = SurvivalSkills(),
     occupation: Occupation = Occupation.NINGUNO,
     onChooseOccupation: (Occupation) -> Unit = {},
+    onCraftNailBat: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -155,6 +157,11 @@ fun WorldInventoryDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White),
                         ) { Text(stringResource(R.string.pack_use_kit), fontSize = 12.sp) }
                     }
+                    Button(
+                        onClick = onCraftNailBat,
+                        enabled = boards >= RecipeRules.NAIL_BAT_BOARDS,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D4037), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_craft_nailbat), fontSize = 12.sp) }
                 }
                 if (survivalPack != null) {
                     Text(stringResource(R.string.car_health_counts, carHealth.toInt(), boards), color = Color.White, fontSize = 14.sp)
@@ -251,6 +258,7 @@ private fun weaponNameRes(kind: WeaponKind): Int = when (kind) {
     WeaponKind.CUCHILLO -> R.string.weapon_cuchillo
     WeaponKind.PISTOLA -> R.string.weapon_pistola
     WeaponKind.ESCOPETA -> R.string.weapon_escopeta
+    WeaponKind.PALO_CLAVOS -> R.string.weapon_palo_clavos
 }
 
 // Icono del ítem: carga la IMAGEN REAL del asset (PNG submuestreado); si falla, cae a un 🔑.

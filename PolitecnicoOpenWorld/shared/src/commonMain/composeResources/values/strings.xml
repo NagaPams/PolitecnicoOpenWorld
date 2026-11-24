@@ -425,6 +425,9 @@
     <string name="survival_skill_punteria">Puntería</string>
     <string name="survival_skill_carpinteria">Carpintería</string>
     <string name="survival_occupation_chosen">🎓 Oficio elegido</string>
+    <string name="survival_craft_nailbat">🔨 Fabricaste un palo con clavos</string>
+    <string name="survival_craft_interrupted">Se interrumpió el crafteo</string>
+    <string name="survival_craft_zombies">No puedes fabricar con zombis cerca</string>
     <string name="survival_container_looted">📦 Contenedor saqueado</string>
     <string name="survival_item_stored">🎒 Guardado en la mochila</string>
     <string name="survival_kit_crafted">🩹 Botiquín creado</string>

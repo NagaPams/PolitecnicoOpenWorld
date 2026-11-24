@@ -16,6 +16,10 @@ import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules
 import ovh.gabrielhuav.pow.domain.models.survival.DayRules
 import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
+import ovh.gabrielhuav.pow.domain.models.survival.CraftInventory
+import ovh.gabrielhuav.pow.domain.models.survival.CraftProgress
+import ovh.gabrielhuav.pow.domain.models.survival.Recipe
+import ovh.gabrielhuav.pow.domain.models.survival.RecipeRules
 import ovh.gabrielhuav.pow.domain.models.survival.Occupation
 import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.SleepCheck
@@ -39,6 +43,10 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_shop
 import ovh.gabrielhuav.pow.shared.recursos.survival_blackout_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
+import ovh.gabrielhuav.pow.shared.recursos.survival_craft_interrupted
+import ovh.gabrielhuav.pow.shared.recursos.survival_craft_nailbat
+import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
+import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_combate
@@ -90,7 +98,8 @@ internal fun WorldMapViewModel.onCarDoor(boarding: Boolean) {
 
 /** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */
 internal fun WorldMapViewModel.playerStepSize(): Double {
-    if (SleepRules.isSleeping(System.currentTimeMillis(), sleepUntilMs)) return 0.0
+    val clock = System.currentTimeMillis()
+    if (SleepRules.isSleeping(clock, sleepUntilMs) || RecipeRules.isCrafting(clock, craftUntilMs)) return 0.0
     val base = if (playerRunsThisStep()) 0.000006 else 0.000003
     return base * GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs)
 }
@@ -99,6 +108,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     grabbedUntilMs = 0L
     sleepUntilMs = 0L
+    cancelCraft(announce = false)
     blackoutAnnounced = false
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     vehicleWreckAnnounced = false
@@ -134,6 +144,7 @@ internal fun WorldMapViewModel.onZombieBite() {
     }
     grabbedUntilMs = GrabRules.grabbedUntil(System.currentTimeMillis())
     wakeUp(SleepRules.WAKE_METERS)
+    cancelCraft(announce = true)
     if (BleedingRules.bleedsOnBite(Random.nextDouble()) && !survivalManager.state.value.bleeding) {
         survivalManager.setBleeding(true)
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding)) }
@@ -185,6 +196,56 @@ internal fun WorldMapViewModel.chooseSurvivalOccupation(occupation: Occupation) 
     }
     soundManager.playItem()
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_occupation_chosen)) }
+}
+
+/** Empieza una receta con tiempo: el jugador se queda quieto y los ingredientes se gastan solo al terminar (t16). */
+internal fun WorldMapViewModel.startCraft(recipe: Recipe) {
+    val state = survivalManager.state.value
+    val now = System.currentTimeMillis()
+    if (!state.enabled || survivalPaused() || _uiState.value.isDriving) return
+    if (RecipeRules.isCrafting(now, craftUntilMs) || SleepRules.isSleeping(now, sleepUntilMs)) return
+    if (!RecipeRules.canCraft(recipe, CraftInventory(state.pack, state.boards, state.arsenal))) return
+    if (RecipeRules.shouldInterrupt(nearestZombieMeters())) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_craft_zombies)) }
+        return
+    }
+    val duration = RecipeRules.durationMs(recipe, skillLevel(Skill.CARPINTERIA))
+    craftUntilMs = now + duration
+    survivalManager.setCraft(CraftProgress(recipe, now, duration))
+    toggleWorldInventory(false)
+    craftJob?.cancel()
+    craftJob = viewModelScope.launch {
+        delay(duration)
+        finishCraft(recipe)
+    }
+}
+
+private suspend fun WorldMapViewModel.finishCraft(recipe: Recipe) {
+    craftUntilMs = 0L
+    survivalManager.setCraft(null)
+    val state = survivalManager.state.value
+    val result = RecipeRules.apply(recipe, CraftInventory(state.pack, state.boards, state.arsenal)) ?: return
+    survivalManager.setPack(result.pack)
+    survivalManager.addBoards(result.boards - state.boards)
+    survivalManager.setArsenal(result.arsenal)
+    soundManager.playItem()
+    if (recipe == Recipe.PALO_CLAVOS) onSkillUse(Skill.CARPINTERIA, 3)
+    showSurvivalPrompt(getString(if (recipe == Recipe.BOTIQUIN) Res.string.survival_kit_crafted else Res.string.survival_craft_nailbat))
+}
+
+/** Corta el crafteo sin gastar nada (zombi cerca, mordida o partida nueva). */
+internal fun WorldMapViewModel.cancelCraft(announce: Boolean) {
+    if (craftUntilMs == 0L && survivalManager.state.value.craft == null) return
+    craftJob?.cancel()
+    craftJob = null
+    craftUntilMs = 0L
+    survivalManager.setCraft(null)
+    if (announce) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_craft_interrupted)) }
+}
+
+/** Una vez por segundo: un zombi cerca interrumpe el crafteo. */
+private fun WorldMapViewModel.updateCraft() {
+    if (craftUntilMs != 0L && RecipeRules.shouldInterrupt(nearestZombieMeters())) cancelCraft(announce = true)
 }
 
 /** Distancia en metros al zombi vivo más cercano, o `Double.MAX_VALUE` si no hay. */
@@ -308,6 +369,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     lastSurvivalUpdateMs = now
     refreshSurvivalLoot()
     updateSleep()
+    updateCraft()
     val clockNow = System.currentTimeMillis()
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))
     survivalManager.addActiveMs(elapsed.coerceAtMost(1000L))

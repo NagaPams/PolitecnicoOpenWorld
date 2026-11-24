@@ -692,6 +692,8 @@
     <string name="occupation_boxeador">Boxeador</string>
     <string name="occupation_soldado">Soldado</string>
     <string name="occupation_carpintero">Carpintero</string>
+    <string name="pack_craft_nailbat">Palo con clavos (2 tablones)</string>
+    <string name="weapon_palo_clavos">Palo con clavos</string>
     <string name="pack_sleep">Dormir (+energía)</string>
     <string name="wm_survival_fuel">Gasolina</string>
     <string name="wm_survival_bleeding">Sangrado</string>
