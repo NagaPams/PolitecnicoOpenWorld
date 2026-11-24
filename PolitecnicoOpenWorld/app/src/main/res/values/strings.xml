@@ -681,6 +681,7 @@
     <string name="weapon_escopeta">Escopeta</string>
     <string name="fuel_counts">⛽ Bidones %1$d · Tanque %2$d%%</string>
     <string name="pack_use_fuel">Cargar gasolina (+40 %)</string>
+    <string name="pack_sleep">Dormir (+energía)</string>
     <string name="wm_survival_fuel">Gasolina</string>
     <string name="wm_survival_bleeding">Sangrado</string>
     <string name="bandage_counts">🩹 Vendas %1$d</string>

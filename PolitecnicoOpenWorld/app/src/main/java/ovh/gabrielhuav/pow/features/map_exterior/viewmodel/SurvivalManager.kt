@@ -68,6 +68,10 @@ class SurvivalManager(enabled: Boolean = false) {
         if (mutableState.value.vehicleHealth != value) mutableState.update { it.copy(vehicleHealth = value) }
     }
 
+    fun setNeeds(needs: SurvivalNeeds) {
+        mutableState.update { it.copy(needs = SurvivalNeeds(needs.hunger.coerceIn(0.0, 100.0), needs.thirst.coerceIn(0.0, 100.0), needs.energy.coerceIn(0.0, 100.0))) }
+    }
+
     fun setStamina(stamina: Double) {
         val value = stamina.coerceIn(0.0, StaminaRules.MAX)
         if (mutableState.value.stamina != value) mutableState.update { it.copy(stamina = value) }

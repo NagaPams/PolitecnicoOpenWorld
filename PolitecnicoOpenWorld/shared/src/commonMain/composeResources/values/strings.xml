@@ -413,6 +413,11 @@
     <string name="survival_item_used">✅ Consumible usado</string>
     <string name="survival_boards_bought">🪵 Tablón guardado</string>
     <string name="survival_building_searched">🏚️ Registraste el edificio</string>
+    <string name="survival_sleep_started">😴 Durmiendo… no te muevas</string>
+    <string name="survival_sleep_done">😴 Dormiste: recuperaste energía, pero tienes más hambre y sed</string>
+    <string name="survival_sleep_woken">⚠️ ¡Algo te despertó!</string>
+    <string name="survival_sleep_zombies">No puedes dormir con zombis cerca</string>
+    <string name="survival_sleep_rested">No tienes sueño</string>
     <string name="survival_container_looted">📦 Contenedor saqueado</string>
     <string name="survival_item_stored">🎒 Guardado en la mochila</string>
     <string name="survival_kit_crafted">🩹 Botiquín creado</string>

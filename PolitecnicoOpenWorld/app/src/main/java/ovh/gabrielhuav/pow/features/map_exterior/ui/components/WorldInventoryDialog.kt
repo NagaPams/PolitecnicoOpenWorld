@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.R
+import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
@@ -68,6 +69,8 @@ fun WorldInventoryDialog(
     carHealth: Double = 100.0,
     boards: Int = 0,
     onRepairCar: () -> Unit = {},
+    energy: Double = 100.0,
+    onSleep: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -165,6 +168,11 @@ fun WorldInventoryDialog(
                         enabled = survivalPack.bidones > 0 && fuel < 100.0,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B4A1C), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_use_fuel), fontSize = 12.sp) }
+                    Button(
+                        onClick = onSleep,
+                        enabled = energy < SleepRules.TOO_RESTED_AT,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF283593), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_sleep), fontSize = 12.sp) }
                 }
                 // Armas (solo con el modo encendido): toca una para equiparla; las de fuego piden munición.
                 if (arsenal != null) {

@@ -41,6 +41,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.craftSurvivalKit
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.equipSurvivalWeapon
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicle
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useBandage
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startSleep
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
@@ -260,6 +261,8 @@ fun WorldMapOverlays(
             carHealth = uiState.survivalVehicleHealth,
             boards = uiState.survivalBoards,
             onRepairCar = { viewModel.repairVehicle() },
+            energy = uiState.survivalNeeds.energy,
+            onSleep = { viewModel.startSleep() },
         )
     }
 }

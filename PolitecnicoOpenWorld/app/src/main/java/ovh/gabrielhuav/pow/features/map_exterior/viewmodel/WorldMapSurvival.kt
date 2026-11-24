@@ -13,6 +13,9 @@ import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
+import ovh.gabrielhuav.pow.domain.models.survival.SleepCheck
+import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
+import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaState
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
@@ -30,6 +33,11 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_no_money
 import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
 import ovh.gabrielhuav.pow.shared.recursos.survival_out_of_breath
+import ovh.gabrielhuav.pow.shared.recursos.survival_sleep_done
+import ovh.gabrielhuav.pow.shared.recursos.survival_sleep_rested
+import ovh.gabrielhuav.pow.shared.recursos.survival_sleep_started
+import ovh.gabrielhuav.pow.shared.recursos.survival_sleep_woken
+import ovh.gabrielhuav.pow.shared.recursos.survival_sleep_zombies
 
 internal fun survivalVisibilityPaused(mapVisible: Boolean, appResumed: Boolean): Boolean =
     !mapVisible || !appResumed
@@ -67,6 +75,7 @@ internal fun WorldMapViewModel.onCarDoor(boarding: Boolean) {
 
 /** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */
 internal fun WorldMapViewModel.playerStepSize(): Double {
+    if (SleepRules.isSleeping(System.currentTimeMillis(), sleepUntilMs)) return 0.0
     val base = if (playerRunsThisStep()) 0.000006 else 0.000003
     return base * GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs)
 }
@@ -74,6 +83,7 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     grabbedUntilMs = 0L
+    sleepUntilMs = 0L
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     vehicleWreckAnnounced = false
     survivalManager.resetForNewGame()
@@ -107,6 +117,7 @@ internal fun WorldMapViewModel.onZombieBite() {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_grabbed)) }
     }
     grabbedUntilMs = GrabRules.grabbedUntil(System.currentTimeMillis())
+    wakeUp(SleepRules.WAKE_METERS)
     if (BleedingRules.bleedsOnBite(Random.nextDouble()) && !survivalManager.state.value.bleeding) {
         survivalManager.setBleeding(true)
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding)) }
@@ -115,6 +126,56 @@ internal fun WorldMapViewModel.onZombieBite() {
     if (survivalManager.infect()) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bitten)) }
     }
+}
+
+/** Distancia en metros al zombi vivo más cercano, o `Double.MAX_VALUE` si no hay. */
+private fun WorldMapViewModel.nearestZombieMeters(): Double {
+    val here = _uiState.value.currentLocation ?: return Double.MAX_VALUE
+    var best = Double.MAX_VALUE
+    for (npc in remoteEntities.values) {
+        if (npc.type != NpcType.ZOMBIE || npc.health <= 0f) continue
+        val d = here.distanceToAsDouble(npc.location)
+        if (d < best) best = d
+    }
+    return best
+}
+
+/** Dormir (t12) desde el inventario: a pie, con energía baja y sin zombis cerca. */
+internal fun WorldMapViewModel.startSleep() {
+    val state = survivalManager.state.value
+    val now = System.currentTimeMillis()
+    if (!state.enabled || survivalPaused() || _uiState.value.isDriving || SleepRules.isSleeping(now, sleepUntilMs)) return
+    when (SleepRules.check(state.needs.energy, nearestZombieMeters())) {
+        SleepCheck.TOO_RESTED -> viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_rested)) }
+        SleepCheck.ZOMBIES_NEAR -> viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_zombies)) }
+        SleepCheck.OK -> {
+            sleepUntilMs = SleepRules.sleepUntil(now)
+            toggleWorldInventory(false)
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_started)) }
+        }
+    }
+}
+
+/** Corta el sueño sin ganar nada (un zombi cerca o una mordida); [nearestMeters] solo decide si hay que avisar. */
+private fun WorldMapViewModel.wakeUp(nearestMeters: Double) {
+    if (!SleepRules.isSleeping(System.currentTimeMillis(), sleepUntilMs)) return
+    sleepUntilMs = 0L
+    if (nearestMeters <= SleepRules.WAKE_METERS) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_woken)) }
+}
+
+/** Una vez por segundo mientras duerme: lo despierta un zombi cerca o, al terminar, aplica el descanso. */
+private fun WorldMapViewModel.updateSleep() {
+    val now = System.currentTimeMillis()
+    if (sleepUntilMs == 0L) return
+    val nearest = nearestZombieMeters()
+    if (SleepRules.shouldWake(nearest)) {
+        wakeUp(nearest)
+        return
+    }
+    if (SleepRules.isSleeping(now, sleepUntilMs)) return
+    sleepUntilMs = 0L
+    survivalManager.setNeeds(SleepRules.rested(survivalManager.state.value.needs, _uiState.value.nightAlpha > 0.05f))
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_done)) }
 }
 
 /** Compra en la tienda del campus con modo supervivencia: cobra solo si el consumible sirve. */
@@ -183,6 +244,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     if (elapsed < 1000L) return
     lastSurvivalUpdateMs = now
     refreshSurvivalLoot()
+    updateSleep()
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING
         s.playerAction == PlayerAction.RUN -> SurvivalActivity.RUNNING

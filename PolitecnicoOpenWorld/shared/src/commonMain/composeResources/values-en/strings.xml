@@ -413,6 +413,11 @@
     <string name="survival_item_used">✅ Item used</string>
     <string name="survival_boards_bought">🪵 Plank stored</string>
     <string name="survival_building_searched">🏚️ You searched the building</string>
+    <string name="survival_sleep_started">😴 Sleeping… stay still</string>
+    <string name="survival_sleep_done">😴 You slept: energy restored, but you are hungrier and thirstier</string>
+    <string name="survival_sleep_woken">⚠️ Something woke you up!</string>
+    <string name="survival_sleep_zombies">You can't sleep with zombies nearby</string>
+    <string name="survival_sleep_rested">You are not sleepy</string>
     <string name="survival_container_looted">📦 Container looted</string>
     <string name="survival_item_stored">🎒 Stored in your pack</string>
     <string name="survival_kit_crafted">🩹 Medkit crafted</string>

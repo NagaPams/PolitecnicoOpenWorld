@@ -418,6 +418,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var fuelEmptyAnnounced = false
     /** Hasta cuándo te sujeta un zombi (t02); frena los pasos a pie. */
     @Volatile internal var grabbedUntilMs = 0L
+    /** Hasta cuándo el jugador duerme (t12); mientras tanto no se mueve. */
+    @Volatile internal var sleepUntilMs = 0L
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
     internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     internal var vehicleWreckAnnounced = false
