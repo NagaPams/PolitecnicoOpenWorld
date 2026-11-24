@@ -427,6 +427,7 @@
     <string name="survival_bandaged">🩹 Venda aplicada</string>
     <string name="survival_bandage_stored">🩹 Venda guardada</string>
     <string name="survival_out_of_breath">🫁 Sin aliento: solo puedes caminar</string>
+    <string name="survival_grabbed">🧟 ¡Te agarró! Golpéalo para soltarte</string>
     <string name="survival_boards_full">🪵 No cargas más tablones</string>
     <string name="survival_door_opened">🚪 Puerta abierta</string>
     <string name="survival_door_closed">🚪 Puerta cerrada</string>

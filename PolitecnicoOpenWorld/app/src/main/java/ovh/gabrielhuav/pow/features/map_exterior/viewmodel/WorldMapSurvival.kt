@@ -10,6 +10,7 @@ import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaState
@@ -21,6 +22,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_bitten
 import ovh.gabrielhuav.pow.shared.recursos.survival_bleeding
+import ovh.gabrielhuav.pow.shared.recursos.survival_grabbed
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_bought
 import ovh.gabrielhuav.pow.shared.recursos.survival_boards_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
@@ -55,8 +57,15 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
     return StaminaRules.runsNow(before, wantsRun)
 }
 
+/** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */
+internal fun WorldMapViewModel.playerStepSize(): Double {
+    val base = if (playerRunsThisStep()) 0.000006 else 0.000003
+    return base * GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs)
+}
+
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
+    grabbedUntilMs = 0L
     survivalManager.resetForNewGame()
     fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
     fuelEmptyAnnounced = false
@@ -84,6 +93,10 @@ internal fun WorldMapViewModel.showSurvivalPrompt(text: String) {
 /** Mordida de zombi: con modo supervivencia activo puede iniciar la infección (una sola vez). */
 internal fun WorldMapViewModel.onZombieBite() {
     if (!survivalManager.state.value.enabled || survivalPaused()) return
+    if (System.currentTimeMillis() >= grabbedUntilMs) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_grabbed)) }
+    }
+    grabbedUntilMs = GrabRules.grabbedUntil(System.currentTimeMillis())
     if (BleedingRules.bleedsOnBite(Random.nextDouble()) && !survivalManager.state.value.bleeding) {
         survivalManager.setBleeding(true)
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding)) }

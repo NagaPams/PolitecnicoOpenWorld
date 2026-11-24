@@ -166,6 +166,7 @@ fun WorldMapViewModel.performPlayerAttack() {
                 if (_uiState.value.globalZombieMode && currentNpc.type == NpcType.PERSON) {
                     provokeApocalypsePolice(playerLoc)
                 }
+                if (currentNpc.type == NpcType.ZOMBIE) grabbedUntilMs = 0L // un golpe al zombi te suelta (t02)
                 val newHealth = (currentNpc.health - damage).coerceAtLeast(0f)
                 if (newHealth <= 0f) {
                     npcHitStreak.remove(npcId)

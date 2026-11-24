@@ -136,7 +136,7 @@ internal fun WorldMapViewModel.moveCharacter(direction: Direction) {
         }
         startMovementAction(isMovingRight)
 
-        val step = if (playerRunsThisStep()) 0.000006 else 0.000003
+        val step = playerStepSize()
 
         val temp = when (direction) {
             Direction.UP    -> GeoPoint(loc.latitude + step, loc.longitude)
@@ -225,7 +225,7 @@ internal fun WorldMapViewModel.moveCharacterByAngle(angleRad: Double) {
             }
         }
 
-        val step = if (playerRunsThisStep()) 0.000006 else 0.000003
+        val step = playerStepSize()
 
         val temp = GeoPoint(
             loc.latitude + sin(angleRad) * step,

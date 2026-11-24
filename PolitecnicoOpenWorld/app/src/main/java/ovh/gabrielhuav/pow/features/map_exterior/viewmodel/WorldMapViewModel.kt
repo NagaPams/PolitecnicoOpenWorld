@@ -412,6 +412,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Gasolina del coche en modo supervivencia (t03); se publica al manager cada segundo. */
     internal var fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
     internal var fuelEmptyAnnounced = false
+    /** Hasta cuándo te sujeta un zombi (t02); frena los pasos a pie. */
+    @Volatile internal var grabbedUntilMs = 0L
     /** Aliento a pie en modo supervivencia (t11); no se guarda. */
     internal var staminaState = ovh.gabrielhuav.pow.domain.models.survival.StaminaState()
     @Volatile internal var staminaMovedThisSecond = false
