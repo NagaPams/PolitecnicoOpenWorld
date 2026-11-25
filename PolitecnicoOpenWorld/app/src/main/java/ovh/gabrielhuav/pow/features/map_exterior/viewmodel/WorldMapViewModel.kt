@@ -431,6 +431,11 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
     internal var lastMemoryCheckMs = 0L
+    /** Cola de avisos de supervivencia (t31). */
+    internal val promptQueue = ovh.gabrielhuav.pow.domain.models.survival.PromptQueue()
+    /** ¿La supervivencia está en pausa (interior, misión, carga)? La pantalla lo muestra como «en pausa» (t31). */
+    internal val _survivalPaused = MutableStateFlow(false)
+    val survivalPausedFlow: StateFlow<Boolean> = _survivalPaused.asStateFlow()
     internal var campusBaseFootprints: List<ovh.gabrielhuav.pow.domain.models.map.CampusFootprint> = emptyList()
     // Se escriben desde IO y se leen en el bucle de juego: @Volatile.
     @Volatile internal var outerFetching = false

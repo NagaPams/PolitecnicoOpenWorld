@@ -28,6 +28,7 @@ import ovh.gabrielhuav.pow.domain.models.map.safeBoardingHeading
 // interiores (ahí vive la lógica del puzzle).
 fun WorldMapViewModel.toggleWorldInventory(show: Boolean) {
     _uiState.update { it.copy(showWorldInventory = show) }
+    if (!show) drainSurvivalPrompts()
 }
 
 /** Slots desbloqueados para el panel del mapa (mismo gate que AppNavGraph: mochila M2 = 4). */

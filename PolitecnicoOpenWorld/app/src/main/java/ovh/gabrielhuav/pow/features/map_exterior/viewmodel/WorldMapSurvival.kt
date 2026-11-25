@@ -113,6 +113,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     sleepUntilMs = 0L
     cancelCraft(announce = false)
     blackoutAnnounced = false
+    promptQueue.clear()
     zoneKills = emptyMap()
     npcAiManager.zoneKills = emptyMap()
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
@@ -133,11 +134,26 @@ internal fun WorldMapViewModel.emitSurvivalNoise(source: NoiseSource) {
     npcAiManager.queueSurvivalNoise(NoiseEvent(location.latitude, location.longitude, source, state.nightAlpha > 0.05f, survivalManager.state.value.weather == Weather.RAIN))
 }
 
-internal fun WorldMapViewModel.showSurvivalPrompt(text: String) {
-    _uiState.update { it.copy(interactionPrompt = text) }
+/**
+ * Aviso de supervivencia con cola y prioridad (t31): el de más prioridad se muestra al instante, los demás esperan su
+ * turno y nada sale mientras el inventario está abierto (antes se perdía detrás del diálogo).
+ */
+internal fun WorldMapViewModel.showSurvivalPrompt(text: String, priority: Int = ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.NORMAL) {
+    displaySurvivalPrompt(promptQueue.offer(ovh.gabrielhuav.pow.domain.models.survival.QueuedPrompt(text, priority), SystemClock.elapsedRealtime(), _uiState.value.showWorldInventory))
+}
+
+/** Muestra el siguiente aviso en espera, si ya toca; se llama al terminar uno y al cerrar el inventario. */
+internal fun WorldMapViewModel.drainSurvivalPrompts() {
+    displaySurvivalPrompt(promptQueue.next(SystemClock.elapsedRealtime(), _uiState.value.showWorldInventory))
+}
+
+private fun WorldMapViewModel.displaySurvivalPrompt(prompt: ovh.gabrielhuav.pow.domain.models.survival.QueuedPrompt?) {
+    if (prompt == null) return
+    _uiState.update { it.copy(interactionPrompt = prompt.text) }
     viewModelScope.launch {
-        delay(3000L)
-        _uiState.update { if (it.interactionPrompt == text) it.copy(interactionPrompt = null) else it }
+        delay(ovh.gabrielhuav.pow.domain.models.survival.PromptQueue.SHOW_MS)
+        _uiState.update { if (it.interactionPrompt == prompt.text) it.copy(interactionPrompt = null) else it }
+        drainSurvivalPrompts()
     }
 }
 
@@ -145,18 +161,18 @@ internal fun WorldMapViewModel.showSurvivalPrompt(text: String) {
 internal fun WorldMapViewModel.onZombieBite() {
     if (!survivalManager.state.value.enabled || survivalPaused()) return
     if (System.currentTimeMillis() >= grabbedUntilMs) {
-        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_grabbed)) }
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_grabbed), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
     }
     grabbedUntilMs = GrabRules.grabbedUntil(System.currentTimeMillis())
     wakeUp(SleepRules.WAKE_METERS)
     cancelCraft(announce = true)
     if (BleedingRules.bleedsOnBite(Random.nextDouble()) && !survivalManager.state.value.bleeding) {
         survivalManager.setBleeding(true)
-        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding)) }
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
     }
     if (!SurvivalRules.biteInfects(Random.nextDouble())) return
     if (survivalManager.infect()) {
-        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bitten)) }
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bitten), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
     }
 }
 
@@ -365,6 +381,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     }
     val s = _uiState.value
     val paused = survivalPaused()
+    if (_survivalPaused.value != paused) _survivalPaused.value = paused
     val noiseActive = survivalManager.state.value.enabled && !paused && isServerDelegatedHost
     if (wasSurvivalNoiseActive != noiseActive) npcAiManager.setSurvivalNoiseEnabled(noiseActive)
     wasSurvivalNoiseActive = noiseActive

@@ -90,9 +90,10 @@ fun WorldMapOverlays(
     uiState.interactionPrompt?.let { promptText ->
         // 🆕 2026-07-12: con un OBJETIVO de campaña visible (widget arriba-centro), el prompt
         // baja para quedar DEBAJO del widget — antes se encimaban (p. ej. "🧪 TP al checkpoint").
-        val promptTop = if (uiState.currentObjective != null) 170.dp else 70.dp
+        // t31: aviso pequeño pegado al borde superior (debajo del widget de objetivo si lo hay), no una franja a media pantalla.
+        val promptTop = if (uiState.currentObjective != null) 84.dp else 36.dp
         Box(modifier = Modifier.fillMaxSize().padding(top = promptTop), contentAlignment = Alignment.TopCenter) {
-            Text(text = promptText, color = Color.White, fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 2.sp, modifier = Modifier.background(color = Color(0xFF3B0D1B).copy(alpha = 0.85f), shape = RoundedCornerShape(8.dp)).padding(horizontal = 24.dp, vertical = 12.dp))
+            Text(text = promptText, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.widthIn(max = 420.dp).background(color = Color(0xFF3B0D1B).copy(alpha = 0.85f), shape = RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 6.dp))
         }
     }
 

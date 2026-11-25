@@ -659,6 +659,7 @@
     <!-- Tutorial de controles (optativo, i18n 2026-07-11) -->
     <string name="wm_provider_isometric">Vista isométrica (experimental)</string>
     <string name="wm_survival_needs">Necesidades</string>
+    <string name="wm_survival_paused">En pausa</string>
     <string name="wm_survival_infection">Infección</string>
     <string name="wm_survival_symptoms">Con síntomas</string>
     <string name="wm_survival_incubating">Incubando</string>

@@ -1009,67 +1009,15 @@ fun WorldMapScreen(
             }
         }
 
-        // Necesidades e infección (modo supervivencia): abajo al centro, entre el joystick y los botones, para que no
-        // queden detrás del joystick como en la columna izquierda (h14).
+        // Estado de supervivencia en una sola barra delgada abajo al centro, entre el joystick y los botones (t31).
+        // Solo muestra lo que importa; el resto de chips ya no se apila encima del juego.
         if (uiState.survivalMode) {
-            Column(
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (uiState.survivalInfection.infected) {
-                    CacheChip(
-                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_infection),
-                        text = androidx.compose.ui.res.stringResource(
-                            if (uiState.survivalInfection.symptomatic) ovh.gabrielhuav.pow.R.string.wm_survival_symptoms
-                            else ovh.gabrielhuav.pow.R.string.wm_survival_incubating,
-                        ),
-                        color = Color(0xFFE53935),
-                        isLoading = false,
-                    )
-                }
-                if (uiState.survivalStamina < 99.0) {
-                    CacheChip(
-                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_stamina),
-                        text = "🫁 ${uiState.survivalStamina.toInt()}",
-                        color = if (uiState.survivalStamina < ovh.gabrielhuav.pow.domain.models.survival.StaminaRules.RECOVER_AT) Color(0xFFE53935) else Color(0xFF4DD0E1),
-                        isLoading = false,
-                    )
-                }
-                if (uiState.survivalBleeding) {
-                    CacheChip(
-                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_bleeding),
-                        text = "🩸",
-                        color = Color(0xFFB71C1C),
-                        isLoading = false,
-                    )
-                }
-                if (uiState.isDriving) {
-                    CacheChip(
-                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_car),
-                        text = "🚗 ${uiState.survivalVehicleHealth.toInt()}%",
-                        color = if (uiState.survivalVehicleHealth < 35.0) Color(0xFFE53935) else Color(0xFF90A4AE),
-                        isLoading = false,
-                    )
-                    CacheChip(
-                        label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_fuel),
-                        text = "⛽ ${uiState.survivalFuel.toInt()}%",
-                        color = if (uiState.survivalFuel < 15.0) Color(0xFFE53935) else Color(0xFFFFB300),
-                        isLoading = false,
-                    )
-                }
-                CacheChip(
-                    label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_survival_needs),
-                    text = "📅 ${uiState.survivalDay}" + (if (ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(uiState.survivalDay)) " 🔌" else "") + when (uiState.survivalWeather) {
-                        ovh.gabrielhuav.pow.domain.models.survival.Weather.RAIN -> " 🌧️"
-                        ovh.gabrielhuav.pow.domain.models.survival.Weather.FOG -> " 🌫️"
-                        else -> ""
-                    } + "  🍗 ${uiState.survivalNeeds.hunger.toInt()}  💧 ${uiState.survivalNeeds.thirst.toInt()}  " +
-                        "⚡ ${uiState.survivalNeeds.energy.toInt()}",
-                    color = Color(0xFF8BC34A),
-                    isLoading = false,
-                )
-            }
+            val survivalPaused by viewModel.survivalPausedFlow.collectAsState()
+            ovh.gabrielhuav.pow.features.map_exterior.ui.components.SurvivalStatusBar(
+                state = uiState,
+                paused = survivalPaused,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
+            )
         }
 
         Column(modifier = Modifier.align(Alignment.TopStart).padding(top = 64.dp, start = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
