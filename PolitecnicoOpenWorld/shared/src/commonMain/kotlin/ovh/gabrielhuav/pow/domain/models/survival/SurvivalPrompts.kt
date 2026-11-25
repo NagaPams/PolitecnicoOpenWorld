@@ -1,5 +1,7 @@
 package ovh.gabrielhuav.pow.domain.models.survival
 
+import ovh.gabrielhuav.pow.platform.concurrencia.PowCerrojo
+
 // Cola de avisos de supervivencia (t31): antes cada aviso pisaba al anterior (el de infección borraba el de agarrón) y
 // los que llegaban con un diálogo abierto se perdían detrás de él. Ahora los de más prioridad se muestran al instante,
 // los demás esperan su turno y nada se muestra mientras un diálogo está abierto. Ver 04_MAP_EXTERIOR.md.
@@ -20,16 +22,18 @@ class PromptQueue(private val maxQueued: Int = 3) {
         private const val SLACK_MS = 200L
     }
 
+    /** Los avisos llegan de varios hilos (bucle de juego, corrutinas, reinicio de partida): todo bajo un cerrojo. */
+    private val cerrojo = PowCerrojo()
     private val waiting = ArrayList<QueuedPrompt>()
     private var activeUntilMs = 0L
     private var activePriority = PromptPriority.LOW
 
-    val queuedCount: Int get() = waiting.size
+    val queuedCount: Int get() = cerrojo.ejecutar { waiting.size }
 
     /** Un aviso nuevo: devuelve el que hay que mostrar YA (este u otro) o `null` si queda en espera. */
-    fun offer(prompt: QueuedPrompt, nowMs: Long, blocked: Boolean): QueuedPrompt? {
+    fun offer(prompt: QueuedPrompt, nowMs: Long, blocked: Boolean): QueuedPrompt? = cerrojo.ejecutar {
         val free = nowMs + SLACK_MS >= activeUntilMs
-        if (!blocked && (free || prompt.priority > activePriority)) return show(prompt, nowMs)
+        if (!blocked && (free || prompt.priority > activePriority)) return@ejecutar show(prompt, nowMs)
         if (waiting.none { it.text == prompt.text }) {
             waiting.add(prompt)
             while (waiting.size > maxQueued) {
@@ -38,18 +42,18 @@ class PromptQueue(private val maxQueued: Int = 3) {
                 waiting.remove(drop)
             }
         }
-        return null
+        null
     }
 
     /** ¿Toca mostrar el siguiente en espera? Llamarlo al terminar un aviso y al cerrar un diálogo. */
-    fun next(nowMs: Long, blocked: Boolean): QueuedPrompt? {
-        if (blocked || waiting.isEmpty() || nowMs + SLACK_MS < activeUntilMs) return null
-        val best = waiting.maxByOrNull { it.priority } ?: return null
+    fun next(nowMs: Long, blocked: Boolean): QueuedPrompt? = cerrojo.ejecutar {
+        if (blocked || waiting.isEmpty() || nowMs + SLACK_MS < activeUntilMs) return@ejecutar null
+        val best = waiting.maxByOrNull { it.priority } ?: return@ejecutar null
         waiting.remove(best)
-        return show(best, nowMs)
+        show(best, nowMs)
     }
 
-    fun clear() {
+    fun clear() = cerrojo.ejecutar {
         waiting.clear()
         activeUntilMs = 0L
         activePriority = PromptPriority.LOW
