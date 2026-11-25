@@ -159,7 +159,7 @@ private fun isoWallQuad(
     }
 }
 
-private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color)
+private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color, val edge: Color, val edgeStroke: Stroke)
 private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color, val casing: Stroke)
 private class IsoBuildingLayer(
     val layer: GraphicsLayer,
@@ -297,7 +297,14 @@ fun IsoWorldView(
                     FootprintKind.PITCH -> Color(0xFF668F70)
                     else -> ISO_GROUND
                 }
-                grounds.add(IsoGroundPath(path, path.getBounds(), color))
+                // t50: cada tipo de suelo lleva su borde: bordillo oscuro (parque y estacionamiento) o línea blanca (cancha).
+                val ppmBake = projection.pixelsPerMeter.toFloat()
+                val (edge, edgeMeters) = when (kind) {
+                    FootprintKind.PITCH -> Color(0xCCF2F2EA) to 0.25f
+                    FootprintKind.PARKING -> Color(0x99444440) to 0.45f
+                    else -> Color(0x883F5A3C) to 0.45f
+                }
+                grounds.add(IsoGroundPath(path, path.getBounds(), color, edge, Stroke(width = edgeMeters * ppmBake)))
                 continue
             }
             val rise = (footprint.heightMeters.coerceAtLeast(0.0) * projection.pixelsPerMeter).toFloat()
@@ -487,7 +494,10 @@ fun IsoWorldView(
             val personBoost = (ISO_MIN_PERSON_PX * density.toFloat() / (ppm * scale * 2.05f)).coerceIn(1f, ISO_MAX_SPRITE_BOOST)
             withTransform({ translate(tx, ty); scale(scale, scale, pivot = Offset.Zero) }) {
                 for (ground in grounds) {
-                    if (isoOnScreen(ground.bounds, left, top, right, bottom)) drawPath(ground.path, ground.color)
+                    if (isoOnScreen(ground.bounds, left, top, right, bottom)) {
+                        drawPath(ground.path, ground.color)
+                        drawPath(ground.path, ground.edge, style = ground.edgeStroke)
+                    }
                 }
                 for (road in bakedRoads) {
                     if (isoOnScreen(road.bounds, left, top, right, bottom, road.casing.width / 2f)) {
@@ -577,7 +587,8 @@ fun IsoWorldView(
                 val rawX = (projection.projectX(target.latitude, target.longitude) * scale + tx).toFloat()
                 val rawY = (projection.projectY(target.latitude, target.longitude) * scale + ty).toFloat()
                 val x = rawX.coerceIn(24f * density.toFloat(), (size.width - 24f * density.toFloat()).coerceAtLeast(24f))
-                val y = rawY.coerceIn(24f * density.toFloat(), (size.height - 24f * density.toFloat()).coerceAtLeast(24f))
+                // La franja de arriba la ocupan la barra de vida y el widget del objetivo: el marcador baja a [OBJECTIVE_TOP_INSET_DP].
+                val y = rawY.coerceIn(OBJECTIVE_TOP_INSET_DP * density.toFloat(), (size.height - 24f * density.toFloat()).coerceAtLeast(OBJECTIVE_TOP_INSET_DP))
                 val d = density.toFloat()
                 drawCircle(Color(0xFF1A1208), 15f * d, Offset(x, y))
                 drawCircle(Color(0xFFFFD35A), 12f * d, Offset(x, y))
@@ -593,6 +604,9 @@ fun IsoWorldView(
         }
     })
 }
+
+/** Margen superior (dp) del marcador de objetivo en el borde: deja libre la barra de vida (t54). */
+private const val OBJECTIVE_TOP_INSET_DP = 60f
 
 private fun isoPolygon(xs: FloatArray, ys: FloatArray, left: Float, top: Float, rise: Float): Path = Path().apply {
     moveTo(xs[0] - left, ys[0] - top - rise)
