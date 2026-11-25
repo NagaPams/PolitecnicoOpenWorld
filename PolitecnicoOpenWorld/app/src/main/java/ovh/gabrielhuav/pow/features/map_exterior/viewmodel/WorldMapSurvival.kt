@@ -118,6 +118,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     blackoutAnnounced = false
     promptQueue.clear()
     zoneKills = emptyMap()
+    lastRegrowDay = 1
     npcAiManager.zoneKills = emptyMap()
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     vehicleWreckAnnounced = false
@@ -181,7 +182,13 @@ internal fun WorldMapViewModel.onZombieBite() {
 
 /** Avisa una vez cuando empieza el apagón; si el día vuelve a bajar (partida nueva o cargada) se rearma. */
 private fun WorldMapViewModel.announceBlackout() {
-    val blackout = BlackoutRules.active(DayRules.daysSurvived(survivalManager.state.value.activeMs))
+    val dayNow = DayRules.daysSurvived(survivalManager.state.value.activeMs)
+    if (dayNow > lastRegrowDay) {
+        zoneKills = ZoneKillRules.regrow(zoneKills, dayNow - lastRegrowDay)
+        npcAiManager.zoneKills = zoneKills
+        lastRegrowDay = dayNow
+    }
+    val blackout = BlackoutRules.active(dayNow)
     if (blackout && !blackoutAnnounced) {
         blackoutAnnounced = true
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_blackout_started)) }

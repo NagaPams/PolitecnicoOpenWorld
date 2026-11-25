@@ -17,6 +17,20 @@ object ZoneKillRules {
     /** Zonas que se recuerdan como máximo (el guardado no crece sin límite). */
     const val MAX_ZONES = 200
 
+    /** t18: bajas que se "reponen" por cada día de supervivencia que pasa (la población vuelve a crecer). */
+    const val REGROW_PER_DAY = 2
+
+    /** Tras [days] días nuevos cada zona recupera [REGROW_PER_DAY] zombis por día; las zonas sin bajas se olvidan. */
+    fun regrow(kills: Map<Long, Int>, days: Int): Map<Long, Int> {
+        if (days <= 0 || kills.isEmpty()) return kills
+        val out = LinkedHashMap<Long, Int>()
+        for ((key, count) in kills) {
+            val left = count - days.toLong().coerceAtMost(CLEARED_AT.toLong()).toInt() * REGROW_PER_DAY
+            if (left > 0) out[key] = left
+        }
+        return out
+    }
+
     fun keyOf(latitude: Double, longitude: Double): Long =
         (floor(latitude / CELL_DEGREES).toLong() shl 32) xor (floor(longitude / CELL_DEGREES).toLong() and 0xFFFFFFFFL)
 

@@ -194,6 +194,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
     zoneKills = @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules.decode(data.survivalZoneKills ?: "")
     npcAiManager.zoneKills = zoneKills
+    lastRegrowDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs)
     // Si la partida cargada ya estaba en apagón no se vuelve a avisar.
     blackoutAnnounced = ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(
         ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs),

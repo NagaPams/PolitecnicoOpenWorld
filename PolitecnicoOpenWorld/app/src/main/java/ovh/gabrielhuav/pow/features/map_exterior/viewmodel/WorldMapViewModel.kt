@@ -447,6 +447,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     @Volatile internal var outerRetryAtMs = 0L
     /** Bajas de zombis por zona (t18); se copia a `npcAiManager.zoneKills` y se guarda. */
     internal var zoneKills: Map<Long, Int> = emptyMap()
+    /** Último día de supervivencia en el que se repuso población (t18); evita reponer de golpe al cargar una partida. */
+    internal var lastRegrowDay = 1
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
     internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     internal var vehicleWreckAnnounced = false
