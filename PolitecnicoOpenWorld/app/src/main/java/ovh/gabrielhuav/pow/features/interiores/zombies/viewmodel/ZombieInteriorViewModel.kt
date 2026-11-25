@@ -615,6 +615,9 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
     /** Salir del minijuego al mapa abierto (equivale a cruzar la puerta TO_WORLD). */
     fun exitToWorld() = goToRoom(ZombieRoomCatalog.EXIT_TO_WORLD)
 
+    /** Hasta cuándo vale la confirmación de salir del salón de la M2 con la mochila pendiente (t33). */
+    private var m2LeaveConfirmUntilMs = 0L
+
     internal fun goToRoom(targetRoomId: String) {
         if (targetRoomId == ZombieRoomCatalog.EXIT_TO_WORLD) {
             gameLoopJob?.cancel()
@@ -631,6 +634,16 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
         val fromRoom = currentRoom()
         val idx = ZombieRoomCatalog.indexOfRoom(targetRoomId)
         if (idx < 0) return
+        // t33: no salir del salón sin avisar mientras la mochila sigue pendiente; la primera vez solo avisa y hay 4 s para confirmar.
+        val now0 = _state.value
+        if (fromRoom.id == ZombieRoomCatalog.ESCOM_SALON_M2_ID && now0.mission2StinkThrown && !now0.mission2BackpackTaken) {
+            val clock = System.currentTimeMillis()
+            if (clock > m2LeaveConfirmUntilMs) {
+                m2LeaveConfirmUntilMs = clock + 4_000L
+                showKeyMessage("🎒 Aún no tienes la mochila de Prankedy. Pulsa de nuevo para salir.")
+                return
+            }
+        }
         val targetRoom = ZombieRoomCatalog.rooms[idx]
 
         if (targetRoom.type == ZoneType.LOBBY && fromRoom.type == ZoneType.BUILDING) {

@@ -570,6 +570,16 @@ fun ZombieGameScreen(
                     val bpY = state.mission2BackpackY
                     if (bpX != null && bpY != null && !state.mission2BackpackTaken && onScreen(bpX, bpY)) {
                         val bpSize = 64f * cam.scale
+                        // t33: halo para que la mochila se distinga entre las mesas.
+                        Box(
+                            modifier = Modifier
+                                .absoluteOffset(
+                                    x = with(density) { toScreenX(bpX).toDp() } - with(density) { (bpSize * 0.9f).toDp() },
+                                    y = with(density) { toScreenY(bpY).toDp() } - with(density) { (bpSize * 0.9f).toDp() },
+                                )
+                                .size(with(density) { (bpSize * 1.8f).toDp() })
+                                .background(Color(0x66FFD35A), CircleShape)
+                        )
                         StoryGroundSprite(
                             assetPath = "CAMPAIGN/MISSION2/mochila_prankedy.webp",
                             sizePx = bpSize,
