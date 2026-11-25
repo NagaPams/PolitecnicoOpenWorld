@@ -54,6 +54,7 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
 
             if (nearbyCarEntry != null) {
                 lastVehicleToggleMs = nowMs
+                if (hotwireFails(nearbyCarEntry.value.isFirstTimeBoarded)) return
                 val carId = nearbyCarEntry.key
                 val carNpc = nearbyCarEntry.value
                 remoteEntities.remove(carId)

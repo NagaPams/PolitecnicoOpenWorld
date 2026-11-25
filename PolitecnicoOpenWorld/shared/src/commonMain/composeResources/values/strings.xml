@@ -452,6 +452,7 @@
     <string name="survival_very_hungry">🍗 Tienes mucha hambre: tus golpes pierden fuerza</string>
     <string name="survival_very_thirsty">💧 Tienes mucha sed: te cuesta recuperar el aliento</string>
     <string name="survival_very_tired">😴 Estás agotado: caminas más lento, duerme un rato</string>
+    <string name="survival_hotwire_failed">🔧 El puente falló: el motor hizo ruido, inténtalo otra vez</string>
     <string name="survival_bandaged">🩹 Venda aplicada</string>
     <string name="survival_bandage_stored">🩹 Venda guardada</string>
     <string name="survival_out_of_breath">🫁 Sin aliento: solo puedes caminar</string>

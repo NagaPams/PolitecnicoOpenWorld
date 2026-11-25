@@ -17,6 +17,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
+import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire_failed
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
@@ -110,6 +111,14 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
 }
 
 /** Puerta del coche (t05): con supervivencia, subir o bajar hace ruido de puerta y subir deja el coche parado un momento. */
+/** t03: ¿falla el puente de este coche? Si sí, suena el motor y el jugador no sube (debe intentarlo otra vez). */
+internal fun WorldMapViewModel.hotwireFails(firstTime: Boolean): Boolean {
+    if (!survivalManager.state.value.enabled || !HotwireRules.fails(firstTime, Random.nextDouble())) return false
+    emitSurvivalNoise(NoiseSource.ENGINE)
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire_failed)) }
+    return true
+}
+
 internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean = false, carId: String? = null) {
     if (!survivalManager.state.value.enabled) return
     if (boarding) carDoorLockedUntilMs = CarDoorRules.lockedUntil(System.currentTimeMillis())

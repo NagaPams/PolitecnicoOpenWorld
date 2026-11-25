@@ -59,6 +59,12 @@ class NoiseBus(capacity: Int) {
 
 /** t03: subirse por primera vez a un coche ajeno es "hacerle el puente" y suena más que abrir la puerta de uno ya tuyo. */
 object HotwireRules {
+    /** Probabilidad de que el puente falle y haya que repetirlo (cada intento suena). */
+    const val FAIL_CHANCE = 0.25
+
+    /** ¿Falla este intento? Solo cuenta en un coche ajeno aún no tuyo ([firstTime]); [roll] va de 0 a 1. */
+    fun fails(firstTime: Boolean, roll: Double): Boolean = firstTime && roll < FAIL_CHANCE
+
     fun noisesOnBoard(firstTime: Boolean): List<NoiseSource> =
         if (firstTime) listOf(NoiseSource.DOOR, NoiseSource.ENGINE) else listOf(NoiseSource.DOOR)
 }
