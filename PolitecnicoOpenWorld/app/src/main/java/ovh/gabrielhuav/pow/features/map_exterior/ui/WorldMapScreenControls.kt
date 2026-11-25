@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.background
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
@@ -212,6 +215,18 @@ fun BoxScope.WorldMapControls(
                 val actionComponent = @Composable { m: Modifier ->
                   Column(modifier = m.controlSlot(layout.actions), horizontalAlignment = Alignment.CenterHorizontally) {
                     shoulders(uiState.swapControls)
+                    // t20: pista de la acción de Y cuando hay un coche al alcance.
+                    if (uiState.nearCar && !uiState.isDriving) {
+                        androidx.compose.material3.Text(
+                            stringResource(ovh.gabrielhuav.pow.R.string.ctx_board_car),
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            modifier = Modifier
+                                .background(androidx.compose.ui.graphics.Color(0xCC1A1A22), androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
                     ActionButtonsController(
                         modifier = Modifier.scale(actionScale),
                         onActionChanged = { action, isPressed ->

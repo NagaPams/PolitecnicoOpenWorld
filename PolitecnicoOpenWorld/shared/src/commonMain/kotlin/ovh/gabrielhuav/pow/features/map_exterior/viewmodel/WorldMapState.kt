@@ -72,6 +72,8 @@ data class WorldMapState(
     val survivalFuel: Double = 70.0,
     val survivalBleeding: Boolean = false,
     val survivalFractured: Boolean = false,
+    /** t20: hay un coche al alcance de Y (subir); lo calcula `updateContextActionTick` a ~4 Hz. */
+    val nearCar: Boolean = false,
     val survivalCoat: Boolean = false,
     val survivalStamina: Double = 100.0,
     val survivalVehicleHealth: Double = 100.0,

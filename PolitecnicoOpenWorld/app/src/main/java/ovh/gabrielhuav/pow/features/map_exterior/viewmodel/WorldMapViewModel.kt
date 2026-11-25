@@ -501,6 +501,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // ─── CICLO DÍA/NOCHE — lógica en WorldMapDayNight.kt ────
     // Throttle del tick (~1 Hz). El reloj es derivado del epoch (nada que persistir).
     internal var lastDayNightUpdateMs = 0L
+    internal var lastContextActionMs = 0L
 
     // ─── PRANKEDY (NPC compañero) ─────────────────────────────────────────────
     internal val prankedyManager = ovh.gabrielhuav.pow.domain.models.ai.PrankedyManager()
@@ -1049,6 +1050,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             runCampusLifeTick(location)
                         }
                         updateDayNightTick()
+                        updateContextActionTick(location)
                         updateSurvivalTick()
                         updateMemoryPressureTick()
                         updateOuterBuildingsTick(location)

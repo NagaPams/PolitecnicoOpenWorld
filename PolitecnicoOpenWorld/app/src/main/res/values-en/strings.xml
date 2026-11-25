@@ -669,6 +669,7 @@
     <string name="moodle_herido">Hurt: low health, heal with a medkit</string>
     <string name="pack_craft_splint">Splint (1 board + 1 bandage)</string>
     <string name="pack_coat_on">🧥 Coat on</string>
+    <string name="ctx_board_car">Y: get in the car</string>
     <string name="wm_survival_paused">Paused</string>
     <string name="wm_survival_infection">Infection</string>
     <string name="wm_survival_symptoms">Symptomatic</string>
