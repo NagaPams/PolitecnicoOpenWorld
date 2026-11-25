@@ -73,24 +73,26 @@ object SurvivalCrafting {
     }
 
     /**
-     * t71: un guardado anterior al límite de peso puede traer más de [MAX_WEIGHT]; se quitan primero los objetos más
-     * pesados (bidón, botiquín, pizza, refresco, venda) hasta que quepa, en vez de dejar la mochila sobrecargada.
+     * t71: un guardado anterior al límite de peso puede traer más de [MAX_WEIGHT]. Se quita, de lo que sobra, el objeto
+     * más ligero que baste para quedar dentro del límite; si ninguno basta solo, el más pesado, y se repite. Así un
+     * exceso pequeño cuesta una venda y no un bidón.
      */
     fun fitToWeight(pack: SurvivalPack): SurvivalPack {
         var p = pack
         while (weightOf(p) > MAX_WEIGHT) {
-            p = when {
-                p.bidones > 0 -> p.copy(bidones = p.bidones - 1)
-                p.botiquin > 0 -> p.copy(botiquin = p.botiquin - 1)
-                p.pizza > 0 -> p.copy(pizza = p.pizza - 1)
-                p.refresco > 0 -> p.copy(refresco = p.refresco - 1)
-                p.vendas > 0 -> p.copy(vendas = p.vendas - 1)
-                else -> return p
-            }
+            val excess = weightOf(p) - MAX_WEIGHT
+            val options = ArrayList<Pair<Double, SurvivalPack>>(5)
+            if (p.vendas > 0) options.add(WEIGHT_VENDA to p.copy(vendas = p.vendas - 1))
+            if (p.pizza > 0) options.add(WEIGHT_PIZZA to p.copy(pizza = p.pizza - 1))
+            if (p.refresco > 0) options.add(WEIGHT_REFRESCO to p.copy(refresco = p.refresco - 1))
+            if (p.botiquin > 0) options.add(WEIGHT_BOTIQUIN to p.copy(botiquin = p.botiquin - 1))
+            if (p.bidones > 0) options.add(WEIGHT_BIDON to p.copy(bidones = p.bidones - 1))
+            if (options.isEmpty()) return p
+            val enough = options.filter { it.first >= excess }.minByOrNull { it.first }
+            p = (enough ?: options.maxByOrNull { it.first }!!).second
         }
         return p
     }
-
     /** Valores de un guardado (viejo o editado a mano) dentro de rango. */
     fun sanitized(pack: SurvivalPack): SurvivalPack = fitToWeight(SurvivalPack(
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
