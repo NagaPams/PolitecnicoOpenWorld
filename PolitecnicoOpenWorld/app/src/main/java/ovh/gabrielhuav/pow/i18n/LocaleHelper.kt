@@ -34,6 +34,15 @@ object LocaleHelper {
     }
 
     /**
+     * Vuelve a fijar el idioma por defecto del proceso (t30): al girar la pantalla Android lo restablece al del sistema
+     * y Compose Resources lo lee de ahí, así que el HUD salía en un idioma y los objetivos en otro. "" = sistema.
+     */
+    fun reapplyDefaultLocale(languageTag: String) {
+        if (languageTag.isBlank()) return
+        Locale.setDefault(Locale.forLanguageTag(languageTag))
+    }
+
+    /**
      * Sincroniza `APP_LANGUAGE` con el idioma por aplicacion que Android 13+ expone al sistema.
      * Compose Multiplatform consulta la lista ajustada de locales, no solo el Context envuelto;
      * por eso este paso hace que `composeResources` (Ajustes, Coleccionables y SF) coincida con

@@ -53,6 +53,14 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(ovh.gabrielhuav.pow.i18n.LocaleHelper.wrap(newBase, lang))
     }
 
+    // t30: la actividad declara configChanges (no se recrea al girar), así que attachBaseContext no vuelve a correr y
+    // Android restablece el Locale por defecto; se reaplica el idioma elegido para que R.string y Res.string coincidan.
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        ovh.gabrielhuav.pow.i18n.LocaleHelper.reapplyDefaultLocale(
+            ovh.gabrielhuav.pow.data.repository.SettingsRepository(this).getLanguage())
+    }
+
     // ETAPA 4 (Hilt): `by viewModels()` SIN Factory → Hilt provee el VM (@HiltViewModel) y lo
     // scopea a la ACTIVITY (clave para WorldMapViewModel: SOBREVIVE a la navegación, el game loop /
     // gate isMapReady NO se reinician — ver 09 §12). El VM se pasa hacia abajo al AppNavGraph.
