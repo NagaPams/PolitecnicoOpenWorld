@@ -140,7 +140,11 @@ class OverpassRepository {
             val datos = codificarUrl(query)
             for (base in OverpassServidores.ordenDesde(indiceUltimoBueno)) {
                 val ways = try {
-                    val respuesta = http.get("$base?data=$datos") { header("User-Agent", USER_AGENT) }
+                    val respuesta = http.get("$base?data=$datos") {
+                        header("User-Agent", USER_AGENT)
+                        // Los servidores públicos saturados no contestan: no esperar 45 s a cada uno.
+                        timeout { requestTimeoutMillis = 20_000L }
+                    }
                     val cuerpo = if (respuesta.status.isSuccess()) respuesta.bodyAsText() else null
                     if (cuerpo == null || OverpassServidores.esErrorDelServidor(cuerpo)) null else parseBuildingsJson(cuerpo)
                 } catch (e: CancellationException) {
@@ -329,6 +333,7 @@ class OverpassRepository {
 internal object OverpassServidores {
     val URLS = listOf(
         "https://overpass-api.de/api/interpreter",
+        "https://overpass.openstreetmap.fr/api/interpreter",
         "https://lz4.overpass-api.de/api/interpreter",
         "https://z.overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
