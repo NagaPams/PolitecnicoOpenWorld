@@ -56,3 +56,9 @@ class NoiseBus(capacity: Int) {
         return event
     }
 }
+
+/** t03: subirse por primera vez a un coche ajeno es "hacerle el puente" y suena más que abrir la puerta de uno ya tuyo. */
+object HotwireRules {
+    fun noisesOnBoard(firstTime: Boolean): List<NoiseSource> =
+        if (firstTime) listOf(NoiseSource.DOOR, NoiseSource.ENGINE) else listOf(NoiseSource.DOOR)
+}

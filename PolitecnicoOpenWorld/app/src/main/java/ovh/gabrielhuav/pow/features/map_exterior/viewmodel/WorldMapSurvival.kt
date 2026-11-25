@@ -11,6 +11,8 @@ import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
+import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
@@ -96,10 +98,11 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
 }
 
 /** Puerta del coche (t05): con supervivencia, subir o bajar hace ruido de puerta y subir deja el coche parado un momento. */
-internal fun WorldMapViewModel.onCarDoor(boarding: Boolean) {
+internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean = false) {
     if (!survivalManager.state.value.enabled) return
     if (boarding) carDoorLockedUntilMs = CarDoorRules.lockedUntil(System.currentTimeMillis())
-    emitSurvivalNoise(NoiseSource.DOOR)
+    if (boarding) HotwireRules.noisesOnBoard(firstTime).forEach { emitSurvivalNoise(it) } else emitSurvivalNoise(NoiseSource.DOOR)
+    if (boarding && firstTime) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire)) }
 }
 
 /** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */
