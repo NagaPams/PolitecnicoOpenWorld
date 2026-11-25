@@ -39,6 +39,11 @@ object SurvivalCrafting {
     /** La mochila ya no admite ni un bidón (el objeto más pesado). */
     fun isHeavy(pack: SurvivalPack): Boolean = weightOf(pack) + WEIGHT_BIDON > MAX_WEIGHT
 
+    /** t68: no se pudo añadir por el peso (y no porque el tipo ya esté en su tope). */
+    fun vendaBlockedByWeight(pack: SurvivalPack): Boolean = pack.vendas < MAX_PER_ITEM && !fits(pack, WEIGHT_VENDA)
+
+    fun bidonBlockedByWeight(pack: SurvivalPack): Boolean = pack.bidones < FuelRules.MAX_CANS && !fits(pack, WEIGHT_BIDON)
+
     fun canAddVenda(pack: SurvivalPack): Boolean = pack.vendas < MAX_PER_ITEM && fits(pack, WEIGHT_VENDA)
 
     fun canAddBidon(pack: SurvivalPack): Boolean = pack.bidones < FuelRules.MAX_CANS && fits(pack, WEIGHT_BIDON)

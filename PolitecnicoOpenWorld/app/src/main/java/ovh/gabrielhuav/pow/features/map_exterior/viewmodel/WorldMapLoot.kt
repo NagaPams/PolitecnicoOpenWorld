@@ -186,8 +186,13 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
             }
         }
         point.kind == LootKind.EDIFICIO -> {
-            taken = searchBuilding(point)
-            if (taken) Res.string.survival_building_searched else emptyHandedMessage(current)
+            val outcome = searchBuilding(point)
+            taken = outcome == SearchOutcome.GAVE
+            when (outcome) {
+                SearchOutcome.GAVE -> Res.string.survival_building_searched
+                SearchOutcome.WEIGHT -> Res.string.survival_pack_full
+                SearchOutcome.EMPTY -> Res.string.survival_not_needed
+            }
         }
         point.kind == LootKind.CONTENEDOR -> {
             taken = lootContainer()
@@ -262,15 +267,19 @@ private fun WorldMapViewModel.grantConsumable(item: SurvivalItem): Boolean {
     return true
 }
 
+/** t68: resultado de registrar un edificio; WEIGHT = algo no cupo por el peso (no por el tope del tipo). */
+private enum class SearchOutcome { GAVE, EMPTY, WEIGHT }
+
 /** t68: si no se recogió nada y la mochila ya no admite un bidón, el motivo es el peso y no que no hiciera falta. */
 private fun emptyHandedMessage(state: SurvivalSubState): org.jetbrains.compose.resources.StringResource =
     if (SurvivalCrafting.isHeavy(state.pack)) Res.string.survival_pack_full else Res.string.survival_not_needed
 
 /** Registra un edificio (t06): da lo que corresponde a su tipo de lugar; false si no cupo nada (no se gasta). */
-private fun WorldMapViewModel.searchBuilding(point: LootPoint): Boolean {
+private fun WorldMapViewModel.searchBuilding(point: LootPoint): SearchOutcome {
     val profile = BuildingSearchRules.profileOf(point.variant)
-    val buildingId = point.id.removePrefix(BuildingSearchRules.ID_PREFIX).toLongOrNull() ?: return false
+    val buildingId = point.id.removePrefix(BuildingSearchRules.ID_PREFIX).toLongOrNull() ?: return SearchOutcome.EMPTY
     var gave = false
+    var weightBlocked = false
     for (gain in BuildingSearchRules.gainsFor(profile, buildingId)) {
         val current = survivalManager.state.value
         when (gain) {
@@ -287,10 +296,14 @@ private fun WorldMapViewModel.searchBuilding(point: LootPoint): Boolean {
             } else if (SurvivalCrafting.canAddVenda(current.pack)) {
                 survivalManager.setPack(current.pack.copy(vendas = current.pack.vendas + 1))
                 gave = true
+            } else if (SurvivalCrafting.vendaBlockedByWeight(current.pack)) {
+                weightBlocked = true
             }
             SearchGain.BIDON -> if (SurvivalCrafting.canAddBidon(current.pack)) {
                 survivalManager.setPack(current.pack.copy(bidones = current.pack.bidones + 1))
                 gave = true
+            } else if (SurvivalCrafting.bidonBlockedByWeight(current.pack)) {
+                weightBlocked = true
             }
             SearchGain.BALAS -> if (current.arsenal.balas < WeaponRules.MAX_AMMO) {
                 survivalManager.setArsenal(WeaponRules.addAmmo(current.arsenal, AmmoKind.BALAS, CONTAINER_BULLETS))
@@ -298,7 +311,11 @@ private fun WorldMapViewModel.searchBuilding(point: LootPoint): Boolean {
             }
         }
     }
-    return gave
+    return when {
+        gave -> SearchOutcome.GAVE
+        weightBlocked -> SearchOutcome.WEIGHT
+        else -> SearchOutcome.EMPTY
+    }
 }
 
 /** Usa una venda guardada: detiene el sangrado. */
