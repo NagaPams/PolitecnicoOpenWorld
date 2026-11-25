@@ -76,7 +76,11 @@ internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhua
     val lon = kotlin.math.round(location.longitude * 1000.0) / 1000.0
     viewModelScope.launch(Dispatchers.IO) {
         try {
-            val fetched = overpassRepository.fetchBuildings(lat, lon, OuterBuildingRules.RADIUS_METERS)
+            // t38: primero el disco (zona ya visitada, sin red); si no hay, Overpass y se guarda.
+            val cacheDir = java.io.File(getApplication<android.app.Application>().cacheDir, "outer_buildings")
+            val cached = OuterBuildingsDiskCache.read(cacheDir, lat, lon)
+            val fetched = cached ?: overpassRepository.fetchBuildings(lat, lon, OuterBuildingRules.RADIUS_METERS)
+            if (cached == null && fetched != null) OuterBuildingsDiskCache.write(cacheDir, lat, lon, fetched)
             if (fetched == null) {
                 outerRetryAtMs = android.os.SystemClock.elapsedRealtime() + OuterBuildingRules.RETRY_AFTER_MS
                 Log.w("Footprints", "Edificios exteriores: sin respuesta de Overpass")
