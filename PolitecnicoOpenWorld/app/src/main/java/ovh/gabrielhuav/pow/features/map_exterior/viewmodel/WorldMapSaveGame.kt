@@ -3,6 +3,7 @@ package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_pack_trimmed
 import android.content.Context
 import kotlinx.coroutines.flow.update
@@ -115,6 +116,7 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalBleeding = survivalManager.state.value.bleeding,
         survivalCoat = survivalManager.state.value.coat,
         survivalWetness = survivalManager.state.value.wetness,
+        survivalCarStates = CarStateRules.encode(carStates),
         survivalFractureHealsAtMs = survivalManager.state.value.fractureHealsAtMs,
         survivalBandages = survivalManager.state.value.pack.vendas,
         survivalVehicleHealth = vehicleHealth,
@@ -198,6 +200,8 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     )
     if (packTrimmed) viewModelScope.launch { showSurvivalPrompt(org.jetbrains.compose.resources.getString(Res.string.survival_pack_trimmed)) }
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
+    // Gson deja en null el texto que un guardado viejo no trae.
+    @Suppress("USELESS_ELVIS") carStates = CarStateRules.decode(data.survivalCarStates ?: "")
     zoneKills = @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules.decode(data.survivalZoneKills ?: "")
     npcAiManager.zoneKills = zoneKills
     lastRegrowDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs)

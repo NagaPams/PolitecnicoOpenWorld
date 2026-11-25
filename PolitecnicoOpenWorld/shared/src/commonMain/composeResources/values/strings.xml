@@ -445,6 +445,8 @@
     <string name="survival_hotwire">🔧 Le hiciste el puente al coche: el motor hizo ruido</string>
     <string name="survival_coat_found">🧥 Encontraste un abrigo: te protege del frío</string>
     <string name="survival_occupation_hint">💼 Elige tu oficio en el inventario (mantén Y): boxeador, soldado o carpintero</string>
+    <string name="survival_fuel_pumping">⛽ Surtiendo gasolina…</string>
+    <string name="survival_fuel_full">⛽ Tanque lleno</string>
     <string name="survival_fuel_low">⛽ Poca gasolina: busca un bidón</string>
     <string name="survival_wet">💦 Tu ropa está empapada: sécate en un coche o con un abrigo</string>
     <string name="survival_cold">🥶 Hace frío: busca un abrigo o sube a un coche</string>

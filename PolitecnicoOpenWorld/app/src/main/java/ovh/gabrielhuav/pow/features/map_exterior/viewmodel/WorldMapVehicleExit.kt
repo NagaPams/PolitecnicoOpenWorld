@@ -10,6 +10,8 @@ import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint
 import ovh.gabrielhuav.pow.domain.models.map.isInsideBarrier
 import ovh.gabrielhuav.pow.domain.models.map.vehicleSpriteHeading
+import ovh.gabrielhuav.pow.domain.models.survival.CarState
+import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.wm_vehicle_exit_blocked
 import java.util.UUID
@@ -65,6 +67,7 @@ internal fun WorldMapViewModel.exitVehicle(forced: Boolean): Boolean {
         },
     )
     remoteEntities[abandonedCar.id] = abandonedCar
+    if (survivalManager.state.value.enabled) carStates = CarStateRules.remember(carStates, abandonedCar.id, CarState(fuelTank, vehicleHealth))
     _uiState.update {
         it.copy(
             currentLocation = exitPoint,

@@ -62,6 +62,40 @@ object VehicleHealthRules {
 }
 
 /** t03: un coche ajeno que se aborda por primera vez viene con su propio estado (gasolina y salud), fijo según su id. */
+/** Gasolina y salud propias de un coche (t03): se guardan al bajar y se recuperan al volver a subir. */
+data class CarState(val fuel: Double, val health: Double)
+
+object CarStateRules {
+    /** Cuántos coches recordamos (los más recientes); el resto vuelve a un estado nuevo al subir. */
+    const val MAX_STATES = 40
+
+    /** [states] con [id] añadido al final (el más reciente) y recortado a [MAX_STATES]. */
+    fun remember(states: Map<String, CarState>, id: String, state: CarState): Map<String, CarState> {
+        val next = LinkedHashMap(states)
+        next.remove(id)
+        next[id] = CarState(FuelRules.sanitized(state.fuel), VehicleHealthRules.sanitized(state.health))
+        while (next.size > MAX_STATES) next.remove(next.keys.first())
+        return next
+    }
+
+    /** `id|gasolina|salud` separados por `;` (los ids son UUID: no llevan esos caracteres). */
+    fun encode(states: Map<String, CarState>): String =
+        states.entries.joinToString(";") { "${it.key}|${it.value.fuel}|${it.value.health}" }
+
+    fun decode(text: String): Map<String, CarState> {
+        val out = LinkedHashMap<String, CarState>()
+        for (part in text.split(';')) {
+            val f = part.split('|')
+            if (f.size != 3 || f[0].isEmpty()) continue
+            val fuel = f[1].toDoubleOrNull() ?: continue
+            val health = f[2].toDoubleOrNull() ?: continue
+            out[f[0]] = CarState(FuelRules.sanitized(fuel), VehicleHealthRules.sanitized(health))
+        }
+        while (out.size > MAX_STATES) out.remove(out.keys.first())
+        return out
+    }
+}
+
 object StrangerCarRules {
     const val MIN_FUEL = 15.0
     const val MAX_FUEL = 60.0

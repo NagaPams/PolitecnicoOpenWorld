@@ -27,5 +27,14 @@ object FuelRules {
 
     fun refill(fuel: Double): Double = (fuel + CAN_FILL).coerceAtMost(MAX)
 
+    /** Lo que surte una bomba por segundo con el coche parado junto a una gasolinera (t03). */
+    const val PUMP_PER_SECOND = 8.0
+    /** Distancia máxima (m) a una gasolinera para surtir. */
+    const val PUMP_RADIUS_M = 30.0
+
+    fun pump(fuel: Double, seconds: Double): Double = (fuel + PUMP_PER_SECOND * seconds).coerceIn(fuel, MAX)
+
+    fun isFull(fuel: Double): Boolean = fuel >= MAX - 0.01
+
     fun sanitized(fuel: Double): Double = if (fuel.isNaN()) START else fuel.coerceIn(0.0, MAX)
 }

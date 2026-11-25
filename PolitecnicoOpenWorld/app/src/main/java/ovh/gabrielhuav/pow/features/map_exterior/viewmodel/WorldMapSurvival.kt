@@ -14,6 +14,9 @@ import ovh.gabrielhuav.pow.domain.models.survival.ConditionSpeedRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.NeedEffectRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
+import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
+import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
+import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.WetnessRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
@@ -63,6 +66,8 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_full
+import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_pumping
 import ovh.gabrielhuav.pow.shared.recursos.survival_wet
 import ovh.gabrielhuav.pow.shared.recursos.survival_fracture_healed
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_low
@@ -125,7 +130,15 @@ internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean =
     if (!survivalManager.state.value.enabled) return
     if (boarding) carDoorLockedUntilMs = CarDoorRules.lockedUntil(System.currentTimeMillis())
     if (boarding) HotwireRules.noisesOnBoard(firstTime).forEach { emitSurvivalNoise(it) } else emitSurvivalNoise(NoiseSource.DOOR)
-    if (boarding && firstTime && carId != null) {
+    val remembered = if (boarding && carId != null) carStates[carId] else null
+    if (remembered != null) {
+        // t03: un coche que ya conducías conserva su gasolina y su salud, no las del último que usaste.
+        fuelTank = remembered.fuel
+        vehicleHealth = remembered.health
+        fuelEmptyAnnounced = FuelRules.isEmpty(fuelTank)
+        vehicleWreckAnnounced = false
+        carStates = carStates - carId!!
+    } else if (boarding && firstTime && carId != null) {
         // t03: el coche ajeno trae su propia gasolina y salud (fijas según su id), no las del anterior.
         fuelTank = StrangerCarRules.fuelFor(carId.hashCode())
         vehicleHealth = StrangerCarRules.healthFor(carId.hashCode())
@@ -156,6 +169,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     npcAiManager.zoneKills = emptyMap()
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     vehicleWreckAnnounced = false
+    carStates = emptyMap()
     survivalManager.resetForNewGame()
     fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
     fuelEmptyAnnounced = false
@@ -457,6 +471,24 @@ private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
 
 private const val LOW_FUEL_NOTICE = 15.0
 
+/** t03: con el coche parado junto a una gasolinera el tanque se llena solo (gratis: el juego no cobra la gasolina). */
+private fun WorldMapViewModel.updateFuelPump(s: WorldMapState, seconds: Double) {
+    val here = s.currentLocation
+    val atStation = s.isDriving && here != null && searchBuildings.orEmpty().any {
+        it.profile == SearchProfile.GASOLINERA && distance(here, GeoPoint(it.latitude, it.longitude)) <= FuelRules.PUMP_RADIUS_M
+    }
+    val stopped = kotlin.math.abs(s.vehicleSpeed) <= MAX_SPEED * 0.05
+    val pumping = atStation && stopped && !FuelRules.isFull(fuelTank)
+    if (pumping) {
+        fuelTank = FuelRules.pump(fuelTank, seconds)
+        fuelEmptyAnnounced = false
+    }
+    if (pumpLatch.fire(pumping, !atStation)) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_pumping)) }
+    if (pumpFullLatch.fire(atStation && stopped && FuelRules.isFull(fuelTank) && pumpedHere, !atStation)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_full)) }
+    }
+}
+
 /** Reloj monotónico; durante una escena no se acumula tiempo de supervivencia. */
 internal fun WorldMapViewModel.updateSurvivalTick() {
     val now = SystemClock.elapsedRealtime()
@@ -513,6 +545,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
         }
     }
     announceConditions(s)
+    updateFuelPump(s, elapsed.coerceAtMost(1000L) / 1000.0)
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     survivalManager.setFuel(fuelTank)
     survivalManager.setVehicleHealth(vehicleHealth)

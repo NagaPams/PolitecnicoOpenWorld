@@ -427,6 +427,11 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Gasolina del coche en modo supervivencia (t03); se publica al manager cada segundo. */
     internal var fuelTank = ovh.gabrielhuav.pow.domain.models.survival.FuelRules.START
     internal var fuelEmptyAnnounced = false
+    /** t03: gasolina y salud de cada coche que se dejó estacionado (id del coche → estado). */
+    internal var carStates: Map<String, ovh.gabrielhuav.pow.domain.models.survival.CarState> = emptyMap()
+    internal var pumpedHere = false
+    internal val pumpLatch =ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val pumpFullLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     /** Hasta cuándo te sujeta un zombi (t02); frena los pasos a pie. */
     @Volatile internal var grabbedUntilMs = 0L
     /** Hasta cuándo el jugador duerme (t12); mientras tanto no se mueve. */
