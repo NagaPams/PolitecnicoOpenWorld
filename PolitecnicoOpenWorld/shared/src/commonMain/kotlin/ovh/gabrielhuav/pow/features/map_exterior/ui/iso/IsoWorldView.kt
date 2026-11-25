@@ -84,6 +84,9 @@ private val ISO_ROOF = Color(0xFFCDBF9B)
 private val ISO_ROOF_EDGE = Color(0xFF4E4637)
 private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
 private val ISO_WALL_DARK = Color(0xFF574E40)
+private val ISO_SHADOW = Color(0x47101510)
+private const val ISO_SHADOW_MAX_DX = 16f
+private const val ISO_SHADOW_MAX_DY = 7f
 private val ISO_FOG = Color(0x6E222A33)
 // t40: fuera del radio de visión la niebla es casi opaca y cubre toda la pantalla (el degradado se queda en este color).
 private val ISO_FOG_EDGE = Color(0xF2141A22)
@@ -293,8 +296,11 @@ fun IsoWorldView(
             val rise = (footprint.heightMeters.coerceAtLeast(0.0) * projection.pixelsPerMeter).toFloat()
             val left = floor(minX - ISO_LAYER_MARGIN)
             val top = floor(minY - rise - ISO_LAYER_MARGIN)
-            val right = ceil(maxX + ISO_LAYER_MARGIN)
-            val bottom = ceil(maxY + ISO_LAYER_MARGIN)
+            // t43: sombra suave a la derecha y abajo del edificio (dentro de la misma capa, crece con la altura).
+            val shadowDx = (rise * 0.3f).coerceAtMost(ISO_SHADOW_MAX_DX)
+            val shadowDy = (rise * 0.12f).coerceAtMost(ISO_SHADOW_MAX_DY)
+            val right = ceil(maxX + ISO_LAYER_MARGIN + shadowDx)
+            val bottom = ceil(maxY + ISO_LAYER_MARGIN + shadowDy)
             val width = (right - left).toInt().coerceAtLeast(1)
             val height = (bottom - top).toInt().coerceAtLeast(1)
             val roof = isoPolygon(xs, ys, left, top, rise)
@@ -342,7 +348,9 @@ fun IsoWorldView(
             }
             val layer = layerPool.track(obtainGraphicsLayer())
             layer.compositingStrategy = CompositingStrategy.ModulateAlpha
+            val shadow = isoPolygon(xs, ys, left - shadowDx, top - shadowDy, 0f)
             layer.record(this, layoutDirection, IntSize(width, height)) {
+                drawPath(shadow, ISO_SHADOW)
                 for ((wall, color) in walls) drawPath(wall, color)
                 for ((detail, color) in details) drawPath(detail, color)
                 drawPath(roof, footprint.roofColor?.let { Color(it.toInt()) } ?: tones.roof)
