@@ -106,7 +106,8 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
 /** Calcula una vez los edificios registrables de las huellas (las pide al cargador si aún no están). */
 private fun WorldMapViewModel.ensureSearchBuildings() {
     if (searchBuildings != null) return
-    val footprints = _uiState.value.campusFootprints
+    // Solo las huellas del campus: los edificios exteriores descargados (t27) no son registrables.
+    val footprints = campusBaseFootprints.ifEmpty { _uiState.value.campusFootprints }
     if (footprints.isEmpty()) {
         if (!buildingFootprintsAsked) {
             buildingFootprintsAsked = true

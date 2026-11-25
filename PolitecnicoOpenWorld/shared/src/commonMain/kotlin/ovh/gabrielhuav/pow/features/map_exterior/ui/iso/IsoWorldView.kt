@@ -355,6 +355,7 @@ fun IsoWorldView(
             val casing = Stroke(width = ((widthMeters + 1.2) * projection.pixelsPerMeter).toFloat(), cap = StrokeCap.Round)
             bakedRoads.add(IsoRoadPath(path, path.getBounds(), stroke, if (road.isForCars) ISO_ROAD else ISO_WALKWAY, casing))
         }
+        val objectiveArrowOutline = Stroke(width = 3f)
         val objectiveArrow = Path().apply {
             moveTo(10f, 0f); lineTo(-8f, -9f); lineTo(-3f, 0f); lineTo(-8f, 9f); close()
         }
@@ -513,7 +514,7 @@ fun IsoWorldView(
                 if (x != rawX || y != rawY) {
                     val angle = atan2((rawY - size.height / 2f).toDouble(), (rawX - size.width / 2f).toDouble()) * 180.0 / PI
                     withTransform({ translate(x, y); rotate(angle.toFloat(), Offset.Zero); translate(22f * d, 0f); scale(d, d, Offset.Zero) }) {
-                        drawPath(objectiveArrow, Color(0xFF1A1208), style = Stroke(width = 3f))
+                        drawPath(objectiveArrow, Color(0xFF1A1208), style = objectiveArrowOutline)
                         drawPath(objectiveArrow, Color(0xFFFFD35A))
                     }
                 }

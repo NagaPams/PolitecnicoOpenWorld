@@ -71,8 +71,9 @@ internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhua
     if (now < outerRetryAtMs) return
     if (!OuterBuildingRules.shouldFetch(outerFetchLat, outerFetchLon, location.latitude, location.longitude)) return
     outerFetching = true
-    val lat = location.latitude
-    val lon = location.longitude
+    // Privacidad y caché: a los servidores públicos solo se les manda la posición redondeada a ~110 m.
+    val lat = kotlin.math.round(location.latitude * 1000.0) / 1000.0
+    val lon = kotlin.math.round(location.longitude * 1000.0) / 1000.0
     viewModelScope.launch(Dispatchers.IO) {
         try {
             val fetched = overpassRepository.fetchBuildings(lat, lon, OuterBuildingRules.RADIUS_METERS)

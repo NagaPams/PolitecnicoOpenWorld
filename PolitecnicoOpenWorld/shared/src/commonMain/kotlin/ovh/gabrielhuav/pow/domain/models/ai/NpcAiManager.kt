@@ -15,7 +15,6 @@ import ovh.gabrielhuav.pow.domain.models.map.canPlaceVehicleWithoutCoveringPoint
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.random.Random
-import ovh.gabrielhuav.pow.platform.color.colorArgb
 import ovh.gabrielhuav.pow.platform.concurrencia.PowListaConcurrente
 import ovh.gabrielhuav.pow.platform.concurrencia.PowMapaConcurrente
 import ovh.gabrielhuav.pow.platform.concurrencia.PowRef
@@ -139,15 +138,6 @@ class NpcAiManager {
             )
         }
 
-        val CAR_COLORS = intArrayOf(
-            colorArgb(200, 30, 30),
-            colorArgb(30, 60, 160),
-            colorArgb(235, 235, 235),
-            colorArgb(25, 25, 25),
-            colorArgb(120, 120, 130),
-            colorArgb(30, 120, 60),
-            colorArgb(210, 180, 40)
-        )
     }
 
     private val _npcs = MutableStateFlow<List<Npc>>(emptyList())
@@ -900,7 +890,7 @@ class NpcAiManager {
     ): Npc? {
         val globalPos = landmark.toGlobalGeoPoint(node.localX, node.localY)
         // t28: sin coches nuevos a menos de ~12 m del jugador (nacer dentro de un lote lleno tapaba los controles).
-        if (ovh.gabrielhuav.pow.domain.models.map.ParkingClearance.skipSlot(globalPos, playerLocation, Random.nextFloat())) return null
+        if (ovh.gabrielhuav.pow.domain.models.map.ParkingClearance.skipSlot(globalPos, playerLocation, ovh.gabrielhuav.pow.domain.models.map.ParkingClearance.slotRoll(globalPos))) return null
         val newCarId = "PARKED_CAR_${ahoraMs()}_${Random.nextInt(1000)}"
 
         val nodeIndex = way.nodes.indexOf(node)

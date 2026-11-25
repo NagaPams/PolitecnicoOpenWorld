@@ -432,10 +432,11 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var blackoutAnnounced = false
     internal var lastMemoryCheckMs = 0L
     internal var campusBaseFootprints: List<ovh.gabrielhuav.pow.domain.models.map.CampusFootprint> = emptyList()
-    internal var outerFetching = false
-    internal var outerFetchLat: Double? = null
-    internal var outerFetchLon: Double? = null
-    internal var outerRetryAtMs = 0L
+    // Se escriben desde IO y se leen en el bucle de juego: @Volatile.
+    @Volatile internal var outerFetching = false
+    @Volatile internal var outerFetchLat: Double? = null
+    @Volatile internal var outerFetchLon: Double? = null
+    @Volatile internal var outerRetryAtMs = 0L
     /** Bajas de zombis por zona (t18); se copia a `npcAiManager.zoneKills` y se guarda. */
     internal var zoneKills: Map<Long, Int> = emptyMap()
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */

@@ -15,6 +15,12 @@ object ParkingClearance {
     /** ¿Un coche estacionado en [car] caería dentro de la zona libre del jugador en [player]? */
     fun blocks(car: GeoPoint, player: GeoPoint): Boolean = car.distanceToAsDouble(player) < CLEAR_METERS
 
+    /** Tirada estable (0..1) de un lugar: siempre la misma para el mismo punto, así el aclarado no se rellena con los repoblados. */
+    fun slotRoll(slot: GeoPoint): Float {
+        val h = (slot.latitude * 1_000_000.0).toLong() * 31L + (slot.longitude * 1_000_000.0).toLong()
+        return ((h xor (h ushr 17)) and 0x7FFFFFFFL).toInt() % 1000 / 1000f
+    }
+
     /**
      * ¿Se deja vacío este lugar? Dentro de [CLEAR_METERS] siempre; entre eso y [THIN_METERS] solo si [roll] (0..1,
      * lo da el que llama) cae en la primera mitad. Así el lote junto al jugador queda a medias (tope de coches
