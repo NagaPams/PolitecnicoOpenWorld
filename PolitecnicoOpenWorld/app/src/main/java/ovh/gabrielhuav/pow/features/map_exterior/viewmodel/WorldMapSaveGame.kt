@@ -113,6 +113,7 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalFuel = fuelTank,
         survivalFuelCans = survivalManager.state.value.pack.bidones,
         survivalBleeding = survivalManager.state.value.bleeding,
+        survivalFractureHealsAtMs = survivalManager.state.value.fractureHealsAtMs,
         survivalBandages = survivalManager.state.value.pack.vendas,
         survivalVehicleHealth = vehicleHealth,
         survivalActiveMs = survivalManager.state.value.activeMs,
@@ -189,6 +190,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         // Gson deja en null el texto que un guardado viejo no trae.
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.decode(data.survivalSkills ?: ""),
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.occupationOf(data.survivalOccupation ?: ""),
+        data.survivalFractureHealsAtMs,
     )
     if (packTrimmed) viewModelScope.launch { showSurvivalPrompt(org.jetbrains.compose.resources.getString(Res.string.survival_pack_trimmed)) }
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)

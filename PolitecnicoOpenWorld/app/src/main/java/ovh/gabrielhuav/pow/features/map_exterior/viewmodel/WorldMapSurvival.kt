@@ -10,6 +10,7 @@ import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
@@ -106,7 +107,8 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
     val clock = System.currentTimeMillis()
     if (SleepRules.isSleeping(clock, sleepUntilMs) || RecipeRules.isCrafting(clock, craftUntilMs)) return 0.0
     val running = playerRunsThisStep()
-    val load = if (survivalManager.state.value.enabled) SurvivalCrafting.speedFactor(SurvivalCrafting.weightOf(survivalManager.state.value.pack)) else 1.0
+    val sv = survivalManager.state.value
+    val load = if (sv.enabled) SurvivalCrafting.speedFactor(SurvivalCrafting.weightOf(sv.pack)) * FractureRules.speedFactor(sv.activeMs, sv.fractureHealsAtMs) else 1.0
     return WalkRules.stepSize(running, load, GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs))
 }
 

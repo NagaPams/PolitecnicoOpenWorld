@@ -38,6 +38,8 @@ data class SurvivalSubState(
     /** Gasolina del coche (0-100); la fuente es `WorldMapViewModel.fuelTank` y aquí se publica cada segundo. */
     val fuel: Double = FuelRules.START,
     val bleeding: Boolean = false,
+    /** Fractura (t10): `activeMs` en que sana; 0 = sin fractura. */
+    val fractureHealsAtMs: Long = 0L,
     /** Aliento del jugador (0-100); la fuente es `WorldMapViewModel.stamina` y aquí se publica cada segundo. */
     val stamina: Double = StaminaRules.MAX,
     /** Salud del coche (0-100); la fuente es `WorldMapViewModel.vehicleHealth` y aquí se publica cada segundo. */
@@ -129,11 +131,16 @@ class SurvivalManager(enabled: Boolean = false) {
 
     /** Morir y reaparecer quita la infección y el sangrado (t32): no se revive para morir otra vez de inmediato. */
     fun clearConditions() {
-        mutableState.update { it.copy(bleeding = false, infection = InfectionState()) }
+        mutableState.update { it.copy(bleeding = false, fractureHealsAtMs = 0L, infection = InfectionState()) }
     }
 
     fun setBleeding(bleeding: Boolean) {
         if (mutableState.value.bleeding != bleeding) mutableState.update { it.copy(bleeding = bleeding) }
+    }
+
+    /** Fractura nueva (o la cura con 0): se mide en tiempo de supervivencia activa. */
+    fun setFractureHealsAt(healsAtMs: Long) {
+        if (mutableState.value.fractureHealsAtMs != healsAtMs) mutableState.update { it.copy(fractureHealsAtMs = healsAtMs) }
     }
 
     fun setFuel(fuel: Double) {
@@ -151,11 +158,13 @@ class SurvivalManager(enabled: Boolean = false) {
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
         bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
         skills: SurvivalSkills = SurvivalSkills(), occupation: Occupation = Occupation.NINGUNO,
+        fractureHealsAtMs: Long = 0L,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
             bleeding = bleeding,
+            fractureHealsAtMs = fractureHealsAtMs.coerceAtLeast(0L),
             vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),
             activeMs = activeMs.coerceAtLeast(0L),
             skills = skills,

@@ -203,6 +203,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalArsenal = survival.arsenal,
                 survivalFuel = survival.fuel,
                 survivalBleeding = survival.bleeding,
+                survivalFractured = ovh.gabrielhuav.pow.domain.models.survival.FractureRules.isFractured(survival.activeMs, survival.fractureHealsAtMs),
                 survivalStamina = survival.stamina,
                 survivalVehicleHealth = survival.vehicleHealth,
                 survivalWeather = survival.weather,

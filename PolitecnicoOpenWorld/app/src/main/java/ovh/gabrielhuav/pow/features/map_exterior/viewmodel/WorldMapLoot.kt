@@ -18,12 +18,14 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_stored
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_repaired
+import ovh.gabrielhuav.pow.shared.recursos.survival_fracture
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_wrecked
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
@@ -336,6 +338,13 @@ internal fun WorldMapViewModel.damageVehicle(speed: Double, againstWall: Boolean
     if (after == vehicleHealth) return
     lastVehicleCrashMs = now
     vehicleHealth = after
+    if (survivalManager.state.value.enabled && FractureRules.fracturesOnCrash(speed, MAX_SPEED, kotlin.random.Random.nextDouble())) {
+        val st = survivalManager.state.value
+        if (!FractureRules.isFractured(st.activeMs, st.fractureHealsAtMs)) {
+            survivalManager.setFractureHealsAt(FractureRules.healsAt(st.activeMs))
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fracture), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
+        }
+    }
     if (VehicleHealthRules.isWrecked(after) && !vehicleWreckAnnounced) {
         vehicleWreckAnnounced = true
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_wrecked)) }
@@ -393,6 +402,7 @@ internal fun WorldMapViewModel.useSurvivalKit() {
     val used = SurvivalCrafting.useKit(survivalManager.state.value.pack) ?: return
     survivalManager.setPack(used)
     survivalManager.setBleeding(false)
+    survivalManager.setFractureHealsAt(0L)
     soundManager.playItem()
     heal(SurvivalCrafting.KIT_HEAL)
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_kit_used)) }
