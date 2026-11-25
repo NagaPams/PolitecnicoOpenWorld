@@ -127,6 +127,11 @@ class SurvivalManager(enabled: Boolean = false) {
         if (mutableState.value.stamina != value) mutableState.update { it.copy(stamina = value) }
     }
 
+    /** Morir y reaparecer quita la infección y el sangrado (t32): no se revive para morir otra vez de inmediato. */
+    fun clearConditions() {
+        mutableState.update { it.copy(bleeding = false, infection = InfectionState()) }
+    }
+
     fun setBleeding(bleeding: Boolean) {
         if (mutableState.value.bleeding != bleeding) mutableState.update { it.copy(bleeding = bleeding) }
     }

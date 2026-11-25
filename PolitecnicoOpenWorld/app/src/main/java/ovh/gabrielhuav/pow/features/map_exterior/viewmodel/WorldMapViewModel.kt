@@ -339,8 +339,11 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     // Cooldown GLOBAL de mordida de zombi: con una horda encima, recibes como mucho UNA mordida
     // cada ZOMBIE_BITE_TO_PLAYER_MS → daño moderado (no muerte instantánea por estar rodeado).
     @Volatile internal var lastZombieBiteMs = 0L
-    internal val ZOMBIE_BITE_TO_PLAYER_MS = 650L
-    internal val ZOMBIE_BITE_TO_PLAYER_DMG = 6f
+    internal val ZOMBIE_BITE_TO_PLAYER_MS = ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules.INTERVAL_MS
+    internal val ZOMBIE_BITE_TO_PLAYER_DMG = ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules.DAMAGE
+    /** Aviso previo de la mordida (t32): último contacto con un zombi y cuándo puede morder por primera vez. */
+    internal var lastZombieContactMs = 0L
+    internal var zombieBiteReadyAtMs = 0L
     // Racha de golpes que le has dado a CADA NPC. A partir de RELENTLESS_HIT_STREAK
     // golpes seguidos, el NPC agresivo se vuelve IMPLACABLE: te persigue y golpea sin
     // parar hasta matarte (o hasta que muera). Cuanto más agresivo seas, peor para ti.

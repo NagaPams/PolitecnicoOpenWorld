@@ -79,6 +79,7 @@ internal fun WorldMapViewModel.triggerWastedSequence() {
                 // wantedLevel/carjackWarning + timer de carjack los POSEE WantedManager.
                 wantedManager.clearWanted()
                 playerHealth = maxPlayerHealth
+                survivalManager.clearConditions()
                 damagePulseTrigger = 0
                 impactEffectTrigger = 0
                 _uiState.update { it.copy(isDrivingPoliceCar = false, showWastedScreen = false, wastedIsBusted = false, showMissionFailed = true) }
@@ -95,6 +96,8 @@ internal fun WorldMapViewModel.triggerWastedSequence() {
             val respawn = GeoPoint(19.504603, -99.145985)
             _uiState.update { it.copy(currentLocation = respawn, showWastedScreen = false, wastedIsBusted = false) }
             playerHealth = maxPlayerHealth
+            survivalManager.clearConditions()   // t32: sin infección ni sangrado al reaparecer
+            npcAiManager.clearParkedCarsNear(respawn)   // y sin coches estacionados encima del punto de reaparición
             // Reiniciar contadores de animación y activar inmunidad temporal (2 s) para que ningún
             // policía/NPC con aggro residual dispare la animación de daño justo al reaaparecer.
             damagePulseTrigger = 0

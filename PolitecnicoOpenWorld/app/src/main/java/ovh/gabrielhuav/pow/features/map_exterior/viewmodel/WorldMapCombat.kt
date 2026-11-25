@@ -437,7 +437,10 @@ internal fun WorldMapViewModel.applyNpcContactDamage(playerLoc: GeoPoint) {
         if (_uiState.value.isDriving) continue // en coche no te golpean (te bajan, no te pegan)
         // Mordida de zombi: cooldown GLOBAL (daño moderado aunque te rodeen muchos).
         if (isZombie) {
-            if (now - lastZombieBiteMs < ZOMBIE_BITE_TO_PLAYER_MS) continue
+            // t32: aviso previo al primer contacto y un solo cooldown global (no crece con el número de zombis).
+            if (ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules.startsNewContact(now - lastZombieContactMs)) zombieBiteReadyAtMs = now + ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules.WINDUP_MS
+            lastZombieContactMs = now
+            if (!ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules.canBite(now, zombieBiteReadyAtMs, lastZombieBiteMs)) continue
             lastZombieBiteMs = now
             npcContactCooldowns[id] = now
             viewModelScope.launch(Dispatchers.Main) { takeDamage(ZOMBIE_BITE_TO_PLAYER_DMG); onZombieBite() }

@@ -322,6 +322,17 @@ class NpcAiManager {
 
     internal var serverNpcs = PowListaConcurrente<Npc>()
 
+    /** Quita los coches estacionados a menos de [ovh.gabrielhuav.pow.domain.models.map.ParkingClearance.CLEAR_METERS] de [center] (al reaparecer, t32/t28). */
+    fun clearParkedCarsNear(center: GeoPoint) {
+        val near = serverNpcs.filter {
+            it.navState == ovh.gabrielhuav.pow.domain.models.map.NpcNavState.PARKED &&
+                ovh.gabrielhuav.pow.domain.models.map.ParkingClearance.blocks(it.location, center)
+        }
+        if (near.isEmpty()) return
+        serverNpcs.removeAll(near)
+        near.forEach { pendingDespawns.add(it.id) }
+    }
+
     fun setServerNpcs(npcs: List<Npc>) {
         serverNpcs.clear()
         serverNpcs.addAll(npcs)

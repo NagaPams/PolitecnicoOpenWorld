@@ -70,6 +70,15 @@ private const val ISO_ROOF_FADE_STEP = 0.12f
 private val ISO_GROUND = Color(0xFF65745E)
 private val ISO_ROAD = Color(0xFF8D908A)
 private val ISO_ROAD_CASING = Color(0xFF3B3E3A)
+/** Los zombis se tiñen de verde enfermizo para no confundirse con los estudiantes (t32). */
+private val ISO_ZOMBIE_TINT = ColorFilter.colorMatrix(ColorMatrix(floatArrayOf(
+    0.72f, 0.20f, 0f, 0f, 0f,
+    0.05f, 1.00f, 0.05f, 0f, 14f,
+    0f, 0.10f, 0.55f, 0f, 0f,
+    0f, 0f, 0f, 1f, 0f,
+)))
+private const val ISO_THREAT_METERS = 12.0
+private const val ISO_THREAT_MAX = 8
 private val ISO_WALKWAY = Color(0xFFA49F8D)
 private val ISO_ROOF = Color(0xFFCDBF9B)
 private val ISO_ROOF_EDGE = Color(0xFF4E4637)
@@ -356,6 +365,8 @@ fun IsoWorldView(
             bakedRoads.add(IsoRoadPath(path, path.getBounds(), stroke, if (road.isForCars) ISO_ROAD else ISO_WALKWAY, casing))
         }
         val objectiveArrowOutline = Stroke(width = 3f)
+        val threatDx = FloatArray(ISO_THREAT_MAX)
+        val threatDy = FloatArray(ISO_THREAT_MAX)
         val objectiveArrow = Path().apply {
             moveTo(10f, 0f); lineTo(-8f, -9f); lineTo(-3f, 0f); lineTo(-8f, 9f); close()
         }
@@ -397,6 +408,7 @@ fun IsoWorldView(
             }
             actors.insert(playerX, playerY, projection.depth(player), null, "", vehicleHeadingState, vehicleColorState ?: -1,
                 playerCar, playerCarMirror, IsoVehicle.SEDAN.drawMeters, IsoVehicle.SEDAN.tintable)
+            var threatCount = 0
             val currentNpcs = npcState
             for (i in currentNpcs.indices) {
                 val npc = currentNpcs[i]
@@ -420,6 +432,15 @@ fun IsoWorldView(
                     mirror = direction.second
                     meters = vehicle.drawMeters
                     tintable = vehicle.tintable
+                }
+                if (npc.type == NpcType.ZOMBIE && threatCount < ISO_THREAT_MAX) {
+                    val dxm = (npc.location.longitude - player.longitude) * 104800.0
+                    val dym = (npc.location.latitude - player.latitude) * 111320.0
+                    if (dxm * dxm + dym * dym < ISO_THREAT_METERS * ISO_THREAT_METERS) {
+                        threatDx[threatCount] = (x - playerX) * scale
+                        threatDy[threatCount] = (y - playerY) * scale
+                        threatCount++
+                    }
                 }
                 actors.insert(x, y, projection.depth(npc.location), npc.type, npc.id, heading, npc.carColor, sprite, mirror, meters, tintable)
             }
@@ -493,6 +514,15 @@ fun IsoWorldView(
                 cachedFogRadius = radius
             }
             drawPath(fog, ISO_FOG)
+            // Indicador de amenaza (t32): una flecha roja alrededor del jugador hacia cada zombi a menos de ~12 m.
+            for (i in 0 until threatCount) {
+                val angle = atan2(threatDy[i].toDouble(), threatDx[i].toDouble()) * 180.0 / PI
+                val d = density.toFloat()
+                withTransform({ translate(size.width / 2f, size.height / 2f); rotate(angle.toFloat(), Offset.Zero); translate(58f * d, 0f); scale(d, d, Offset.Zero) }) {
+                    drawPath(objectiveArrow, Color(0xFF1A0808), style = objectiveArrowOutline)
+                    drawPath(objectiveArrow, Color(0xFFE53935))
+                }
+            }
             destinationState?.let { target ->
                 val x = (projection.projectX(target.latitude, target.longitude) * scale + tx).toFloat()
                     .coerceIn(16f, (size.width - 16f).coerceAtLeast(16f))
@@ -601,7 +631,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
                 drawIsoCarSprite(sprite, x, y, width, height, tint)
             }
         } else {
-            drawIsoPlayerFrame(sprite, x, y, pixelsPerMeter * personBoost, actors.mirrors[index])
+            drawIsoPlayerFrame(sprite, x, y, pixelsPerMeter * personBoost, actors.mirrors[index], if (type == NpcType.ZOMBIE) ISO_ZOMBIE_TINT else null)
         }
         return
     }
@@ -633,7 +663,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoPlayerFrame(
-    frame: ImageBitmap, x: Float, y: Float, pixelsPerMeter: Float, mirror: Boolean,
+    frame: ImageBitmap, x: Float, y: Float, pixelsPerMeter: Float, mirror: Boolean, tint: ColorFilter? = null,
 ) {
     val height = (pixelsPerMeter * ISO_PLAYER_CANVAS_METERS).toInt().coerceAtLeast(1)
     val width = (height.toFloat() * frame.width / frame.height).toInt().coerceAtLeast(1)
@@ -644,6 +674,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoPlayerFrame(
             dstOffset = IntOffset((x - width / 2f).toInt(), (y - height * (1f - ISO_PLAYER_FOOT_FRACTION)).toInt()),
             dstSize = IntSize(width, height),
             filterQuality = FilterQuality.Low,
+            colorFilter = tint,
         )
     }
 }
