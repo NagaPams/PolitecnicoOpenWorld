@@ -6,6 +6,7 @@ import ovh.gabrielhuav.pow.domain.models.campaign.MissionCatalog
 import ovh.gabrielhuav.pow.domain.models.campaign.mission3.Mission3
 import ovh.gabrielhuav.pow.domain.models.map.Npc
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
+import ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -44,7 +45,6 @@ private const val M3_ZOMBIE_SPEED = 0.0000023         // paso por tick (similar 
 private const val M3_ZOMBIE_CONTACT_DEG = 0.00006     // ~7 m: contacto zombi↔objetivo
 private const val M3_CONVERT_MS = 2500L               // contacto sostenido con Prankedy → conversión
 private const val M3_ZOMBIE_DAMAGE = 14f              // daño por contacto al jugador
-private const val M3_ZOMBIE_HIT_COOLDOWN_MS = 1200L   // entre golpes de contacto al jugador
 private const val M3_PRANKEDY_ZOMBIE_HP = 999999f     // "inmortal": no muere con el combate normal
 // Contención: policías que PELEAN con los zombis (dan el ambiente de apocalipsis).
 private const val M3_CONTAIN_COP_COUNT = 4            // policías de contención (además del cordón de sigilo)
@@ -351,10 +351,14 @@ private fun WorldMapViewModel.tickM3Brote(playerLoc: GeoPoint, now: Long) {
                 m3Dist(moved.latitude, moved.longitude, prankedyLoc.latitude, prankedyLoc.longitude) < M3_ZOMBIE_CONTACT_DEG) {
                 zombieTouchingPrankedy = true
             }
-            if (m3Dist(moved.latitude, moved.longitude, playerLoc.latitude, playerLoc.longitude) < M3_ZOMBIE_CONTACT_DEG &&
-                now - mission3ZombieHitCooldownMs > M3_ZOMBIE_HIT_COOLDOWN_MS) {
-                mission3ZombieHitCooldownMs = now
-                takeDamage(M3_ZOMBIE_DAMAGE)   // si te mata: triggerWastedSequence → MISIÓN FALLIDA (m3_*)
+            if (m3Dist(moved.latitude, moved.longitude, playerLoc.latitude, playerLoc.longitude) < M3_ZOMBIE_CONTACT_DEG) {
+                // t35: mismo aviso previo y cooldown global que el mundo abierto (ZombieBiteRules); el daño sigue siendo el de la misión.
+                if (ZombieBiteRules.startsNewContact(now - lastZombieContactMs)) zombieBiteReadyAtMs = now + ZombieBiteRules.WINDUP_MS
+                lastZombieContactMs = now
+                if (ZombieBiteRules.canBite(now, zombieBiteReadyAtMs, mission3ZombieHitCooldownMs)) {
+                    mission3ZombieHitCooldownMs = now
+                    takeDamage(M3_ZOMBIE_DAMAGE)   // si te mata: triggerWastedSequence → MISIÓN FALLIDA (m3_*)
+                }
             }
         } else if (npc.id.startsWith("M3_CONTAIN_")) {
             // Policía de contención: carga contra el zombi más cercano (da el ambiente de batalla).

@@ -322,6 +322,7 @@ fun WorldMapScreen(
         viewModel.worldMapForeground = true
         onDispose {
             viewModel.worldMapForeground = false
+            viewModel.promptQueue.clear()   // t35: los avisos en espera no reaparecen al volver de un interior
             viewModel.soundManager.stopWalk()
             viewModel.soundManager.stopRun()
             viewModel.soundManager.stopCar()
