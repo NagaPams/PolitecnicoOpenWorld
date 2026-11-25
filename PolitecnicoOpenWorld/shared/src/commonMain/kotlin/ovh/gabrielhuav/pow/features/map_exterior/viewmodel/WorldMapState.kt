@@ -56,6 +56,8 @@ enum class TileSource  { LOCAL_OSM, LOCAL_CACHE, NETWORK }
 enum class DebugEditTool { NONE, WALL, BLOCK, NAV_PED, NAV_CAR }
 
 data class WorldMapState(
+    /** t21: con poca memoria se omiten los adornos (manchas de suelo y lluvia animada). Lo escribe `updateMemoryPressureTick`. */
+    val lowDetailMode: Boolean = false,
     // ⚠️ LO POSEE SurvivalManager: solo se escribe a través de sus métodos.
     val survivalMode: Boolean = false,
     val survivalNeeds: ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds =

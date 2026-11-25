@@ -2,6 +2,7 @@ package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
 import android.os.SystemClock
 import android.util.Log
+import kotlinx.coroutines.flow.update
 import java.io.File
 import ovh.gabrielhuav.pow.domain.platform.MemoryPressureRules
 
@@ -23,5 +24,7 @@ internal fun WorldMapViewModel.updateMemoryPressureTick() {
     if (after != before) {
         npcAiManager.memoryFactor = after
         Log.i("MemoryPressure", "población x$after (antes x$before)")
+        val low = MemoryPressureRules.lowDetail(after)
+        _uiState.update { it.copy(lowDetailMode = low) }
     }
 }

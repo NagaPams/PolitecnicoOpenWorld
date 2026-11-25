@@ -602,6 +602,7 @@ fun WorldMapScreen(
                     // t58: en coche se va más rápido, así que se ve más lejos (la cámara también se aleja).
                     fogVisionMeters = if (uiState.isDriving) NPC_FOG_VISION_METERS * FOG_DRIVING_FACTOR else NPC_FOG_VISION_METERS,
                     fogMaxFraction = if (uiState.isDriving) FOG_DRIVING_MAX_FRACTION else 0.40f,
+                    lowDetail = uiState.lowDetailMode,
                     playerMoveAngle = uiState.playerMoveAngle,
                     playerAction = uiState.playerAction,
                     vehicleColor = uiState.currentVehicleColor,
@@ -818,7 +819,7 @@ fun WorldMapScreen(
                 color = if (raining) Color(0xFF1B2A3A) else Color(0xFFC5CBD1),
                 alpha = if (raining) 0.30f else 0.40f,
             )
-            if (raining) ovh.gabrielhuav.pow.features.map_exterior.ui.components.RainStreaks()
+            if (raining && !uiState.lowDetailMode) ovh.gabrielhuav.pow.features.map_exterior.ui.components.RainStreaks()
         }
 
         // Barra de acción del crafteo (t16): avanza sola con el reloj, sin depender del tick de 1 Hz.

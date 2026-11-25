@@ -19,6 +19,9 @@ fun shouldWarnLowMemory(availableMb: Long, nowMs: Long, lastWarnMs: Long?): Bool
  * histéresis (se recupera hasta [RECOVER_MB]) para que no suba y baje cada vez que la memoria cruza el umbral.
  */
 object MemoryPressureRules {
+    /** t21: con el factor de población recortado (poca memoria) la vista omite los adornos. */
+    fun lowDetail(factor: Float): Boolean = factor < 1.0f
+
     const val CRITICAL_MB = 200L
     const val RECOVER_MB = 400L
     const val LOW_FACTOR = 0.6f

@@ -233,6 +233,8 @@ fun IsoWorldView(
     fogVisionMeters: Double,
     /** Tope del radio de la niebla como fracción del lado menor de la pantalla (t60: más amplio al conducir). */
     fogMaxFraction: Float = 0.40f,
+    /** t21: sin adornos (manchas de suelo) cuando hay poca memoria. */
+    lowDetail: Boolean = false,
     modifier: Modifier = Modifier,
     playerMoveAngle: Float? = null,
     playerAction: PlayerAction = PlayerAction.IDLE,
@@ -255,6 +257,7 @@ fun IsoWorldView(
     val missionRouteState by rememberUpdatedState(missionRoute)
     val drivingState by rememberUpdatedState(isDriving)
     val vehicleHeadingState by rememberUpdatedState(vehicleHeading)
+    val lowDetailState by rememberUpdatedState(lowDetail)
     val moveAngleState by rememberUpdatedState(playerMoveAngle)
     val actionState by rememberUpdatedState(playerAction)
     val vehicleColorState by rememberUpdatedState(vehicleColor)
@@ -409,7 +412,7 @@ fun IsoWorldView(
             val ix0 = floor(left / patchCell).toInt(); val ix1 = floor(right / patchCell).toInt()
             val iy0 = floor(top / patchCell).toInt(); val iy1 = floor(bottom / patchCell).toInt()
             // Auditoría: además del mínimo en píxeles, un tope de celdas visibles para no dibujar miles de óvalos con zoom lejano.
-            if (IsoPatchRules.shouldDraw(patchCell * scale, (ix1 - ix0 + 1).toLong() * (iy1 - iy0 + 1))) {
+            if (!lowDetailState && IsoPatchRules.shouldDraw(patchCell * scale, (ix1 - ix0 + 1).toLong() * (iy1 - iy0 + 1))) {
                 val patchW = patchCell * scale * 0.55f
                 val patchH = patchW * 0.5f
                 for (iy in iy0..iy1) for (ix in ix0..ix1) {
