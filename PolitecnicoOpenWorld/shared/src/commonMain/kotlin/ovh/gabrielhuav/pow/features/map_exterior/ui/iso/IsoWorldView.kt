@@ -84,9 +84,6 @@ private val ISO_ROOF = Color(0xFFCDBF9B)
 private val ISO_ROOF_EDGE = Color(0xFF4E4637)
 private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
 private val ISO_WALL_DARK = Color(0xFF574E40)
-private const val ISO_PATCH_METERS = 3f
-private const val ISO_PATCH_MIN_PX = 14f
-private const val ISO_PATCH_MAX_CELLS = 1200L
 private val ISO_PATCH_DARK = Color(0x1A1B2A18)
 private val ISO_PATCH_LIGHT = Color(0x14C8DCB0)
 private val ISO_SHADOW = Color(0x47101510)
@@ -408,20 +405,19 @@ fun IsoWorldView(
             val right = (size.width - tx) / scale; val bottom = (size.height - ty) / scale
             // t50: manchas de pasto/tierra repartidas por celdas de ~3 m (fijas en el mundo, sin asignaciones); con zoom
             // muy lejano las celdas serían de pocos píxeles y se omiten.
-            val patchCell = (ISO_PATCH_METERS * projection.pixelsPerMeter).toFloat()
+            val patchCell = (IsoPatchRules.CELL_METERS * projection.pixelsPerMeter).toFloat()
             val ix0 = floor(left / patchCell).toInt(); val ix1 = floor(right / patchCell).toInt()
             val iy0 = floor(top / patchCell).toInt(); val iy1 = floor(bottom / patchCell).toInt()
             // Auditoría: además del mínimo en píxeles, un tope de celdas visibles para no dibujar miles de óvalos con zoom lejano.
-            if (patchCell * scale >= ISO_PATCH_MIN_PX && (ix1 - ix0 + 1).toLong() * (iy1 - iy0 + 1) <= ISO_PATCH_MAX_CELLS) {
+            if (IsoPatchRules.shouldDraw(patchCell * scale, (ix1 - ix0 + 1).toLong() * (iy1 - iy0 + 1))) {
                 val patchW = patchCell * scale * 0.55f
                 val patchH = patchW * 0.5f
                 for (iy in iy0..iy1) for (ix in ix0..ix1) {
-                    val h = (ix * 73856093) xor (iy * 19349663)
-                    if (h and 3 != 0) continue
-                    val jx = ((h ushr 4) and 15) / 15f
-                    val jy = ((h ushr 8) and 15) / 15f
+                    if (!IsoPatchRules.hasPatch(ix, iy)) continue
+                    val jx = IsoPatchRules.jitterX(ix, iy)
+                    val jy = IsoPatchRules.jitterY(ix, iy)
                     drawOval(
-                        if (h and 64 == 0) ISO_PATCH_DARK else ISO_PATCH_LIGHT,
+                        if (IsoPatchRules.isDark(ix, iy)) ISO_PATCH_DARK else ISO_PATCH_LIGHT,
                         Offset((ix + jx) * patchCell * scale + tx, (iy + jy) * patchCell * scale + ty),
                         Size(patchW, patchH),
                     )
@@ -542,9 +538,7 @@ fun IsoWorldView(
                     drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame)
                 }
             }
-            val maxRadius = (size.minDimension * fogMaxFraction).coerceAtLeast(1f)
-            val radius = (fogVisionMeters * projection.pixelsPerMeter * scale).toFloat()
-                .coerceIn(minOf(40f * density.toFloat(), maxRadius), maxRadius)
+            val radius = IsoFogRules.radiusPx(fogVisionMeters, projection.pixelsPerMeter, scale, density.toFloat(), size.minDimension, fogMaxFraction)
             // t34: viñeta radial suave en vez de un óvalo de borde duro; el degradado se arma solo si cambia el radio o el tamaño.
             if (radius != cachedFogRadius || size.width != cachedFogW || size.height != cachedFogH) {
                 fogBrush = Brush.radialGradient(
