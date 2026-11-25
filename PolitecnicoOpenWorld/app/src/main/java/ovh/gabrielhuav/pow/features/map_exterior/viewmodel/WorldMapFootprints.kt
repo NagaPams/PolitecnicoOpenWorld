@@ -90,6 +90,7 @@ internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhua
             // t38: primero el disco (zona ya visitada, sin red); si no hay, Overpass y se guarda.
             val cacheDir = java.io.File(getApplication<android.app.Application>().cacheDir, "outer_buildings")
             val cached = OuterBuildingsDiskCache.read(cacheDir, lat, lon)
+                ?: OuterBuildingRules.nearby(outerPack, lat, lon, OuterBuildingRules.RADIUS_METERS).takeIf { it.isNotEmpty() }
             // Sin red, un archivo caducado sirve más que ningún edificio (auditoría t35–t39).
             val fetched = cached ?: overpassRepository.fetchBuildings(lat, lon, OuterBuildingRules.RADIUS_METERS)
                 ?: OuterBuildingsDiskCache.read(cacheDir, lat, lon, ignoreAge = true)

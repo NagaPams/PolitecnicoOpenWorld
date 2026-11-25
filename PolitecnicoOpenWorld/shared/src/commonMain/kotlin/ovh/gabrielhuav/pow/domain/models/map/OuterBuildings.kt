@@ -3,6 +3,19 @@ package ovh.gabrielhuav.pow.domain.models.map
 // Edificios fuera del campus para la vista isométrica (t27): se descargan de OSM por zonas y se suman a las huellas
 // empaquetadas del campus. Reglas puras aquí; la descarga vive en OverpassRepository y el ViewModel decide cuándo.
 
+/** Paquete opcional de edificios incluido en la app (t51): si el archivo no existe se ignora y todo sigue como antes. */
+const val RUTA_PAQUETE_EDIFICIOS = "CONFIG/outer_buildings_pack.json"
+
+/** Lee el paquete de edificios; vacío si no está o está dañado (nunca lanza). Bloqueante: llamarlo fuera del hilo de UI. */
+fun cargarPaqueteEdificios(): List<FootprintWay> = try {
+    if (!ovh.gabrielhuav.pow.platform.assets.PowAssets.existe(RUTA_PAQUETE_EDIFICIOS)) emptyList()
+    else ovh.gabrielhuav.pow.data.json.PowJson.decodeFromString<CampusFootprintsFile>(
+        ovh.gabrielhuav.pow.platform.assets.PowAssets.texto(RUTA_PAQUETE_EDIFICIOS),
+    ).ways
+} catch (e: Exception) {
+    emptyList()
+}
+
 object OuterBuildingRules {
     /** Radio de descarga alrededor del jugador. */
     const val RADIUS_METERS = 450
@@ -41,6 +54,17 @@ object OuterBuildingRules {
         if (merged.size <= baseSize) emptyList() else merged.subList(baseSize, merged.size).map { fp ->
             CollisionPolygon(name = "OUT_${fp.id}", nodes = fp.points.map { GeoNode(it.latitude, it.longitude) })
         }
+
+    /** t51: edificios del [pack] cuyo primer punto cae a [radiusMeters] o menos de ([lat], [lon]). */
+    fun nearby(pack: List<FootprintWay>, lat: Double, lon: Double, radiusMeters: Int): List<FootprintWay> {
+        if (pack.isEmpty()) return pack
+        val dLat = radiusMeters / 111_320.0
+        val dLon = radiusMeters / (111_320.0 * kotlin.math.cos(lat * kotlin.math.PI / 180.0))
+        return pack.filter { way ->
+            val p = way.pts.firstOrNull() ?: return@filter false
+            p.size >= 2 && kotlin.math.abs(p[0] - lat) <= dLat && kotlin.math.abs(p[1] - lon) <= dLon
+        }
+    }
 
     /** ¿Toca pedir otra zona? [lastLat]/[lastLon] nulos = nunca se ha pedido. */
     fun shouldFetch(lastLat: Double?, lastLon: Double?, lat: Double, lon: Double): Boolean {

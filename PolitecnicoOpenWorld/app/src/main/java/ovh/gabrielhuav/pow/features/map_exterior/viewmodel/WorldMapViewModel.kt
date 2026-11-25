@@ -1190,6 +1190,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** t42: colisión de los edificios exteriores descargados; se suma a la del campus cada vez que esta se reconstruye. */
     /** t44: el aviso de "sin datos de edificios" sale una vez por racha de fallos. */
     @Volatile internal var outerNoDataShown = false
+    /** t51: paquete de edificios incluido en la app; se lee una vez (vacío si no hay archivo). */
+    internal val outerPack: List<ovh.gabrielhuav.pow.domain.models.map.FootprintWay> by lazy { ovh.gabrielhuav.pow.domain.models.map.cargarPaqueteEdificios() }
     @Volatile internal var outerCollisionPolygons: List<ovh.gabrielhuav.pow.domain.models.map.CollisionPolygon> = emptyList()
 
     // Llama esta función en el init{} de tu ViewModel
