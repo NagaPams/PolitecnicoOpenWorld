@@ -471,4 +471,5 @@
     <string name="zinterior_key_test_first">🔒 You can't discard this key yet. Try it on the door first (Lab 2).</string>
     <string name="zinterior_key_discarded">🗑️ Key discarded. Look for another in Lab 1 (←).</string>
     <string name="survival_pack_full">🎒 Pack full: you can't carry more weight</string>
+    <string name="survival_pack_trimmed">🎒 Your saved pack was too heavy: some items were left behind</string>
 </resources>

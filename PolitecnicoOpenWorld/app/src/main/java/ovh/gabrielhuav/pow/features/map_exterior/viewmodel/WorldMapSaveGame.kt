@@ -1,5 +1,9 @@
 package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.survival_pack_trimmed
 import android.content.Context
 import kotlinx.coroutines.flow.update
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
@@ -159,6 +163,9 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     val restoredCompleted: List<String> = data.completedMissions ?: emptyList()
     // wantedLevel (WantedManager) y completedMissions (CampaignManager) los POSEEN sus managers
     // (fachada combine): se restauran vía el manager, NO en el copy de _uiState.
+    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages)
+    // t74: si el guardado traía más de lo que cabe, `restore` lo recorta; se avisa para que no parezca una pérdida sin motivo.
+    val packTrimmed = ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting.sanitized(savedPack) != savedPack
     survivalManager.restore(
         ovh.gabrielhuav.pow.domain.models.survival.SurvivalNeeds(
             data.survivalHunger, data.survivalThirst, data.survivalEnergy,
@@ -167,7 +174,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         data.survivalBoards,
         // Gson deja en null el texto que un guardado viejo no trae.
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.map.DoorRules.decode(data.survivalDoors ?: ""),
-        ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages),
+        savedPack,
         ovh.gabrielhuav.pow.domain.models.survival.SurvivalArsenal(
             weapons = @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.WeaponRules.decode(data.survivalWeapons ?: ""),
             equipped = ovh.gabrielhuav.pow.domain.models.survival.WeaponKind.entries
@@ -183,6 +190,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.decode(data.survivalSkills ?: ""),
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.occupationOf(data.survivalOccupation ?: ""),
     )
+    if (packTrimmed) viewModelScope.launch { showSurvivalPrompt(org.jetbrains.compose.resources.getString(Res.string.survival_pack_trimmed)) }
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)
     zoneKills = @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.ZoneKillRules.decode(data.survivalZoneKills ?: "")
     npcAiManager.zoneKills = zoneKills

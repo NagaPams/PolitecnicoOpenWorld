@@ -471,4 +471,5 @@
     <string name="zinterior_key_test_first">🔒 No puedes desechar esta llave todavía. Pruébala primero en la puerta (Lab 2).</string>
     <string name="zinterior_key_discarded">🗑️ Llave desechada. Busca otra en el Laboratorio 1 (←).</string>
     <string name="survival_pack_full">🎒 Mochila llena: no puedes cargar más peso</string>
+    <string name="survival_pack_trimmed">🎒 Tu mochila guardada pesaba demasiado: se dejaron algunos objetos</string>
 </resources>
