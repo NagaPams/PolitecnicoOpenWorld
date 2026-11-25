@@ -441,6 +441,7 @@
     <string name="survival_fuel_filled">⛽ Tanque rellenado</string>
     <string name="survival_fuel_empty">⛽ Sin gasolina</string>
     <string name="survival_bleeding">🩸 ¡Estás sangrando! Busca una venda</string>
+    <string name="survival_bail_hit">💥 Te golpeaste al bajar con el coche en movimiento</string>
     <string name="survival_fracture">🦴 ¡Te fracturaste! Caminas más lento un rato (o usa un botiquín)</string>
     <string name="survival_hotwire">🔧 Le hiciste el puente al coche: el motor hizo ruido</string>
     <string name="survival_coat_found">🧥 Encontraste un abrigo: te protege del frío</string>

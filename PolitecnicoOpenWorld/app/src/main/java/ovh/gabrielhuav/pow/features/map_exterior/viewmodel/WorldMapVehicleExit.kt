@@ -80,6 +80,7 @@ internal fun WorldMapViewModel.exitVehicle(forced: Boolean): Boolean {
             prankedyBoarding = false,
         )
     }
+    applyBailoutInjury(state.vehicleSpeed)
     logVehicleVisualTransition(if (forced) "forced-exit" else "exit-vehicle")
     prankedyManager.onVehicleInteraction()
     updateNpcsState()

@@ -18,6 +18,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.BailoutRules
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
@@ -27,6 +28,8 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_stored
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_repaired
 import ovh.gabrielhuav.pow.shared.recursos.survival_coat_found
+import ovh.gabrielhuav.pow.shared.recursos.survival_bail_hit
+import ovh.gabrielhuav.pow.shared.recursos.survival_bleeding
 import ovh.gabrielhuav.pow.shared.recursos.survival_fracture
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_wrecked
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
@@ -360,6 +363,25 @@ internal fun WorldMapViewModel.damageVehicle(speed: Double, againstWall: Boolean
     if (VehicleHealthRules.isWrecked(after) && !vehicleWreckAnnounced) {
         vehicleWreckAnnounced = true
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_wrecked)) }
+    }
+}
+
+/** t10: bajar de un coche en movimiento lastima según la velocidad: golpe (vida), corte (sangrado) o caída (fractura). */
+internal fun WorldMapViewModel.applyBailoutInjury(speed: Double) {
+    if (!survivalManager.state.value.enabled) return
+    val injury = BailoutRules.injuryOnBailout(speed, MAX_SPEED, kotlin.random.Random.nextDouble()) ?: return
+    combatManager.updateHealth { h -> CrashInjuryRules.healthAfter(h.toDouble(), injury.damage).toFloat() }
+    when {
+        BailoutRules.causesBleeding(injury.kind) -> {
+            survivalManager.setBleeding(true)
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
+        }
+        BailoutRules.causesFracture(injury.kind) -> {
+            val st = survivalManager.state.value
+            if (!FractureRules.isFractured(st.activeMs, st.fractureHealsAtMs)) survivalManager.setFractureHealsAt(FractureRules.healsAt(st.activeMs))
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fracture), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
+        }
+        else -> viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bail_hit)) }
     }
 }
 
