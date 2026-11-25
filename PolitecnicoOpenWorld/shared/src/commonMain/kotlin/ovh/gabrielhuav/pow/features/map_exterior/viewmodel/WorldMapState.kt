@@ -72,6 +72,7 @@ data class WorldMapState(
     val survivalFuel: Double = 70.0,
     val survivalBleeding: Boolean = false,
     val survivalFractured: Boolean = false,
+    val survivalCoat: Boolean = false,
     val survivalStamina: Double = 100.0,
     val survivalVehicleHealth: Double = 100.0,
     /** Clima y día de supervivencia (t13); los publica `SurvivalManager`. */

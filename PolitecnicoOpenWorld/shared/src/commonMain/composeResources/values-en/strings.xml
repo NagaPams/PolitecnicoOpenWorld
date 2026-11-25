@@ -443,6 +443,7 @@
     <string name="survival_bleeding">🩸 You are bleeding! Find a bandage</string>
     <string name="survival_fracture">🦴 You broke a bone! You walk slower for a while (or use a medkit)</string>
     <string name="survival_hotwire">🔧 You hotwired the car: the engine was noisy</string>
+    <string name="survival_coat_found">🧥 You found a coat: it keeps the cold off</string>
     <string name="survival_bandaged">🩹 Bandage applied</string>
     <string name="survival_bandage_stored">🩹 Bandage stored</string>
     <string name="survival_out_of_breath">🫁 Out of breath: you can only walk</string>

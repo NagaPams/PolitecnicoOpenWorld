@@ -7,13 +7,17 @@ object TemperatureRules {
     const val MAX_COLD = 2
     const val ENERGY_DRAIN_PER_LEVEL = 0.15
 
-    /** Frío 0 (templado), 1 (fresco) o 2 (helado): la noche suma uno y la lluvia o la niebla suman otro. */
-    fun coldLevel(weather: Weather, night: Boolean): Int {
+    /**
+     * Frío 0 (templado), 1 (fresco) o 2 (helado): la noche suma uno y la lluvia o la niebla suman otro. Un abrigo
+     * ([coat]) y estar al abrigo dentro de un coche ([sheltered]) restan uno cada uno, sin bajar de 0.
+     */
+    fun coldLevel(weather: Weather, night: Boolean, coat: Boolean = false, sheltered: Boolean = false): Int {
         val wet = if (weather == Weather.CLEAR) 0 else 1
-        return ((if (night) 1 else 0) + wet).coerceAtMost(MAX_COLD)
+        val base = ((if (night) 1 else 0) + wet).coerceAtMost(MAX_COLD)
+        return (base - (if (coat) 1 else 0) - (if (sheltered) 1 else 0)).coerceAtLeast(0)
     }
 
     /** Multiplicador del gasto de energía al moverse. */
-    fun energyScale(weather: Weather, night: Boolean): Double =
-        1.0 + ENERGY_DRAIN_PER_LEVEL * coldLevel(weather, night)
+    fun energyScale(weather: Weather, night: Boolean, coat: Boolean = false, sheltered: Boolean = false): Double =
+        1.0 + ENERGY_DRAIN_PER_LEVEL * coldLevel(weather, night, coat, sheltered)
 }

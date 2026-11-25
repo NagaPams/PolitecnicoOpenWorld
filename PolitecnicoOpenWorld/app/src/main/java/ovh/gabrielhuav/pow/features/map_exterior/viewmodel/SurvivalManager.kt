@@ -39,6 +39,8 @@ data class SurvivalSubState(
     /** Gasolina del coche (0-100); la fuente es `WorldMapViewModel.fuelTank` y aquí se publica cada segundo. */
     val fuel: Double = FuelRules.START,
     val bleeding: Boolean = false,
+    /** Lleva un abrigo puesto (t12): resta un nivel de frío. */
+    val coat: Boolean = false,
     /** Fractura (t10): `activeMs` en que sana; 0 = sin fractura. */
     val fractureHealsAtMs: Long = 0L,
     /** Aliento del jugador (0-100); la fuente es `WorldMapViewModel.stamina` y aquí se publica cada segundo. */
@@ -144,6 +146,10 @@ class SurvivalManager(enabled: Boolean = false) {
         if (mutableState.value.fractureHealsAtMs != healsAtMs) mutableState.update { it.copy(fractureHealsAtMs = healsAtMs) }
     }
 
+    fun setCoat(coat: Boolean) {
+        if (mutableState.value.coat != coat) mutableState.update { it.copy(coat = coat) }
+    }
+
     fun setFuel(fuel: Double) {
         val value = FuelRules.sanitized(fuel)
         if (mutableState.value.fuel != value) mutableState.update { it.copy(fuel = value) }
@@ -159,12 +165,13 @@ class SurvivalManager(enabled: Boolean = false) {
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
         bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
         skills: SurvivalSkills = SurvivalSkills(), occupation: Occupation = Occupation.NINGUNO,
-        fractureHealsAtMs: Long = 0L,
+        fractureHealsAtMs: Long = 0L, coat: Boolean = false,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
             bleeding = bleeding,
+            coat = coat,
             fractureHealsAtMs = fractureHealsAtMs.coerceAtLeast(0L),
             vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),
             activeMs = activeMs.coerceAtLeast(0L),
@@ -211,7 +218,7 @@ class SurvivalManager(enabled: Boolean = false) {
         if (!enabled || paused || deltaMs <= 0) return null
         val current = mutableState.value
         val infection = current.infection.advance(deltaMs)
-        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night))
+        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night, current.coat, activity == SurvivalActivity.DRIVING))
         val next = current.copy(needs = needs, infection = infection)
         mutableState.value = next
         return next

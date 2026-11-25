@@ -79,6 +79,8 @@ data class GameSaveData(
     // Sangrado activo y vendas guardadas.
     val survivalBleeding: Boolean = false,
     val survivalBandages: Int = 0,
+    // Abrigo puesto (resta un nivel de frío).
+    val survivalCoat: Boolean = false,
     // Fractura: instante (ms de supervivencia activa) en que sana; 0 = sin fractura.
     val survivalFractureHealsAtMs: Long = 0L,
     // Salud del coche (0-100).

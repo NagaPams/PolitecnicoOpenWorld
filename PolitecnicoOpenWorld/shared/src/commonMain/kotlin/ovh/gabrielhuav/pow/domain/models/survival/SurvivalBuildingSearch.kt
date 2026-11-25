@@ -16,7 +16,7 @@ import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
 enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERICO }
 
 /** Qué puede dar un registro. */
-enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS }
+enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO }
 
 /** Un edificio registrable con el punto (afuera de su pared) donde se registra. */
 data class SearchableBuilding(val id: Long, val profile: SearchProfile, val latitude: Double, val longitude: Double)
@@ -47,14 +47,14 @@ object BuildingSearchRules {
 
     /** Qué da cada lugar; el genérico varía por [id] para que no todos sean iguales. */
     fun gainsFor(profile: SearchProfile, id: Long): List<SearchGain> = when (profile) {
-        SearchProfile.TIENDA -> listOf(SearchGain.PIZZA, SearchGain.REFRESCO, SearchGain.REFRESCO)
+        SearchProfile.TIENDA -> listOf(SearchGain.PIZZA, SearchGain.REFRESCO, SearchGain.REFRESCO, SearchGain.ABRIGO)
         SearchProfile.GASOLINERA -> listOf(SearchGain.BIDON, SearchGain.REFRESCO)
         SearchProfile.CLINICA -> listOf(SearchGain.VENDA, SearchGain.VENDA, SearchGain.SUERO)
         SearchProfile.ESCUELA -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.PIZZA)
         SearchProfile.ESTABLO -> listOf(SearchGain.TABLON, SearchGain.VENDA)
         SearchProfile.GENERICO -> listOf(
             SearchGain.TABLON,
-            when (abs(id % 3).toInt()) { 0 -> SearchGain.PIZZA; 1 -> SearchGain.REFRESCO; else -> SearchGain.BALAS },
+            when (abs(id % 4).toInt()) { 0 -> SearchGain.PIZZA; 1 -> SearchGain.REFRESCO; 2 -> SearchGain.BALAS; else -> SearchGain.ABRIGO },
         )
     }
 

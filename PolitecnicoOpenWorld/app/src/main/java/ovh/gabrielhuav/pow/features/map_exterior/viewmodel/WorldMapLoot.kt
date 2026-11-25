@@ -25,6 +25,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_ammo_found
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_stored
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_repaired
+import ovh.gabrielhuav.pow.shared.recursos.survival_coat_found
 import ovh.gabrielhuav.pow.shared.recursos.survival_fracture
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_wrecked
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
@@ -306,6 +307,11 @@ private fun WorldMapViewModel.searchBuilding(point: LootPoint): SearchOutcome {
                 gave = true
             } else if (SurvivalCrafting.bidonBlockedByWeight(current.pack)) {
                 weightBlocked = true
+            }
+            SearchGain.ABRIGO -> if (!current.coat) {
+                survivalManager.setCoat(true)
+                gave = true
+                viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_coat_found)) }
             }
             SearchGain.BALAS -> if (current.arsenal.balas < WeaponRules.MAX_AMMO) {
                 survivalManager.setArsenal(WeaponRules.addAmmo(current.arsenal, AmmoKind.BALAS, CONTAINER_BULLETS))
