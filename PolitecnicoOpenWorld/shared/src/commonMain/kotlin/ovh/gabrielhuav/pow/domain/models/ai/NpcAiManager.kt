@@ -899,6 +899,8 @@ class NpcAiManager {
         playerLocation: GeoPoint,
     ): Npc? {
         val globalPos = landmark.toGlobalGeoPoint(node.localX, node.localY)
+        // t28: sin coches nuevos a menos de ~12 m del jugador (nacer dentro de un lote lleno tapaba los controles).
+        if (ovh.gabrielhuav.pow.domain.models.map.ParkingClearance.blocks(globalPos, playerLocation)) return null
         val newCarId = "PARKED_CAR_${ahoraMs()}_${Random.nextInt(1000)}"
 
         val nodeIndex = way.nodes.indexOf(node)
