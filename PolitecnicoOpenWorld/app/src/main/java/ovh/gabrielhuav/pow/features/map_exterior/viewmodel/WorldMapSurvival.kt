@@ -15,6 +15,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
 import ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
+import ovh.gabrielhuav.pow.domain.models.survival.WalkRules
 import ovh.gabrielhuav.pow.domain.models.survival.DayRules
 import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
 import ovh.gabrielhuav.pow.domain.models.survival.CraftInventory
@@ -104,9 +105,9 @@ internal fun WorldMapViewModel.onCarDoor(boarding: Boolean) {
 internal fun WorldMapViewModel.playerStepSize(): Double {
     val clock = System.currentTimeMillis()
     if (SleepRules.isSleeping(clock, sleepUntilMs) || RecipeRules.isCrafting(clock, craftUntilMs)) return 0.0
-    val base = if (playerRunsThisStep()) 0.000006 else 0.000003
+    val running = playerRunsThisStep()
     val load = if (survivalManager.state.value.enabled) SurvivalCrafting.speedFactor(SurvivalCrafting.weightOf(survivalManager.state.value.pack)) else 1.0
-    return base * load * GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs)
+    return WalkRules.stepSize(running, load, GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs))
 }
 
 fun WorldMapViewModel.resetSurvivalForNewGame() {
