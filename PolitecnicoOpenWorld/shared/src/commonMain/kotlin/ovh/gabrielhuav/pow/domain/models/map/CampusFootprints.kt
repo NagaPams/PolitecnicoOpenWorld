@@ -39,6 +39,9 @@ data class CampusFootprint(
     val roofColor: Long? = null,
     val windowSpacingM: Double = 0.0,
     val doors: List<DoorSpec> = emptyList(),
+    /** Etiquetas de OSM `amenity` y `building` (vacías si no hay): de ellas sale el tipo de lugar al registrarlo (t08). */
+    val amenity: String = "",
+    val buildingType: String = "",
 )
 
 private const val METERS_PER_LEVEL = 3.2
@@ -86,6 +89,8 @@ fun CampusFootprintsFile.toFootprints(spec: BuildingSpecFile = BuildingSpecFile(
             roofColor = extra?.roofColor?.let(::parseColorHex),
             windowSpacingM = extra?.windows?.spacingM ?: 0.0,
             doors = extra?.doors.orEmpty(),
+            amenity = way.tags["amenity"].orEmpty(),
+            buildingType = way.tags["building"].orEmpty(),
         )
     }
     val groundOrder = listOf(FootprintKind.PARK, FootprintKind.PARKING, FootprintKind.PITCH)

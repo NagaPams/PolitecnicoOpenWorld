@@ -13,7 +13,7 @@ import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
 // recuadro del campus (`escom_osm_footprints.json`); fuera de él no hay nada que registrar. Ver 04_MAP_EXTERIOR.md.
 
 /** Tipo de lugar según su nombre en OSM. Los valores nuevos van AL FINAL. */
-enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERICO }
+enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERICO, CASA, TALLER }
 
 /** Qué puede dar un registro. */
 enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO }
@@ -33,7 +33,30 @@ object BuildingSearchRules {
 
     fun profileOf(ordinal: Int): SearchProfile = SearchProfile.entries.getOrElse(ordinal) { SearchProfile.GENERICO }
 
-    fun profileFor(name: String): SearchProfile {
+    /** El nombre manda; si no dice nada, el tipo de lugar sale de las etiquetas de OSM [amenity] y [building]. */
+    fun profileFor(name: String, amenity: String = "", building: String = ""): SearchProfile {
+        val byName = profileByName(name)
+        if (byName != SearchProfile.GENERICO) return byName
+        return when {
+            amenity == "fuel" -> SearchProfile.GASOLINERA
+            amenity in CLINIC_AMENITIES -> SearchProfile.CLINICA
+            amenity in SHOP_AMENITIES -> SearchProfile.TIENDA
+            amenity in SCHOOL_AMENITIES || building in SCHOOL_BUILDINGS -> SearchProfile.ESCUELA
+            building == "stable" -> SearchProfile.ESTABLO
+            building in HOME_BUILDINGS -> SearchProfile.CASA
+            building in WORKSHOP_BUILDINGS -> SearchProfile.TALLER
+            else -> SearchProfile.GENERICO
+        }
+    }
+
+    private val CLINIC_AMENITIES = setOf("doctors", "hospital", "clinic", "pharmacy", "dentist")
+    private val SHOP_AMENITIES = setOf("cafe", "restaurant", "fast_food", "marketplace", "supermarket", "bar")
+    private val SCHOOL_AMENITIES = setOf("school", "university", "college")
+    private val SCHOOL_BUILDINGS = setOf("school", "university")
+    private val HOME_BUILDINGS = setOf("apartments", "house", "residential", "dormitory")
+    private val WORKSHOP_BUILDINGS = setOf("industrial", "warehouse", "garage", "garages")
+
+    private fun profileByName(name: String): SearchProfile {
         val n = name.lowercase()
         return when {
             "plaza" in n || "torres" in n || "tienda" in n -> SearchProfile.TIENDA
@@ -52,6 +75,8 @@ object BuildingSearchRules {
         SearchProfile.CLINICA -> listOf(SearchGain.VENDA, SearchGain.VENDA, SearchGain.SUERO)
         SearchProfile.ESCUELA -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.PIZZA)
         SearchProfile.ESTABLO -> listOf(SearchGain.TABLON, SearchGain.VENDA)
+        SearchProfile.CASA -> listOf(SearchGain.PIZZA, SearchGain.ABRIGO, SearchGain.VENDA)
+        SearchProfile.TALLER -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.BIDON)
         SearchProfile.GENERICO -> listOf(
             SearchGain.TABLON,
             when (abs(id % 4).toInt()) { 0 -> SearchGain.PIZZA; 1 -> SearchGain.REFRESCO; 2 -> SearchGain.BALAS; else -> SearchGain.ABRIGO },
@@ -67,7 +92,7 @@ object BuildingSearchRules {
         for (fp in footprints) {
             if ((fp.kind != FootprintKind.BUILDING && fp.kind != FootprintKind.ROOF) || fp.doors.isNotEmpty() || fp.id in ART_IDS) continue
             val point = outsidePoint(fp.points) ?: continue
-            out.add(SearchableBuilding(fp.id, profileFor(fp.name), point.latitude, point.longitude))
+            out.add(SearchableBuilding(fp.id, profileFor(fp.name, fp.amenity, fp.buildingType), point.latitude, point.longitude))
         }
         return out
     }
