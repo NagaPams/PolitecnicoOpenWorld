@@ -85,6 +85,8 @@ private val ISO_ROOF_EDGE = Color(0xFF4E4637)
 private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
 private val ISO_WALL_DARK = Color(0xFF574E40)
 private val ISO_FOG = Color(0x6E222A33)
+// t40: fuera del radio de visión la niebla es casi opaca y cubre toda la pantalla (el degradado se queda en este color).
+private val ISO_FOG_EDGE = Color(0xF2141A22)
 private val ISO_WINDOW = Color(0xFF2C3A47)
 private val ISO_DOOR = Color(0xFF241C14)
 private const val ISO_LEVEL_METERS = 3.2
@@ -510,8 +512,8 @@ fun IsoWorldView(
             // t34: viñeta radial suave en vez de un óvalo de borde duro; el degradado se arma solo si cambia el radio o el tamaño.
             if (radius != cachedFogRadius || size.width != cachedFogW || size.height != cachedFogH) {
                 fogBrush = Brush.radialGradient(
-                    0.0f to Color.Transparent, 0.62f to Color.Transparent, 1.0f to ISO_FOG,
-                    center = Offset(size.width / 2f, size.height / 2f), radius = radius * 1.9f,
+                    0.0f to Color.Transparent, 0.55f to Color.Transparent, 0.8f to ISO_FOG, 1.0f to ISO_FOG_EDGE,
+                    center = Offset(size.width / 2f, size.height / 2f), radius = radius * 1.35f,
                 )
                 cachedFogRadius = radius; cachedFogW = size.width; cachedFogH = size.height
             }
