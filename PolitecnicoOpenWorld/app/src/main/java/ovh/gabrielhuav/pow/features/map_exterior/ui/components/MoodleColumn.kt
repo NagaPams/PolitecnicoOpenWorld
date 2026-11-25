@@ -3,6 +3,7 @@ package ovh.gabrielhuav.pow.features.map_exterior.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -20,7 +21,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.MoodleRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapState
 
-/** Moodles (t11): columna de iconos con gravedad (puntos) para lo que molesta ahora; vacía si todo va bien. */
+/** Moodles (t11): fila de iconos con gravedad (puntos) para lo que molesta ahora; vacía si todo va bien. */
 @Composable
 fun MoodleColumn(state: WorldMapState, modifier: Modifier = Modifier) {
     val weight = SurvivalCrafting.weightOf(state.survivalPack)
@@ -34,7 +35,7 @@ fun MoodleColumn(state: WorldMapState, modifier: Modifier = Modifier) {
         )
     }
     if (moodles.isEmpty()) return
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         moodles.forEach { MoodleChip(it) }
     }
 }

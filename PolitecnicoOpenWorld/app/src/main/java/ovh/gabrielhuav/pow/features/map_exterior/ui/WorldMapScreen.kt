@@ -1018,7 +1018,7 @@ fun WorldMapScreen(
             val survivalPaused by viewModel.survivalPausedFlow.collectAsState()
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.MoodleColumn(
                 state = uiState,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
             )
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.SurvivalStatusBar(
                 state = uiState,
