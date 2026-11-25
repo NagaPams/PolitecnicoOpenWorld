@@ -12,6 +12,24 @@ object SurvivalCrafting {
     const val KIT_PIZZAS = 1
     const val KIT_HEAL = 40f
 
+    // t61: peso de carga. Además del tope por tipo, la mochila entera no pasa de MAX_WEIGHT (un bidón pesa lo que tres vendas y media).
+    const val MAX_WEIGHT = 16.0
+    const val WEIGHT_PIZZA = 1.0
+    const val WEIGHT_REFRESCO = 1.0
+    const val WEIGHT_BOTIQUIN = 1.5
+    const val WEIGHT_BIDON = 3.0
+    const val WEIGHT_VENDA = 0.5
+
+    fun weightOf(pack: SurvivalPack): Double =
+        pack.pizza * WEIGHT_PIZZA + pack.refresco * WEIGHT_REFRESCO + pack.botiquin * WEIGHT_BOTIQUIN +
+            pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA
+
+    private fun fits(pack: SurvivalPack, extra: Double): Boolean = weightOf(pack) + extra <= MAX_WEIGHT
+
+    fun canAddVenda(pack: SurvivalPack): Boolean = pack.vendas < MAX_PER_ITEM && fits(pack, WEIGHT_VENDA)
+
+    fun canAddBidon(pack: SurvivalPack): Boolean = pack.bidones < FuelRules.MAX_CANS && fits(pack, WEIGHT_BIDON)
+
     /** Hambre o sed en este valor o menos: el botín se consume al recogerlo; si no, va a la mochila. */
     const val USE_NOW_THRESHOLD = 60.0
 
@@ -36,8 +54,8 @@ object SurvivalCrafting {
 
     /** Guarda un consumible; null si no se guarda (tipo sin lugar en la mochila o mochila llena de ese tipo). */
     fun store(pack: SurvivalPack, item: SurvivalItem): SurvivalPack? = when (item) {
-        SurvivalItem.PIZZA -> if (pack.pizza < MAX_PER_ITEM) pack.copy(pizza = pack.pizza + 1) else null
-        SurvivalItem.REFRESCO -> if (pack.refresco < MAX_PER_ITEM) pack.copy(refresco = pack.refresco + 1) else null
+        SurvivalItem.PIZZA -> if (pack.pizza < MAX_PER_ITEM && fits(pack, WEIGHT_PIZZA)) pack.copy(pizza = pack.pizza + 1) else null
+        SurvivalItem.REFRESCO -> if (pack.refresco < MAX_PER_ITEM && fits(pack, WEIGHT_REFRESCO)) pack.copy(refresco = pack.refresco + 1) else null
         else -> null
     }
 

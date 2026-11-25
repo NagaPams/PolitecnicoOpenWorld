@@ -151,7 +151,7 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 survivalManager.setBleeding(false)
                 taken = true
                 Res.string.survival_bandaged
-            } else if (current.pack.vendas < SurvivalCrafting.MAX_PER_ITEM) {
+            } else if (SurvivalCrafting.canAddVenda(current.pack)) {
                 survivalManager.setPack(current.pack.copy(vendas = current.pack.vendas + 1))
                 taken = true
                 Res.string.survival_bandage_stored
@@ -166,7 +166,7 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 fuelEmptyAnnounced = false
                 taken = true
                 Res.string.survival_fuel_filled
-            } else if (current.pack.bidones < FuelRules.MAX_CANS) {
+            } else if (SurvivalCrafting.canAddBidon(current.pack)) {
                 survivalManager.setPack(current.pack.copy(bidones = current.pack.bidones + 1))
                 taken = true
                 Res.string.survival_fuel_stored
@@ -279,11 +279,11 @@ private fun WorldMapViewModel.searchBuilding(point: LootPoint): Boolean {
             SearchGain.VENDA -> if (current.bleeding) {
                 survivalManager.setBleeding(false)
                 gave = true
-            } else if (current.pack.vendas < SurvivalCrafting.MAX_PER_ITEM) {
+            } else if (SurvivalCrafting.canAddVenda(current.pack)) {
                 survivalManager.setPack(current.pack.copy(vendas = current.pack.vendas + 1))
                 gave = true
             }
-            SearchGain.BIDON -> if (current.pack.bidones < FuelRules.MAX_CANS) {
+            SearchGain.BIDON -> if (SurvivalCrafting.canAddBidon(current.pack)) {
                 survivalManager.setPack(current.pack.copy(bidones = current.pack.bidones + 1))
                 gave = true
             }
