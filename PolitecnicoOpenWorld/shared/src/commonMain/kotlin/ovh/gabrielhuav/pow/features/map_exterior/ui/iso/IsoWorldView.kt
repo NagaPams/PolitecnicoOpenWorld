@@ -86,6 +86,7 @@ private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
 private val ISO_WALL_DARK = Color(0xFF574E40)
 private const val ISO_PATCH_METERS = 3f
 private const val ISO_PATCH_MIN_PX = 14f
+private const val ISO_PATCH_MAX_CELLS = 1200L
 private val ISO_PATCH_DARK = Color(0x1A1B2A18)
 private val ISO_PATCH_LIGHT = Color(0x14C8DCB0)
 private val ISO_SHADOW = Color(0x47101510)
@@ -406,9 +407,10 @@ fun IsoWorldView(
             // t50: manchas de pasto/tierra repartidas por celdas de ~3 m (fijas en el mundo, sin asignaciones); con zoom
             // muy lejano las celdas serían de pocos píxeles y se omiten.
             val patchCell = (ISO_PATCH_METERS * projection.pixelsPerMeter).toFloat()
-            if (patchCell * scale >= ISO_PATCH_MIN_PX) {
-                val ix0 = floor(left / patchCell).toInt(); val ix1 = floor(right / patchCell).toInt()
-                val iy0 = floor(top / patchCell).toInt(); val iy1 = floor(bottom / patchCell).toInt()
+            val ix0 = floor(left / patchCell).toInt(); val ix1 = floor(right / patchCell).toInt()
+            val iy0 = floor(top / patchCell).toInt(); val iy1 = floor(bottom / patchCell).toInt()
+            // Auditoría: además del mínimo en píxeles, un tope de celdas visibles para no dibujar miles de óvalos con zoom lejano.
+            if (patchCell * scale >= ISO_PATCH_MIN_PX && (ix1 - ix0 + 1).toLong() * (iy1 - iy0 + 1) <= ISO_PATCH_MAX_CELLS) {
                 val patchW = patchCell * scale * 0.55f
                 val patchH = patchW * 0.5f
                 for (iy in iy0..iy1) for (ix in ix0..ix1) {
