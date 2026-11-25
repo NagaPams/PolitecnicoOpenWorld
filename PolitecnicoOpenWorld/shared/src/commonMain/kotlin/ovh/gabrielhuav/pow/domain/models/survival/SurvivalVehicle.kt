@@ -60,3 +60,19 @@ object VehicleHealthRules {
 
     fun sanitized(health: Double): Double = if (health.isNaN()) MAX else health.coerceIn(0.0, MAX)
 }
+
+/** t03: un coche ajeno que se aborda por primera vez viene con su propio estado (gasolina y salud), fijo según su id. */
+object StrangerCarRules {
+    const val MIN_FUEL = 15.0
+    const val MAX_FUEL = 60.0
+    const val MIN_HEALTH = 55.0
+
+    private fun spread(seed: Int, salt: Int): Double {
+        val mixed = (seed * 31 + salt) * -1640531527
+        return ((mixed ushr 8) and 0xFFFF) / 65535.0
+    }
+
+    fun fuelFor(seed: Int): Double = MIN_FUEL + (MAX_FUEL - MIN_FUEL) * spread(seed, 1)
+
+    fun healthFor(seed: Int): Double = MIN_HEALTH + (VehicleHealthRules.MAX - MIN_HEALTH) * spread(seed, 2)
+}

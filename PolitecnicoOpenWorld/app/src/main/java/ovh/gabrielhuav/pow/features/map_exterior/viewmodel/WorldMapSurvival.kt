@@ -12,6 +12,7 @@ import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
+import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
@@ -98,10 +99,16 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
 }
 
 /** Puerta del coche (t05): con supervivencia, subir o bajar hace ruido de puerta y subir deja el coche parado un momento. */
-internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean = false) {
+internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean = false, carId: String? = null) {
     if (!survivalManager.state.value.enabled) return
     if (boarding) carDoorLockedUntilMs = CarDoorRules.lockedUntil(System.currentTimeMillis())
     if (boarding) HotwireRules.noisesOnBoard(firstTime).forEach { emitSurvivalNoise(it) } else emitSurvivalNoise(NoiseSource.DOOR)
+    if (boarding && firstTime && carId != null) {
+        // t03: el coche ajeno trae su propia gasolina y salud (fijas según su id), no las del anterior.
+        fuelTank = StrangerCarRules.fuelFor(carId.hashCode())
+        vehicleHealth = StrangerCarRules.healthFor(carId.hashCode())
+        vehicleWreckAnnounced = false
+    }
     if (boarding && firstTime) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire)) }
 }
 
