@@ -26,6 +26,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalSkills
 import ovh.gabrielhuav.pow.domain.models.survival.WeatherRules
+import ovh.gabrielhuav.pow.domain.models.survival.WetnessRules
 
 data class SurvivalSubState(
     val enabled: Boolean = false,
@@ -41,6 +42,8 @@ data class SurvivalSubState(
     val bleeding: Boolean = false,
     /** Lleva un abrigo puesto (t12): resta un nivel de frío. */
     val coat: Boolean = false,
+    /** Humedad de la ropa (0-100, t11): la lluvia la sube y el tiempo o el coche la bajan. */
+    val wetness: Double = 0.0,
     /** Fractura (t10): `activeMs` en que sana; 0 = sin fractura. */
     val fractureHealsAtMs: Long = 0L,
     /** Aliento del jugador (0-100); la fuente es `WorldMapViewModel.stamina` y aquí se publica cada segundo. */
@@ -146,6 +149,11 @@ class SurvivalManager(enabled: Boolean = false) {
         if (mutableState.value.fractureHealsAtMs != healsAtMs) mutableState.update { it.copy(fractureHealsAtMs = healsAtMs) }
     }
 
+    fun setWetness(wetness: Double) {
+        val value = WetnessRules.sanitized(wetness)
+        if (mutableState.value.wetness != value) mutableState.update { it.copy(wetness = value) }
+    }
+
     fun setCoat(coat: Boolean) {
         if (mutableState.value.coat != coat) mutableState.update { it.copy(coat = coat) }
     }
@@ -165,13 +173,14 @@ class SurvivalManager(enabled: Boolean = false) {
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
         bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
         skills: SurvivalSkills = SurvivalSkills(), occupation: Occupation = Occupation.NINGUNO,
-        fractureHealsAtMs: Long = 0L, coat: Boolean = false,
+        fractureHealsAtMs: Long = 0L, coat: Boolean = false, wetness: Double = 0.0,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
             bleeding = bleeding,
             coat = coat,
+            wetness = WetnessRules.sanitized(wetness),
             fractureHealsAtMs = fractureHealsAtMs.coerceAtLeast(0L),
             vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),
             activeMs = activeMs.coerceAtLeast(0L),
@@ -218,7 +227,7 @@ class SurvivalManager(enabled: Boolean = false) {
         if (!enabled || paused || deltaMs <= 0) return null
         val current = mutableState.value
         val infection = current.infection.advance(deltaMs)
-        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night, current.coat, activity == SurvivalActivity.DRIVING))
+        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night, current.coat, activity == SurvivalActivity.DRIVING, WetnessRules.isSoaked(current.wetness)))
         val next = current.copy(needs = needs, infection = infection)
         mutableState.value = next
         return next

@@ -446,6 +446,7 @@
     <string name="survival_coat_found">🧥 You found a coat: it keeps the cold off</string>
     <string name="survival_occupation_hint">💼 Pick your trade in the inventory (hold Y): boxer, soldier or carpenter</string>
     <string name="survival_fuel_low">⛽ Low on fuel: find a can</string>
+    <string name="survival_wet">💦 Your clothes are soaked: dry off in a car or wear a coat</string>
     <string name="survival_cold">🥶 It is cold: find a coat or get in a car</string>
     <string name="survival_fracture_healed">🦴 Your fracture healed</string>
     <string name="survival_splint_crafted">🦴 Splint on: the fracture healed</string>

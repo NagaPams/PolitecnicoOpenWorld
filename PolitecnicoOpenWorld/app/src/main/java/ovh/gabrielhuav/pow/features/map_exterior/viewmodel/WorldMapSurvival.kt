@@ -15,6 +15,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.NeedEffectRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
+import ovh.gabrielhuav.pow.domain.models.survival.WetnessRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire_failed
@@ -62,6 +63,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_wet
 import ovh.gabrielhuav.pow.shared.recursos.survival_fracture_healed
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_low
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_hint
@@ -374,7 +376,7 @@ private fun WorldMapViewModel.updateSleep() {
     sleepUntilMs = 0L
     val sv = survivalManager.state.value
     val night = _uiState.value.nightAlpha > 0.05f
-    survivalManager.setNeeds(SleepRules.rested(sv.needs, night, TemperatureRules.coldLevel(sv.weather, night, sv.coat)))
+    survivalManager.setNeeds(SleepRules.rested(sv.needs, night, TemperatureRules.coldLevel(sv.weather, night, sv.coat, soaked = WetnessRules.isSoaked(sv.wetness))))
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_done)) }
 }
 
@@ -428,9 +430,12 @@ private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
     if (lowFuelLatch.fire(s.isDriving && fuelTank > 0.0 && fuelTank < LOW_FUEL_NOTICE, fuelTank >= LOW_FUEL_NOTICE + 10.0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_low)) }
     }
-    val cold = TemperatureRules.coldLevel(sv.weather, s.nightAlpha > 0.05f, sv.coat, s.isDriving)
+    val cold = TemperatureRules.coldLevel(sv.weather, s.nightAlpha > 0.05f, sv.coat, s.isDriving, WetnessRules.isSoaked(sv.wetness))
     if (coldLatch.fire(cold >= 1, cold == 0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_cold)) }
+    }
+    if (wetLatch.fire(WetnessRules.isSoaked(sv.wetness), sv.wetness < WetnessRules.SOAKED_AT / 2)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_wet)) }
     }
     // Necesidades críticas: un aviso al cruzar el umbral y otro solo tras recuperarse bien (30).
     if (hungerLatch.fire(sv.needs.hunger < NeedEffectRules.CRITICAL_BELOW, sv.needs.hunger >= 30.0)) {
@@ -490,6 +495,8 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val clockNow = System.currentTimeMillis()
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))
     survivalManager.addActiveMs(elapsed.coerceAtMost(1000L))
+    val dressed = survivalManager.state.value
+    survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving, elapsed.coerceAtMost(1000L) / 1000.0))
     announceBlackout()
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING

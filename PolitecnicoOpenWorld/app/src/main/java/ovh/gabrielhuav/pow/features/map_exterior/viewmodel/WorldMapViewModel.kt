@@ -204,6 +204,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalFuel = survival.fuel,
                 survivalBleeding = survival.bleeding,
                 survivalCoat = survival.coat,
+                survivalWetness = survival.wetness,
                 survivalFractured = ovh.gabrielhuav.pow.domain.models.survival.FractureRules.isFractured(survival.activeMs, survival.fractureHealsAtMs),
                 survivalStamina = survival.stamina,
                 survivalVehicleHealth = survival.vehicleHealth,
@@ -459,6 +460,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Cerrojos de los avisos de estado (poca gasolina, frío) y si la fractura seguía activa en el tick anterior. */
     internal val lowFuelLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val coldLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val wetLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val hungerLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val thirstLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val tiredLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()

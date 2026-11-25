@@ -81,6 +81,8 @@ data class GameSaveData(
     val survivalBandages: Int = 0,
     // Abrigo puesto (resta un nivel de frío).
     val survivalCoat: Boolean = false,
+    // Humedad de la ropa (0-100).
+    val survivalWetness: Double = 0.0,
     // Fractura: instante (ms de supervivencia activa) en que sana; 0 = sin fractura.
     val survivalFractureHealsAtMs: Long = 0L,
     // Salud del coche (0-100).

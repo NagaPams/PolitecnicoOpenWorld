@@ -114,6 +114,7 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalFuelCans = survivalManager.state.value.pack.bidones,
         survivalBleeding = survivalManager.state.value.bleeding,
         survivalCoat = survivalManager.state.value.coat,
+        survivalWetness = survivalManager.state.value.wetness,
         survivalFractureHealsAtMs = survivalManager.state.value.fractureHealsAtMs,
         survivalBandages = survivalManager.state.value.pack.vendas,
         survivalVehicleHealth = vehicleHealth,
@@ -193,6 +194,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         @Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.survival.SkillRules.occupationOf(data.survivalOccupation ?: ""),
         data.survivalFractureHealsAtMs,
         data.survivalCoat,
+        data.survivalWetness,
     )
     if (packTrimmed) viewModelScope.launch { showSurvivalPrompt(org.jetbrains.compose.resources.getString(Res.string.survival_pack_trimmed)) }
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)

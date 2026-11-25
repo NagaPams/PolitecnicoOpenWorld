@@ -24,6 +24,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.MoodleKind
 import ovh.gabrielhuav.pow.domain.models.survival.MoodleRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
+import ovh.gabrielhuav.pow.domain.models.survival.WetnessRules
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapState
 
 /** Moodles (t11): fila de iconos con gravedad (puntos) para lo que molesta ahora; vacía si todo va bien. */
@@ -32,11 +33,11 @@ fun MoodleColumn(state: WorldMapState, health: Int, modifier: Modifier = Modifie
     val weight = SurvivalCrafting.weightOf(state.survivalPack)
     val moodles = remember(
         state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, health,
+        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, health, state.survivalWetness,
     ) {
         MoodleRules.active(
             state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving), health.toDouble(),
+            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, WetnessRules.isSoaked(state.survivalWetness)), health.toDouble(), state.survivalWetness,
         )
     }
     if (moodles.isEmpty()) return
@@ -77,6 +78,7 @@ private fun nameOf(kind: MoodleKind): Int = when (kind) {
     MoodleKind.CARGA -> R.string.moodle_carga
     MoodleKind.FRIO -> R.string.moodle_frio
     MoodleKind.HERIDO -> R.string.moodle_herido
+    MoodleKind.MOJADO -> R.string.moodle_mojado
 }
 
 private fun iconOf(kind: MoodleKind): String = when (kind) {
@@ -90,4 +92,5 @@ private fun iconOf(kind: MoodleKind): String = when (kind) {
     MoodleKind.CARGA -> "🎒"
     MoodleKind.FRIO -> "🥶"
     MoodleKind.HERIDO -> "❤️‍🩹"
+    MoodleKind.MOJADO -> "💦"
 }
