@@ -351,6 +351,18 @@ internal fun WorldMapViewModel.damageVehicle(speed: Double, againstWall: Boolean
     }
 }
 
+/** Atropellar a un zombi abolla el coche un poco (t04); sin enfriamiento porque cada zombi muerto cuenta una vez. */
+internal fun WorldMapViewModel.damageVehicleRunOver(speed: Double) {
+    if (!survivalManager.state.value.enabled) return
+    val after = VehicleHealthRules.runOver(vehicleHealth, speed, MAX_SPEED)
+    if (after == vehicleHealth) return
+    vehicleHealth = after
+    if (VehicleHealthRules.isWrecked(after) && !vehicleWreckAnnounced) {
+        vehicleWreckAnnounced = true
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_wrecked)) }
+    }
+}
+
 /** Repara el coche con un tablón (desde el inventario): +[VehicleHealthRules.REPAIR_PER_BOARD] % de salud. */
 internal fun WorldMapViewModel.repairVehicle() {
     val state = survivalManager.state.value

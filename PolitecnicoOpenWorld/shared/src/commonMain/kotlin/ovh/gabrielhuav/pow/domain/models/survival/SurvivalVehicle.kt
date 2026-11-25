@@ -21,6 +21,8 @@ object VehicleHealthRules {
     const val WALL_DAMAGE_AT_TOP_SPEED = 45.0
     /** Daño de un choque contra otro coche a velocidad máxima. */
     const val CAR_DAMAGE_AT_TOP_SPEED = 28.0
+    /** Daño al coche por atropellar a un zombi a velocidad máxima (t04): menos que un choque, pero se acumula. */
+    const val RUN_OVER_DAMAGE_AT_TOP_SPEED = 6.0
     /** Por debajo de esta fracción de la velocidad máxima el golpe no cuenta (rozones y arranques contra la pared). */
     const val MIN_SPEED_FRACTION = 0.15
     /** Con menos salud que esto el coche no pasa de [DAMAGED_SPEED_FACTOR] de su velocidad máxima. */
@@ -36,6 +38,13 @@ object VehicleHealthRules {
         if (fraction < MIN_SPEED_FRACTION) return health
         val top = if (againstWall) WALL_DAMAGE_AT_TOP_SPEED else CAR_DAMAGE_AT_TOP_SPEED
         return (health - fraction * top).coerceAtLeast(0.0)
+    }
+
+    /** Salud tras atropellar a un zombi a [speed]; sin tope mínimo de velocidad (quien atropella ya va rápido). */
+    fun runOver(health: Double, speed: Double, maxSpeed: Double): Double {
+        if (maxSpeed <= 0.0 || !speed.isFinite()) return health
+        val fraction = (abs(speed) / maxSpeed).coerceIn(0.0, 1.0)
+        return (health - fraction * RUN_OVER_DAMAGE_AT_TOP_SPEED).coerceAtLeast(0.0)
     }
 
     fun isWrecked(health: Double): Boolean = health <= 0.0

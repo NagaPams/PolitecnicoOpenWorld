@@ -317,6 +317,11 @@ internal fun WorldMapViewModel.runOverNpcs(
                 if (spd < RUN_OVER_MIN_SPEED) continue
                 if (d > RUN_OVER_RADIUS) continue
                 // Los zombis NO esquivan (shamblean): atropellables a cualquier velocidad.
+                if (npc.health - damage <= 0f) {
+                    // t18/t04: un zombi atropellado cuenta como baja de su zona y abolla el coche.
+                    onZombieKilled(npc.location)
+                    damageVehicleRunOver(spd)
+                }
                 killOrHurt(id, npc); changed = true; impactWorthy = true
             }
             // Coches y patrullas: se resuelven después, ordenados por id (ver más abajo).
