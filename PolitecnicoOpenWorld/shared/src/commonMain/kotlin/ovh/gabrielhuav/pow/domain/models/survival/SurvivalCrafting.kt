@@ -72,9 +72,28 @@ object SurvivalCrafting {
         else -> null
     }
 
+    /**
+     * t71: un guardado anterior al límite de peso puede traer más de [MAX_WEIGHT]; se quitan primero los objetos más
+     * pesados (bidón, botiquín, pizza, refresco, venda) hasta que quepa, en vez de dejar la mochila sobrecargada.
+     */
+    fun fitToWeight(pack: SurvivalPack): SurvivalPack {
+        var p = pack
+        while (weightOf(p) > MAX_WEIGHT) {
+            p = when {
+                p.bidones > 0 -> p.copy(bidones = p.bidones - 1)
+                p.botiquin > 0 -> p.copy(botiquin = p.botiquin - 1)
+                p.pizza > 0 -> p.copy(pizza = p.pizza - 1)
+                p.refresco > 0 -> p.copy(refresco = p.refresco - 1)
+                p.vendas > 0 -> p.copy(vendas = p.vendas - 1)
+                else -> return p
+            }
+        }
+        return p
+    }
+
     /** Valores de un guardado (viejo o editado a mano) dentro de rango. */
-    fun sanitized(pack: SurvivalPack): SurvivalPack = SurvivalPack(
+    fun sanitized(pack: SurvivalPack): SurvivalPack = fitToWeight(SurvivalPack(
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
         pack.bidones.coerceIn(0, FuelRules.MAX_CANS), pack.vendas.coerceIn(0, MAX_PER_ITEM),
-    )
+    ))
 }
