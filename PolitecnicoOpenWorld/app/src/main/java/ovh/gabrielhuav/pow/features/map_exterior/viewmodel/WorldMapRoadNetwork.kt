@@ -11,6 +11,13 @@ import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.MapWay
 import kotlin.math.floor
 
+/**
+ * ¿No se pintan calles aquí? En el campus (zona libre) los mapas con teselas ya muestran las calles reales; la vista
+ * isométrica no tiene teselas, así que ahí SÍ se pintan (t27: ENCB y los alrededores salían como un plano vacío).
+ */
+internal fun WorldMapViewModel.hideRoadsHere(lat: Double, lon: Double): Boolean =
+    isFreeMovementZone(lat, lon) && _uiState.value.mapProvider != MapProvider.ISOMETRIC
+
 internal fun WorldMapViewModel.updateVisibleRoads(location: GeoPoint, force: Boolean = false) {
         // DE-DUP (2026-06-21, par 6): sincronizado al MIEMBRO canónico de WorldMapViewModel.kt antes de
         // borrarlo. El miembro usaba filtro CIRCULAR (distance <= RADIO) + ANTI-CARRERA (re-chequea zona
@@ -19,7 +26,7 @@ internal fun WorldMapViewModel.updateVisibleRoads(location: GeoPoint, force: Boo
         // el filtro ya devuelve lista vacía). Param renombrado playerLoc→location (todos los call-sites son
         // posicionales). Cascada SEGURA: distance/isFreeMovementZone son miembros internal únicos (sin gemelo).
         // 🆕 ZONA LIBRE (ESCOM/ENCB): dentro del campus NO se pintan calles; vacía el Flow y SALTA el filtro.
-        if (isFreeMovementZone(location.latitude, location.longitude)) {
+        if (hideRoadsHere(location.latitude, location.longitude)) {
             wasInFreeMovementZone = true
             if (_roadNetworkFlow.value.isNotEmpty()) _roadNetworkFlow.value = emptyList()
             return
@@ -46,7 +53,7 @@ internal fun WorldMapViewModel.updateVisibleRoads(location: GeoPoint, force: Boo
             }
             // Anti-carrera: si al terminar el filtro el jugador YA está en zona libre, no repintamos
             // (evita que una corutina lanzada en el borde reponga las líneas).
-            if (!isFreeMovementZone(location.latitude, location.longitude)) {
+            if (!hideRoadsHere(location.latitude, location.longitude)) {
                 _roadNetworkFlow.value = visible
             } else if (_roadNetworkFlow.value.isNotEmpty()) {
                 _roadNetworkFlow.value = emptyList()

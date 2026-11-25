@@ -1026,7 +1026,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                         updateMemoryPressureTick()
 
                         maybeRefetchRoadNetwork(location)
-                        if (_uiState.value.showRoadNetwork) {
+                        if (_uiState.value.showRoadNetwork || _uiState.value.mapProvider == MapProvider.ISOMETRIC) {
                             updateVisibleRoads(location)
                         }
 

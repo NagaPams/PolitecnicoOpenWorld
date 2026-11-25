@@ -56,6 +56,8 @@ import ovh.gabrielhuav.pow.domain.models.map.isoScreenSector
 import ovh.gabrielhuav.pow.domain.models.map.isoWorldAngleToScreenHeading
 import ovh.gabrielhuav.pow.domain.models.map.isoWallFacesCamera
 import ovh.gabrielhuav.pow.domain.models.map.isoSpriteHeading
+import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.pow
@@ -66,7 +68,8 @@ private const val ISO_LAYER_MARGIN = 8f
 private const val ISO_ROOF_HIDDEN_ALPHA = 0.1f
 private const val ISO_ROOF_FADE_STEP = 0.12f
 private val ISO_GROUND = Color(0xFF65745E)
-private val ISO_ROAD = Color(0xFF797C76)
+private val ISO_ROAD = Color(0xFF8D908A)
+private val ISO_ROAD_CASING = Color(0xFF3B3E3A)
 private val ISO_WALKWAY = Color(0xFFA49F8D)
 private val ISO_ROOF = Color(0xFFCDBF9B)
 private val ISO_ROOF_EDGE = Color(0xFF4E4637)
@@ -141,7 +144,7 @@ private fun isoWallQuad(
 }
 
 private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color)
-private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color)
+private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color, val casing: Stroke)
 private class IsoBuildingLayer(
     val layer: GraphicsLayer,
     val xs: FloatArray,
@@ -349,7 +352,11 @@ fun IsoWorldView(
             }
             val widthMeters = if (road.isForCars) 6.0 else 2.0
             val stroke = Stroke(width = (widthMeters * projection.pixelsPerMeter).toFloat(), cap = StrokeCap.Round)
-            bakedRoads.add(IsoRoadPath(path, path.getBounds(), stroke, if (road.isForCars) ISO_ROAD else ISO_WALKWAY))
+            val casing = Stroke(width = ((widthMeters + 1.2) * projection.pixelsPerMeter).toFloat(), cap = StrokeCap.Round)
+            bakedRoads.add(IsoRoadPath(path, path.getBounds(), stroke, if (road.isForCars) ISO_ROAD else ISO_WALKWAY, casing))
+        }
+        val objectiveArrow = Path().apply {
+            moveTo(10f, 0f); lineTo(-8f, -9f); lineTo(-3f, 0f); lineTo(-8f, 9f); close()
         }
         val fog = Path().apply { fillType = PathFillType.EvenOdd }
         val actors = IsoActors(512)
@@ -422,6 +429,11 @@ fun IsoWorldView(
                     if (isoOnScreen(ground.bounds, left, top, right, bottom)) drawPath(ground.path, ground.color)
                 }
                 for (road in bakedRoads) {
+                    if (isoOnScreen(road.bounds, left, top, right, bottom, road.casing.width / 2f)) {
+                        drawPath(road.path, ISO_ROAD_CASING, style = road.casing)
+                    }
+                }
+                for (road in bakedRoads) {
                     if (isoOnScreen(road.bounds, left, top, right, bottom, road.stroke.width / 2f)) {
                         drawPath(road.path, road.color, style = road.stroke)
                     }
@@ -488,12 +500,23 @@ fun IsoWorldView(
                 drawCircle(Color(0xFF64A9EC), 7f * density.toFloat(), Offset(x, y))
             }
             objectiveState?.let { target ->
-                val x = (projection.projectX(target.latitude, target.longitude) * scale + tx).toFloat()
-                    .coerceIn(16f, (size.width - 16f).coerceAtLeast(16f))
-                val y = (projection.projectY(target.latitude, target.longitude) * scale + ty).toFloat()
-                    .coerceIn(16f, (size.height - 16f).coerceAtLeast(16f))
-                drawCircle(Color(0xFFFFD35A), 9f * density.toFloat(), Offset(x, y))
-                drawCircle(Color(0xFF552B16), 4f * density.toFloat(), Offset(x, y))
+                // Objetivo (t27): aro grande con borde claro; si cae fuera de la pantalla, una flecha en el borde que
+                // apunta hacia él (antes era un punto de 9 dp que se perdía en el vacío).
+                val rawX = (projection.projectX(target.latitude, target.longitude) * scale + tx).toFloat()
+                val rawY = (projection.projectY(target.latitude, target.longitude) * scale + ty).toFloat()
+                val x = rawX.coerceIn(24f * density.toFloat(), (size.width - 24f * density.toFloat()).coerceAtLeast(24f))
+                val y = rawY.coerceIn(24f * density.toFloat(), (size.height - 24f * density.toFloat()).coerceAtLeast(24f))
+                val d = density.toFloat()
+                drawCircle(Color(0xFF1A1208), 15f * d, Offset(x, y))
+                drawCircle(Color(0xFFFFD35A), 12f * d, Offset(x, y))
+                drawCircle(Color(0xFF552B16), 5f * d, Offset(x, y))
+                if (x != rawX || y != rawY) {
+                    val angle = atan2((rawY - size.height / 2f).toDouble(), (rawX - size.width / 2f).toDouble()) * 180.0 / PI
+                    withTransform({ translate(x, y); rotate(angle.toFloat(), Offset.Zero); translate(22f * d, 0f); scale(d, d, Offset.Zero) }) {
+                        drawPath(objectiveArrow, Color(0xFF1A1208), style = Stroke(width = 3f))
+                        drawPath(objectiveArrow, Color(0xFFFFD35A))
+                    }
+                }
             }
         }
     })
