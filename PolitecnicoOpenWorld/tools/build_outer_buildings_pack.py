@@ -29,14 +29,17 @@ def fetch_tile(south, west, north, east):
     query = f'[out:json][timeout:60];way["building"]({south},{west},{north},{east});out geom;'
     data = urllib.parse.urlencode({"data": query}).encode()
     last = None
-    for server in SERVERS:
-        try:
-            request = urllib.request.Request(server, data=data, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(request, timeout=90) as response:
-                return json.load(response)["elements"]
-        except Exception as error:  # noqa: BLE001 - se prueba el siguiente servidor
-            last = error
-            time.sleep(2)
+    # Los servidores públicos fallan seguido (504): 3 rondas con espera creciente antes de rendirse con la tesela.
+    for attempt in range(3):
+        for server in SERVERS:
+            try:
+                request = urllib.request.Request(server, data=data, headers={"User-Agent": USER_AGENT})
+                with urllib.request.urlopen(request, timeout=90) as response:
+                    return json.load(response)["elements"]
+            except Exception as error:  # noqa: BLE001 - se prueba el siguiente servidor
+                last = error
+                time.sleep(2)
+        time.sleep(15 * (attempt + 1))
     raise RuntimeError(f"ningún servidor respondió para la tesela: {last}")
 
 
@@ -60,16 +63,22 @@ def main():
     args = parser.parse_args()
 
     ways = {}
+    failed = []
     lat = args.south
-    while lat < args.north:
+    while lat < args.north - 1e-9:
         lon = args.west
-        while lon < args.east:
+        while lon < args.east - 1e-9:
             tile = (round(lat, 6), round(lon, 6), round(min(lat + args.tile, args.north), 6), round(min(lon + args.tile, args.east), 6))
-            for element in fetch_tile(*tile):
-                way = to_way(element)
-                if way:
-                    ways[way["id"]] = way
-            print(f"tesela {tile}: {len(ways)} edificios", file=sys.stderr)
+            try:
+                for element in fetch_tile(*tile):
+                    way = to_way(element)
+                    if way:
+                        ways[way["id"]] = way
+                print(f"tesela {tile}: {len(ways)} edificios", file=sys.stderr)
+            except RuntimeError as error:
+                # Una tesela caída no tira todo el trabajo: se anota y se sigue (se puede repetir solo esa zona).
+                failed.append(tile)
+                print(f"tesela {tile}: FALLÓ ({error})", file=sys.stderr)
             lon += args.tile
             time.sleep(1.5)
         lat += args.tile
@@ -78,6 +87,9 @@ def main():
     with open(args.out, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
     print(f"{len(ways)} edificios -> {args.out}", file=sys.stderr)
+    if failed:
+        print(f"ATENCIÓN: {len(failed)} teselas sin datos (paquete incompleto): {failed}", file=sys.stderr)
+        sys.exit(2)
 
 
 if __name__ == "__main__":
