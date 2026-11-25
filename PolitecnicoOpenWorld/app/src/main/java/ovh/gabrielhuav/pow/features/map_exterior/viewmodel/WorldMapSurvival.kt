@@ -12,6 +12,7 @@ import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.ConditionSpeedRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
+import ovh.gabrielhuav.pow.domain.models.survival.NeedEffectRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
@@ -64,6 +65,9 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_fracture_healed
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_low
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_hint
 import ovh.gabrielhuav.pow.shared.recursos.survival_splint_crafted
+import ovh.gabrielhuav.pow.shared.recursos.survival_very_hungry
+import ovh.gabrielhuav.pow.shared.recursos.survival_very_thirsty
+import ovh.gabrielhuav.pow.shared.recursos.survival_very_tired
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_combate
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_punteria
@@ -419,6 +423,16 @@ private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
     if (coldLatch.fire(cold >= 1, cold == 0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_cold)) }
     }
+    // Necesidades críticas: un aviso al cruzar el umbral y otro solo tras recuperarse bien (30).
+    if (hungerLatch.fire(sv.needs.hunger < NeedEffectRules.CRITICAL_BELOW, sv.needs.hunger >= 30.0)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_very_hungry)) }
+    }
+    if (thirstLatch.fire(sv.needs.thirst < NeedEffectRules.CRITICAL_BELOW, sv.needs.thirst >= 30.0)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_very_thirsty)) }
+    }
+    if (tiredLatch.fire(sv.needs.energy < NeedEffectRules.CRITICAL_BELOW, sv.needs.energy >= 30.0)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_very_tired)) }
+    }
     val fractured = FractureRules.isFractured(sv.activeMs, sv.fractureHealsAtMs)
     // fractureHealsAtMs = 0 es una cura con botiquín o férula (que ya tienen su propio aviso): solo se avisa la que sanó sola.
     if (wasFractured && !fractured && sv.fractureHealsAtMs != 0L) {
@@ -486,7 +500,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     survivalManager.setFuel(fuelTank)
     survivalManager.setVehicleHealth(vehicleHealth)
-    if (!staminaMovedThisSecond) staminaState = StaminaRules.rest(staminaState, elapsed.coerceAtMost(1000L) / 1000.0)
+    if (!staminaMovedThisSecond) staminaState = StaminaRules.rest(staminaState, elapsed.coerceAtMost(1000L) / 1000.0 * NeedEffectRules.staminaRegenFactor(survivalManager.state.value.needs.thirst))
     staminaMovedThisSecond = false
     survivalManager.setStamina(staminaState.value)
     // El avance de necesidades corre fuera del bloqueo de vida; dentro solo se aplica el daño (h12).

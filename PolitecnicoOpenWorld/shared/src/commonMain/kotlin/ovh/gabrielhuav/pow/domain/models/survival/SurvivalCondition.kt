@@ -25,6 +25,27 @@ object CrashInjuryRules {
         if (damage <= 0.0) health else maxOf(health - damage, minOf(health, SurvivalRules.HEALTH_FLOOR))
 }
 
+/** El hambre y la sed críticas también pasan factura: golpes más flojos y el aliento tarda más en volver. */
+object NeedEffectRules {
+    /** Por debajo de esto una necesidad ya cuenta como crítica (y avisa). */
+    const val CRITICAL_BELOW = 15.0
+    const val SEVERE_BELOW = 5.0
+
+    /** Multiplicador del daño cuerpo a cuerpo según el hambre. */
+    fun meleeFactor(hunger: Double): Double = when {
+        hunger < SEVERE_BELOW -> 0.7
+        hunger < CRITICAL_BELOW -> 0.85
+        else -> 1.0
+    }
+
+    /** Multiplicador de lo que recupera el aliento al descansar según la sed. */
+    fun staminaRegenFactor(thirst: Double): Double = when {
+        thirst < SEVERE_BELOW -> 0.4
+        thirst < CRITICAL_BELOW -> 0.6
+        else -> 1.0
+    }
+}
+
 object ConditionSpeedRules {
     const val TIRED_BELOW = 15.0
     const val EXHAUSTED_BELOW = 5.0

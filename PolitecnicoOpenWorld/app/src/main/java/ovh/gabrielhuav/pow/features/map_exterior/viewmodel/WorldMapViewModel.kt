@@ -459,6 +459,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Cerrojos de los avisos de estado (poca gasolina, frío) y si la fractura seguía activa en el tick anterior. */
     internal val lowFuelLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val coldLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val hungerLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val thirstLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val tiredLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal var wasFractured = false
     /** Hasta cuándo el coche no arranca tras subir (puerta, t05). */
     @Volatile internal var carDoorLockedUntilMs = 0L

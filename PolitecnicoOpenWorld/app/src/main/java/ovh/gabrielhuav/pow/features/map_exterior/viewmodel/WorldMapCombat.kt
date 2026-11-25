@@ -58,7 +58,8 @@ fun WorldMapViewModel.performPlayerAttack() {
     val radius = if (weapon.kind == WeaponKind.PUNOS) ATTACK_RADIUS else WeaponRules.rangeDegrees(weapon)
     // Con supervivencia el daño crece con el nivel de la habilidad (puntería con armas de fuego, combate con el resto).
     val damage = if (survivalManager.state.value.enabled) {
-        weapon.damage * ovh.gabrielhuav.pow.domain.models.survival.SkillRules.damageFactor(skillLevel(if (weapon.isFirearm) Skill.PUNTERIA else Skill.COMBATE)).toFloat()
+        weapon.damage * ovh.gabrielhuav.pow.domain.models.survival.SkillRules.damageFactor(skillLevel(if (weapon.isFirearm) Skill.PUNTERIA else Skill.COMBATE)).toFloat() *
+            (if (weapon.isFirearm) 1f else ovh.gabrielhuav.pow.domain.models.survival.NeedEffectRules.meleeFactor(survivalManager.state.value.needs.hunger).toFloat())
     } else weapon.damage
     // Las armas de fuego solo pegan al objetivo más cercano; los barridos de policía/Prankedy son del cuerpo a cuerpo.
     val sweepRadius = if (weapon.isFirearm) 0.0 else radius

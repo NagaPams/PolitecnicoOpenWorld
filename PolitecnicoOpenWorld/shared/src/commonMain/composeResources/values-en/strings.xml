@@ -449,6 +449,9 @@
     <string name="survival_cold">🥶 It is cold: find a coat or get in a car</string>
     <string name="survival_fracture_healed">🦴 Your fracture healed</string>
     <string name="survival_splint_crafted">🦴 Splint on: the fracture healed</string>
+    <string name="survival_very_hungry">🍗 You are very hungry: your hits lose strength</string>
+    <string name="survival_very_thirsty">💧 You are very thirsty: your breath comes back slowly</string>
+    <string name="survival_very_tired">😴 You are exhausted: you walk slower, get some sleep</string>
     <string name="survival_bandaged">🩹 Bandage applied</string>
     <string name="survival_bandage_stored">🩹 Bandage stored</string>
     <string name="survival_out_of_breath">🫁 Out of breath: you can only walk</string>
