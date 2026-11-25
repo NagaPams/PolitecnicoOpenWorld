@@ -395,6 +395,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val noiseActive = survivalManager.state.value.enabled && !paused && isServerDelegatedHost
     if (wasSurvivalNoiseActive != noiseActive) npcAiManager.setSurvivalNoiseEnabled(noiseActive)
     wasSurvivalNoiseActive = noiseActive
+    npcAiManager.zombieVisionFactor = if (noiseActive) ovh.gabrielhuav.pow.domain.models.survival.ZombieSightRules.factor(survivalManager.state.value.weather, s.nightAlpha > 0.05f) else 1.0
     if (!survivalManager.state.value.enabled || paused) {
         lastSurvivalUpdateMs = 0L
         // Sin supervivencia o en pausa (misión, escena, interior) no hay botín que ver ni recoger.

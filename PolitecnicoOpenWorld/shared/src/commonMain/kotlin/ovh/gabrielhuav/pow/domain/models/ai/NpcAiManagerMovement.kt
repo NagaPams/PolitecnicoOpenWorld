@@ -39,17 +39,17 @@ internal fun NpcAiManager.moveZombieNpc(
         val nearestH = serverNpcs
             .filter {
                 val visiblePolice = survivalNoiseEnabled && it.type == NpcType.POLICE_COP &&
-                    calculateDistance(it.location.latitude, it.location.longitude, npc.location.latitude, npc.location.longitude) <= ZOMBIE_VISION
+                    calculateDistance(it.location.latitude, it.location.longitude, npc.location.latitude, npc.location.longitude) <= zombieVision
                 (it.type == NpcType.PERSON || visiblePolice) && it.health > 0f && it.displayName.isNullOrEmpty()
             }
             .minByOrNull { calculateDistance(it.location.latitude, it.location.longitude, npc.location.latitude, npc.location.longitude) }
-        val playerVisible = calculateDistance(npc.location.latitude, npc.location.longitude, playerLat, playerLon) <= ZOMBIE_VISION
+        val playerVisible = calculateDistance(npc.location.latitude, npc.location.longitude, playerLat, playerLon) <= zombieVision
         if (nearestH == null) {
             if (!playerVisible) moveScoutTowardNoise(npc)?.let { return it }
             return moveNpc(npc, network, now, 0.5f)
         }
         val dh = calculateDistance(nearestH.location.latitude, nearestH.location.longitude, npc.location.latitude, npc.location.longitude)
-        if (dh > ZOMBIE_VISION && !playerVisible) moveScoutTowardNoise(npc)?.let { return it }
+        if (dh > zombieVision && !playerVisible) moveScoutTowardNoise(npc)?.let { return it }
         val scoutScreamDist = 0.0002
         val scoutFleeMs = 4500L
         var newScream = npc.screamUntil
@@ -90,7 +90,7 @@ internal fun NpcAiManager.moveZombieNpc(
         }
     }
 
-    if (realDist > ZOMBIE_VISION) {
+    if (realDist > zombieVision) {
         val sound = strongestSurvivalNoise(npc.location.latitude, npc.location.longitude, survivalNoiseNowMs)
             ?: hordeNoiseFor(npc.id) ?: return moveNpc(npc, network, now, 0.5f)
         // La ponderación anterior favorece al jugador; si queda fuera de visión, buscar
@@ -100,7 +100,7 @@ internal fun NpcAiManager.moveZombieNpc(
             val distance = calculateDistance(
                 npc.location.latitude, npc.location.longitude, human.location.latitude, human.location.longitude,
             )
-            if (distance <= ZOMBIE_VISION && distance < realDist) {
+            if (distance <= zombieVision && distance < realDist) {
                 realDist = distance
                 targetLat = human.location.latitude
                 targetLon = human.location.longitude

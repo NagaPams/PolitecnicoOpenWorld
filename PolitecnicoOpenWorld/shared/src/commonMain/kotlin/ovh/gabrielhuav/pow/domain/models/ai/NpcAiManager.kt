@@ -211,6 +211,9 @@ class NpcAiManager {
 
     val ZOMBIE_SPEED_MULT = 3.5f
     val ZOMBIE_VISION = 0.0009
+    /** t13: multiplicador de vista por clima/noche (1 = sin efecto); lo fija el tick de supervivencia. */
+    @Volatile var zombieVisionFactor = 1.0
+    val zombieVision get() = ZOMBIE_VISION * zombieVisionFactor
     val ZOMBIE_CONTACT_DIST = 0.00003
     val ZOMBIE_BITE_DAMAGE = 8f
     val ZOMBIE_BITE_COOLDOWN_MS = 1000L
