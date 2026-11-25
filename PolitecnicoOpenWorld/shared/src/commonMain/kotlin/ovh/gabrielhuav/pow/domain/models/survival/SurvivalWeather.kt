@@ -60,8 +60,8 @@ object BlackoutRules {
 }
 
 object DayRules {
-    /** Un día de juego dura 24 min reales (el mismo ciclo del reloj del mundo). */
-    const val DAY_MS = 24 * 60 * 1000L
+    /** Un día de juego dura 48 min reales (el mismo ciclo del reloj del mundo; t34: antes 24, una hora por minuto). */
+    const val DAY_MS = 48 * 60 * 1000L
 
     /** Día en que va el jugador: empieza en 1 y cuenta solo el tiempo de supervivencia activa. */
     fun daysSurvived(activeMs: Long): Int = (activeMs.coerceAtLeast(0L) / DAY_MS).coerceAtMost(Int.MAX_VALUE - 1L).toInt() + 1

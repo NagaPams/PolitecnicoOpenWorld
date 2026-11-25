@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.update
 // ─────────────────────────────────────────────────────────────────────────────
 // CICLO DÍA/NOCHE del mundo abierto (extensiones del WorldMapViewModel, SIN gemelo miembro).
 //
-// Reloj de juego DETERMINISTA derivado del epoch (1 min real = 1 hora de juego → ciclo
-// completo de 24 min; igual para todos los jugadores, no se persiste nada). El game loop
+// Reloj de juego DETERMINISTA derivado del epoch (2 min reales = 1 hora de juego → ciclo
+// completo de 48 min; igual para todos los jugadores, no se persiste nada). El game loop
 // llama updateDayNightTick() cada tick; internamente se auto-limita a ~1 Hz y solo escribe
 // el estado si cambió (StateFlow dedup + sin allocs por frame — regla de gama baja, ver 09).
 // La OSCURIDAD se dibuja como una capa Compose renderer-agnóstica en WorldMapScreen (velo
@@ -15,8 +15,17 @@ import kotlinx.coroutines.flow.update
 // mini-brotes (WorldMapDynamicEvents.kt) — la infección "se siente" más al anochecer.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 1 hora de juego = 1 minuto real → ciclo día/noche completo de 24 minutos.
-internal const val DAY_NIGHT_CYCLE_MS = 24L * 60_000L
+// 1 hora de juego = 2 minutos reales → ciclo día/noche completo de 48 minutos (t34; antes 24: el reloj corría una hora
+// por minuto y desorientaba). Es la misma duración del «día» de supervivencia (DayRules.DAY_MS).
+internal const val DAY_NIGHT_CYCLE_MS = ovh.gabrielhuav.pow.domain.models.survival.DayRules.DAY_MS
+
+/** Icono del reloj según la hora de juego: amanecer, día, atardecer o noche (t34). */
+internal fun clockIconForHour(hour: Int): String = when (hour) {
+    in 5..6 -> "🌅"
+    in 7..16 -> "☀️"
+    in 17..19 -> "🌇"
+    else -> "🌙"
+}
 
 // Oscuridad máxima del velo nocturno (no llegar a negro: se debe seguir viendo el mapa).
 internal const val MAX_NIGHT_ALPHA = 0.38f

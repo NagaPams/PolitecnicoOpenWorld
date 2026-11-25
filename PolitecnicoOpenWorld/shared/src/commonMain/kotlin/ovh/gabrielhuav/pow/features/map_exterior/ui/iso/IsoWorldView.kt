@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -21,7 +22,6 @@ import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
@@ -370,7 +370,9 @@ fun IsoWorldView(
         val objectiveArrow = Path().apply {
             moveTo(10f, 0f); lineTo(-8f, -9f); lineTo(-3f, 0f); lineTo(-8f, 9f); close()
         }
-        val fog = Path().apply { fillType = PathFillType.EvenOdd }
+        var fogBrush: Brush? = null
+        var cachedFogW = -1f
+        var cachedFogH = -1f
         val actors = IsoActors(512)
         var cachedFogRadius = -1f
         val clock = TimeSource.Monotonic.markNow()
@@ -505,15 +507,19 @@ fun IsoWorldView(
             val maxRadius = (size.minDimension * 0.40f).coerceAtLeast(1f)
             val radius = (fogVisionMeters * projection.pixelsPerMeter * scale).toFloat()
                 .coerceIn(minOf(40f * density.toFloat(), maxRadius), maxRadius)
-            if (radius != cachedFogRadius) {
-                fog.reset()
-                fog.fillType = PathFillType.EvenOdd
-                fog.addRect(Rect(0f, 0f, size.width, size.height))
-                fog.addOval(Rect(size.width / 2f - radius, size.height / 2f - radius / 2f,
-                    size.width / 2f + radius, size.height / 2f + radius / 2f))
-                cachedFogRadius = radius
+            // t34: viñeta radial suave en vez de un óvalo de borde duro; el degradado se arma solo si cambia el radio o el tamaño.
+            if (radius != cachedFogRadius || size.width != cachedFogW || size.height != cachedFogH) {
+                fogBrush = Brush.radialGradient(
+                    0.0f to Color.Transparent, 0.62f to Color.Transparent, 1.0f to ISO_FOG,
+                    center = Offset(size.width / 2f, size.height / 2f), radius = radius * 1.9f,
+                )
+                cachedFogRadius = radius; cachedFogW = size.width; cachedFogH = size.height
             }
-            drawPath(fog, ISO_FOG)
+            fogBrush?.let { brush ->
+                withTransform({ scale(1f, 0.5f, pivot = Offset(size.width / 2f, size.height / 2f)) }) {
+                    drawRect(brush, topLeft = Offset(0f, -size.height / 2f), size = Size(size.width, size.height * 2f))
+                }
+            }
             // Indicador de amenaza (t32): una flecha roja alrededor del jugador hacia cada zombi a menos de ~12 m.
             for (i in 0 until threatCount) {
                 val angle = atan2(threatDy[i].toDouble(), threatDx[i].toDouble()) * 180.0 / PI

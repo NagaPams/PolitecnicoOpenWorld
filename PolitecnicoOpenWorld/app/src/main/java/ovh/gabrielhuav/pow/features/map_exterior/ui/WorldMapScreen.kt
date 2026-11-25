@@ -800,23 +800,20 @@ fun WorldMapScreen(
         // (nightAlpha) la calcula el game loop (~1 Hz, WorldMapDayNight.kt). No toca los
         // renderers ni el fog → funciona igual en OSM nativo, Google nativo y web.
         if (uiState.nightAlpha > 0.01f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF091126).copy(alpha = if (uiState.survivalMode) ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.veilAlpha(uiState.nightAlpha, uiState.survivalDay) else uiState.nightAlpha))
+            ovh.gabrielhuav.pow.features.map_exterior.ui.components.EdgeVeil(
+                color = Color(0xFF091126),
+                alpha = if (uiState.survivalMode) ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.veilAlpha(uiState.nightAlpha, uiState.survivalDay) else uiState.nightAlpha,
             )
         }
 
         // Clima (t13): velo gris azulado con lluvia y gris claro con niebla; solo con supervivencia.
         if (uiState.survivalMode && uiState.survivalWeather != ovh.gabrielhuav.pow.domain.models.survival.Weather.CLEAR) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        if (uiState.survivalWeather == ovh.gabrielhuav.pow.domain.models.survival.Weather.RAIN) Color(0xFF1B2A3A).copy(alpha = 0.22f)
-                        else Color(0xFFC5CBD1).copy(alpha = 0.32f)
-                    )
+            val raining = uiState.survivalWeather == ovh.gabrielhuav.pow.domain.models.survival.Weather.RAIN
+            ovh.gabrielhuav.pow.features.map_exterior.ui.components.EdgeVeil(
+                color = if (raining) Color(0xFF1B2A3A) else Color(0xFFC5CBD1),
+                alpha = if (raining) 0.30f else 0.40f,
             )
+            if (raining) ovh.gabrielhuav.pow.features.map_exterior.ui.components.RainStreaks()
         }
 
         // Barra de acción del crafteo (t16): avanza sola con el reloj, sin depender del tick de 1 Hz.
@@ -1056,10 +1053,10 @@ fun WorldMapScreen(
                     z = "GLOBAL"
                 )
             }
-            // RELOJ del ciclo día/noche (1 min real = 1 h de juego). Dorado de día, azul de noche.
+            // RELOJ del ciclo día/noche (2 min reales = 1 h de juego, t34). Dorado de día, azul de noche; icono de amanecer/atardecer.
             CacheChip(
                 label = androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_chip_clock),
-                text = String.format(java.util.Locale.US, "🕐 %02d:00", uiState.gameHour),
+                text = String.format(java.util.Locale.US, "%s %02d:00", ovh.gabrielhuav.pow.features.map_exterior.viewmodel.clockIconForHour(uiState.gameHour), uiState.gameHour),
                 color = if (uiState.nightAlpha > 0.05f) Color(0xFF7FB2FF) else Color(0xFFD4AF37),
                 isLoading = false
             )
