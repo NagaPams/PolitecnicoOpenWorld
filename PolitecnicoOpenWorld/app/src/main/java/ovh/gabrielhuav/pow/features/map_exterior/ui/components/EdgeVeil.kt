@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -15,6 +14,8 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PointMode
+import androidx.compose.ui.graphics.drawscope.translate
 import kotlin.math.hypot
 
 /**
@@ -49,15 +50,26 @@ fun RainStreaks(modifier: Modifier = Modifier) {
         animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart),
         label = "rainProgress",
     )
-    Canvas(modifier.fillMaxSize()) {
-        val t = progress.value
-        for (i in 0 until RAIN_STREAKS) {
-            val x = ((i * 97) % 100) / 100f * size.width
-            val phase = ((i * 37) % 100) / 100f
-            val y = ((t + phase) % 1f) * size.height
-            drawLine(RAIN_COLOR, Offset(x, y), Offset(x - 7f, y + 24f), strokeWidth = 2f)
-        }
-    }
+    // t36: las rayas se calculan una vez por tamaño; cada cuadro solo desplaza el bloque (dos copias que se empalman).
+    Box(
+        modifier
+            .fillMaxSize()
+            .drawWithCache {
+                val height = size.height
+                val points = ArrayList<Offset>(RAIN_STREAKS * 2)
+                for (i in 0 until RAIN_STREAKS) {
+                    val x = ((i * 97) % 100) / 100f * size.width
+                    val y = ((i * 37) % 100) / 100f * height
+                    points.add(Offset(x, y))
+                    points.add(Offset(x - 7f, y + 24f))
+                }
+                onDrawBehind {
+                    val shift = progress.value * height
+                    translate(top = shift) { drawPoints(points, PointMode.Lines, RAIN_COLOR, strokeWidth = 2f) }
+                    translate(top = shift - height) { drawPoints(points, PointMode.Lines, RAIN_COLOR, strokeWidth = 2f) }
+                }
+            },
+    )
 }
 
 private const val RAIN_STREAKS = 46
