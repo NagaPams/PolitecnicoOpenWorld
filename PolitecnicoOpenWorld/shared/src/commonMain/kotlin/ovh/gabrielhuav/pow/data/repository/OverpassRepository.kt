@@ -19,6 +19,7 @@ import ovh.gabrielhuav.pow.data.json.has
 import ovh.gabrielhuav.pow.data.json.optJSONObject
 import ovh.gabrielhuav.pow.data.json.optString
 import ovh.gabrielhuav.pow.data.json.powJsonObjeto
+import ovh.gabrielhuav.pow.domain.models.map.FootprintWay
 import ovh.gabrielhuav.pow.domain.models.map.MapNode
 import ovh.gabrielhuav.pow.domain.models.map.MapWay
 import ovh.gabrielhuav.pow.platform.log.powLog
@@ -64,6 +65,7 @@ class OverpassRepository {
         // Regex pre-compiladas una sola vez para toda la vida del proceso
         private val CAR_REGEX =
             Regex("^(primary|secondary|tertiary|residential|unclassified|service|living_street)$")
+        private val BUILDING_TAGS = listOf("building", "height", "building:levels", "amenity", "name")
         private val PEOPLE_REGEX =
             Regex("^(footway|pedestrian|path|residential|living_street|service)$")
 
@@ -122,6 +124,63 @@ class OverpassRepository {
             powLog(TAG, "Ningún servidor de Overpass respondió (${orden.size} probados).")
             emptyList()
         }
+
+    /**
+     * Edificios de OSM alrededor de (lat, lon) para la vista isométrica fuera del campus (t27). Solo Overpass: las
+     * celdas estáticas no traen edificios. `null` = ningún servidor respondió (el caller reintenta más tarde); lista
+     * vacía = zona sin edificios.
+     */
+    suspend fun fetchBuildings(lat: Double, lon: Double, radiusMeters: Int): List<FootprintWay>? =
+        withContext(Dispatchers.Default) {
+            val query = """
+            [out:json][timeout:25];
+            way["building"](around:$radiusMeters,$lat,$lon);
+            out geom 400;
+        """.trimIndent()
+            val datos = codificarUrl(query)
+            for (base in OverpassServidores.ordenDesde(indiceUltimoBueno)) {
+                val ways = try {
+                    val respuesta = http.get("$base?data=$datos") { header("User-Agent", USER_AGENT) }
+                    val cuerpo = if (respuesta.status.isSuccess()) respuesta.bodyAsText() else null
+                    if (cuerpo == null || OverpassServidores.esErrorDelServidor(cuerpo)) null else parseBuildingsJson(cuerpo)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    powLog(TAG, "Edificios: error de red en $base: ${e.message}")
+                    null
+                }
+                if (ways != null) {
+                    indiceUltimoBueno = OverpassServidores.URLS.indexOf(base)
+                    return@withContext ways
+                }
+            }
+            null
+        }
+
+    /** Parsea `out geom` de Overpass: cada way trae su geometría en línea. Solo conserva las etiquetas que usa el dibujo. */
+    internal fun parseBuildingsJson(jsonString: String): List<FootprintWay> {
+        val elements = powJsonObjeto(jsonString).optJSONArray("elements") ?: return emptyList()
+        val result = ArrayList<FootprintWay>(elements.size)
+        for (i in 0 until elements.size) {
+            val element = elements.optJSONObject(i) ?: continue
+            if (element.optString("type") != "way") continue
+            val tagsJson = element.optJSONObject("tags") ?: continue
+            val geometry = element.optJSONArray("geometry") ?: continue
+            val pts = ArrayList<List<Double>>(geometry.size)
+            for (j in 0 until geometry.size) {
+                val p = geometry.optJSONObject(j) ?: continue
+                pts.add(listOf(p.optDouble("lat"), p.optDouble("lon")))
+            }
+            if (pts.size < 4) continue
+            val tags = HashMap<String, String>(4)
+            for (key in BUILDING_TAGS) {
+                val value = tagsJson.optString(key, "")
+                if (value.isNotEmpty()) tags[key] = value
+            }
+            result.add(FootprintWay(element.optLong("id"), tags, pts))
+        }
+        return result
+    }
 
     /**
      * La celda de (lat, lon) desde la rama `datos-calles`. `null` = no hay archivo (fuera de la

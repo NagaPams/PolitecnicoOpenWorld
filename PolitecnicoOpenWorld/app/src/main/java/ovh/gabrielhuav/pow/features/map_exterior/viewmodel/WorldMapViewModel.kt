@@ -431,6 +431,11 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
     internal var lastMemoryCheckMs = 0L
+    internal var campusBaseFootprints: List<ovh.gabrielhuav.pow.domain.models.map.CampusFootprint> = emptyList()
+    internal var outerFetching = false
+    internal var outerFetchLat: Double? = null
+    internal var outerFetchLon: Double? = null
+    internal var outerRetryAtMs = 0L
     /** Bajas de zombis por zona (t18); se copia a `npcAiManager.zoneKills` y se guarda. */
     internal var zoneKills: Map<Long, Int> = emptyMap()
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
@@ -1024,6 +1029,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                         updateDayNightTick()
                         updateSurvivalTick()
                         updateMemoryPressureTick()
+                        updateOuterBuildingsTick(location)
 
                         maybeRefetchRoadNetwork(location)
                         if (_uiState.value.showRoadNetwork || _uiState.value.mapProvider == MapProvider.ISOMETRIC) {

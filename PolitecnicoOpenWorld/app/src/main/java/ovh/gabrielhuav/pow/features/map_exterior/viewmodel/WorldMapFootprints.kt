@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.data.json.PowJson
 import ovh.gabrielhuav.pow.domain.models.map.CampusFootprintsFile
+import ovh.gabrielhuav.pow.domain.models.map.OuterBuildingRules
 import ovh.gabrielhuav.pow.domain.models.map.RUTA_HUELLAS_CAMPUS
 import ovh.gabrielhuav.pow.domain.models.map.cargarEsquemaEdificios
 import ovh.gabrielhuav.pow.domain.models.map.toFootprints
@@ -31,6 +32,7 @@ internal fun WorldMapViewModel.setCampusFootprints(show: Boolean) {
             val file = PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS))
             val footprints = file.toFootprints(cargarEsquemaEdificios())
             withContext(Dispatchers.Main) {
+                campusBaseFootprints = footprints
                 _uiState.update { it.copy(campusFootprints = footprints, showCampusFootprints = true) }
             }
             Log.d("Footprints", "cargadas ${footprints.size} huellas")
@@ -47,9 +49,48 @@ internal fun WorldMapViewModel.ensureCampusFootprintsLoaded() {
         try {
             val file = PowJson.decodeFromString<CampusFootprintsFile>(PowAssets.texto(RUTA_HUELLAS_CAMPUS))
             val footprints = file.toFootprints(cargarEsquemaEdificios())
-            withContext(Dispatchers.Main) { _uiState.update { it.copy(campusFootprints = footprints) } }
+            withContext(Dispatchers.Main) {
+                campusBaseFootprints = footprints
+                _uiState.update { it.copy(campusFootprints = footprints) }
+            }
         } catch (e: Exception) {
             Log.e("Footprints", "Error al cargar huellas isométricas: ${e.message}")
+        }
+    }
+}
+
+/**
+ * Edificios fuera del campus para la vista isométrica (t27): cuando el jugador se aleja ~220 m del último centro
+ * descargado, pide a Overpass los edificios cercanos y los suma a las huellas del campus. Si falla la red espera 1 min.
+ * Solo corre con el mapa isométrico y con las huellas del campus ya cargadas.
+ */
+internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhuav.pow.domain.models.geo.GeoPoint) {
+    if (_uiState.value.mapProvider != MapProvider.ISOMETRIC || campusBaseFootprints.isEmpty()) return
+    if (outerFetching) return
+    val now = android.os.SystemClock.elapsedRealtime()
+    if (now < outerRetryAtMs) return
+    if (!OuterBuildingRules.shouldFetch(outerFetchLat, outerFetchLon, location.latitude, location.longitude)) return
+    outerFetching = true
+    val lat = location.latitude
+    val lon = location.longitude
+    viewModelScope.launch(Dispatchers.IO) {
+        try {
+            val fetched = overpassRepository.fetchBuildings(lat, lon, OuterBuildingRules.RADIUS_METERS)
+            if (fetched == null) {
+                outerRetryAtMs = android.os.SystemClock.elapsedRealtime() + OuterBuildingRules.RETRY_AFTER_MS
+                Log.w("Footprints", "Edificios exteriores: sin respuesta de Overpass")
+            } else {
+                val merged = OuterBuildingRules.merge(campusBaseFootprints, fetched, lat, lon)
+                outerFetchLat = lat
+                outerFetchLon = lon
+                withContext(Dispatchers.Main) { _uiState.update { it.copy(campusFootprints = merged) } }
+                Log.i("Footprints", "Edificios exteriores: ${merged.size - campusBaseFootprints.size} de ${fetched.size} descargados")
+            }
+        } catch (e: Exception) {
+            outerRetryAtMs = android.os.SystemClock.elapsedRealtime() + OuterBuildingRules.RETRY_AFTER_MS
+            Log.e("Footprints", "Edificios exteriores: ${e.message}")
+        } finally {
+            outerFetching = false
         }
     }
 }
