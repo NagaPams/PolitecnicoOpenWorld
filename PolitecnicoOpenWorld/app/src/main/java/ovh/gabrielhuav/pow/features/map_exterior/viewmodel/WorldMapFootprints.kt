@@ -97,7 +97,8 @@ internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhua
             if (fetched == null) {
                 outerRetryAtMs = android.os.SystemClock.elapsedRealtime() + OuterBuildingRules.RETRY_AFTER_MS
                 Log.w("Footprints", "Edificios exteriores: sin respuesta de Overpass")
-                if (!outerNoDataShown && _uiState.value.survivalMode) {
+                // El modo supervivencia lo posee SurvivalManager: `_uiState.value.survivalMode` siempre es false (ver 09 §1).
+                if (!outerNoDataShown && survivalManager.state.value.enabled) {
                     outerNoDataShown = true
                     withContext(Dispatchers.Main) { showSurvivalPrompt(getString(Res.string.survival_no_building_data)) }
                 }
