@@ -33,11 +33,12 @@ object SurvivalRules {
     const val HEALTH_FLOOR = 10.0
     const val BITE_INFECTION_PROBABILITY = 0.25
 
-    // Ritmo provisional (por segundo de juego): hambre ~55 min, sed ~37 min y energía ~45 min en
-    // reposo/caminando lento; correr triplica el gasto. Afinar en dispositivo.
-    private const val HUNGER_RATE = 0.03
-    private const val THIRST_RATE = 0.045
-    private const val ENERGY_RATE = 0.0375
+    // t37: el ritmo se mide en DÍAS de juego (DayRules.DAY_MS), así cambiar la duración del día no desajusta la
+    // supervivencia. En reposo el hambre dura 1,2 días, la sed 0,8 y la energía 1 día; correr triplica el gasto.
+    private const val SECONDS_PER_DAY = DayRules.DAY_MS / 1000.0
+    private const val HUNGER_RATE = 100.0 / (SECONDS_PER_DAY * 1.2)
+    private const val THIRST_RATE = 100.0 / (SECONDS_PER_DAY * 0.8)
+    private const val ENERGY_RATE = 100.0 / SECONDS_PER_DAY
     private const val REST_ENERGY_GAIN = 0.05
     private const val FOOD_RESTORE = 40.0
     private const val DRINK_RESTORE = 40.0
