@@ -1016,6 +1016,10 @@ fun WorldMapScreen(
         // Solo muestra lo que importa; el resto de chips ya no se apila encima del juego.
         if (uiState.survivalMode) {
             val survivalPaused by viewModel.survivalPausedFlow.collectAsState()
+            ovh.gabrielhuav.pow.features.map_exterior.ui.components.MoodleColumn(
+                state = uiState,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp),
+            )
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.SurvivalStatusBar(
                 state = uiState,
                 paused = survivalPaused,
