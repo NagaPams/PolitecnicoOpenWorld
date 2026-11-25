@@ -187,11 +187,11 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
         }
         point.kind == LootKind.EDIFICIO -> {
             taken = searchBuilding(point)
-            if (taken) Res.string.survival_building_searched else Res.string.survival_not_needed
+            if (taken) Res.string.survival_building_searched else emptyHandedMessage(current)
         }
         point.kind == LootKind.CONTENEDOR -> {
             taken = lootContainer()
-            if (taken) Res.string.survival_container_looted else Res.string.survival_not_needed
+            if (taken) Res.string.survival_container_looted else emptyHandedMessage(current)
         }
         item == SurvivalItem.TABLONES -> if (current.boards >= MAX_BOARDS_CARRIED) {
             Res.string.survival_boards_full
@@ -261,6 +261,10 @@ private fun WorldMapViewModel.grantConsumable(item: SurvivalItem): Boolean {
     if (result.healthBonus > 0f) heal(result.healthBonus)
     return true
 }
+
+/** t68: si no se recogió nada y la mochila ya no admite un bidón, el motivo es el peso y no que no hiciera falta. */
+private fun emptyHandedMessage(state: SurvivalSubState): org.jetbrains.compose.resources.StringResource =
+    if (SurvivalCrafting.isHeavy(state.pack)) Res.string.survival_pack_full else Res.string.survival_not_needed
 
 /** Registra un edificio (t06): da lo que corresponde a su tipo de lugar; false si no cupo nada (no se gasta). */
 private fun WorldMapViewModel.searchBuilding(point: LootPoint): Boolean {

@@ -36,6 +36,9 @@ object SurvivalCrafting {
 
     private fun fits(pack: SurvivalPack, extra: Double): Boolean = weightOf(pack) + extra <= MAX_WEIGHT
 
+    /** La mochila ya no admite ni un bidón (el objeto más pesado). */
+    fun isHeavy(pack: SurvivalPack): Boolean = weightOf(pack) + WEIGHT_BIDON > MAX_WEIGHT
+
     fun canAddVenda(pack: SurvivalPack): Boolean = pack.vendas < MAX_PER_ITEM && fits(pack, WEIGHT_VENDA)
 
     fun canAddBidon(pack: SurvivalPack): Boolean = pack.bidones < FuelRules.MAX_CANS && fits(pack, WEIGHT_BIDON)
