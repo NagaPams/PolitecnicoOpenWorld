@@ -24,6 +24,16 @@ object SurvivalCrafting {
         pack.pizza * WEIGHT_PIZZA + pack.refresco * WEIGHT_REFRESCO + pack.botiquin * WEIGHT_BOTIQUIN +
             pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA
 
+    /** t67: hasta este peso (60 % del máximo) se camina normal; de ahí al máximo se frena hasta [MIN_SPEED_FACTOR]. */
+    const val SLOW_FROM_WEIGHT = 9.6
+    const val MIN_SPEED_FACTOR = 0.85
+
+    fun speedFactor(weight: Double): Double {
+        if (weight <= SLOW_FROM_WEIGHT) return 1.0
+        val t = ((weight - SLOW_FROM_WEIGHT) / (MAX_WEIGHT - SLOW_FROM_WEIGHT)).coerceIn(0.0, 1.0)
+        return 1.0 - t * (1.0 - MIN_SPEED_FACTOR)
+    }
+
     private fun fits(pack: SurvivalPack, extra: Double): Boolean = weightOf(pack) + extra <= MAX_WEIGHT
 
     fun canAddVenda(pack: SurvivalPack): Boolean = pack.vendas < MAX_PER_ITEM && fits(pack, WEIGHT_VENDA)
