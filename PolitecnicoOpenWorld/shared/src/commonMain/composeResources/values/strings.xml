@@ -444,6 +444,7 @@
     <string name="survival_bandaged">🩹 Venda aplicada</string>
     <string name="survival_bandage_stored">🩹 Venda guardada</string>
     <string name="survival_out_of_breath">🫁 Sin aliento: solo puedes caminar</string>
+    <string name="survival_no_building_data">🗺️ Sin datos de edificios en esta zona (sin conexión). Se reintentará.</string>
     <string name="survival_grabbed">🧟 ¡Te agarró! Golpéalo para soltarte</string>
     <string name="survival_car_wrecked">🚗 El coche está destruido. Repáralo con tablones</string>
     <string name="survival_car_repaired">🔧 Coche reparado</string>

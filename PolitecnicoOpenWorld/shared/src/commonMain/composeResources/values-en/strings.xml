@@ -444,6 +444,7 @@
     <string name="survival_bandaged">🩹 Bandage applied</string>
     <string name="survival_bandage_stored">🩹 Bandage stored</string>
     <string name="survival_out_of_breath">🫁 Out of breath: you can only walk</string>
+    <string name="survival_no_building_data">🗺️ No building data for this area (offline). Will retry.</string>
     <string name="survival_grabbed">🧟 It grabbed you! Hit it to break free</string>
     <string name="survival_car_wrecked">🚗 The car is wrecked. Repair it with planks</string>
     <string name="survival_car_repaired">🔧 Car repaired</string>

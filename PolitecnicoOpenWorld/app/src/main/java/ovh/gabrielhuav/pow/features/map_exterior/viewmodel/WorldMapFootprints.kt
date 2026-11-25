@@ -13,6 +13,9 @@ import ovh.gabrielhuav.pow.domain.models.map.RUTA_HUELLAS_CAMPUS
 import ovh.gabrielhuav.pow.domain.models.map.cargarEsquemaEdificios
 import ovh.gabrielhuav.pow.domain.models.map.toFootprints
 import ovh.gabrielhuav.pow.platform.assets.PowAssets
+import org.jetbrains.compose.resources.getString
+import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.survival_no_building_data
 
 // Prototipo del mapa cenital estilizado (estilo Chinatown Wars): carga las huellas de OSM del
 // campus y activa/desactiva la capa Compose `CampusFootprintLayer`. Ver 04_MAP_EXTERIOR.md.
@@ -59,6 +62,14 @@ internal fun WorldMapViewModel.ensureCampusFootprintsLoaded() {
     }
 }
 
+/** La colisión del campus más la de los edificios exteriores ya descargados (t42). */
+internal fun WorldMapViewModel.withOuterCollisions(
+    config: ovh.gabrielhuav.pow.domain.models.map.ExteriorCollisionsConfig,
+): ovh.gabrielhuav.pow.domain.models.map.ExteriorCollisionsConfig {
+    val outer = outerCollisionPolygons
+    return if (outer.isEmpty()) config else config.copy(polygons = config.polygons + outer)
+}
+
 /**
  * Edificios fuera del campus para la vista isométrica (t27): cuando el jugador se aleja ~220 m del último centro
  * descargado, pide a Overpass los edificios cercanos y los suma a las huellas del campus. Si falla la red espera 1 min.
@@ -86,10 +97,23 @@ internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhua
             if (fetched == null) {
                 outerRetryAtMs = android.os.SystemClock.elapsedRealtime() + OuterBuildingRules.RETRY_AFTER_MS
                 Log.w("Footprints", "Edificios exteriores: sin respuesta de Overpass")
+                if (!outerNoDataShown && _uiState.value.survivalMode) {
+                    outerNoDataShown = true
+                    withContext(Dispatchers.Main) { showSurvivalPrompt(getString(Res.string.survival_no_building_data)) }
+                }
             } else {
+                outerNoDataShown = false
                 val merged = OuterBuildingRules.merge(campusBaseFootprints, fetched, lat, lon)
                 outerFetchLat = lat
                 outerFetchLon = lon
+                // t42: los edificios nuevos también bloquean (jugador, coches y NPC); se suman a la colisión actual del campus.
+                outerCollisionPolygons = OuterBuildingRules.collisionPolygons(merged, campusBaseFootprints.size)
+                exteriorCollisions?.let { current ->
+                    val config = current.copy(polygons = current.polygons.filterNot { it.name.startsWith("OUT_") } + outerCollisionPolygons)
+                    exteriorCollisions = config
+                    npcAiManager.setExteriorCollisions(config)
+                    withContext(Dispatchers.Main) { _uiState.update { it.copy(exteriorCollisions = config) } }
+                }
                 withContext(Dispatchers.Main) { _uiState.update { it.copy(campusFootprints = merged) } }
                 Log.i("Footprints", "Edificios exteriores: ${merged.size - campusBaseFootprints.size} de ${fetched.size} descargados")
             }
