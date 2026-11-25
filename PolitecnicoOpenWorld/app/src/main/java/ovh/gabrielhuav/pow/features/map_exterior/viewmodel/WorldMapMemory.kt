@@ -24,7 +24,8 @@ internal fun WorldMapViewModel.updateMemoryPressureTick() {
     if (after != before) {
         npcAiManager.memoryFactor = after
         Log.i("MemoryPressure", "población x$after (antes x$before)")
-        val low = MemoryPressureRules.lowDetail(after)
-        _uiState.update { it.copy(lowDetailMode = low) }
     }
+    // El ahorro lo puede pedir el jugador (densidad mínima desde «Optimizar dispositivo») o forzarlo la poca memoria.
+    val low = MemoryPressureRules.lowDetail(after, settingsRepository.getNpcDensity())
+    if (_uiState.value.lowDetailMode != low) _uiState.update { it.copy(lowDetailMode = low) }
 }

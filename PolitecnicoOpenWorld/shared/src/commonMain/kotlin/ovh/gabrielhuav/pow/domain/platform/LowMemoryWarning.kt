@@ -22,6 +22,12 @@ object MemoryPressureRules {
     /** t21: con el factor de población recortado (poca memoria) la vista omite los adornos. */
     fun lowDetail(factor: Float): Boolean = factor < 1.0f
 
+    /** Densidad de NPC (ajustes) a partir de la cual el jugador pidió ahorrar: «Optimizar dispositivo» la deja en 0,4. */
+    const val SAVER_DENSITY_AT_MOST = 0.5f
+
+    /** t21: modo de ahorro elegido por el jugador (densidad mínima) o forzado por poca memoria. */
+    fun lowDetail(factor: Float, npcDensity: Float): Boolean = lowDetail(factor) || npcDensity <= SAVER_DENSITY_AT_MOST
+
     const val CRITICAL_MB = 200L
     const val RECOVER_MB = 400L
     const val LOW_FACTOR = 0.6f
