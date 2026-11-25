@@ -657,6 +657,14 @@
     <!-- Controls tutorial (optional, i18n 2026-07-11) -->
     <string name="wm_provider_isometric">Isometric view (experimental)</string>
     <string name="wm_survival_needs">Needs</string>
+    <string name="moodle_hambre">Hunger: eat something soon</string>
+    <string name="moodle_sed">Thirst: find something to drink</string>
+    <string name="moodle_cansancio">Tired: rest or sleep</string>
+    <string name="moodle_aliento">Out of breath: stop running</string>
+    <string name="moodle_sangrado">Bleeding: use a bandage</string>
+    <string name="moodle_fractura">Fracture: you walk slower; a medkit cures it</string>
+    <string name="moodle_infeccion">Infection: it keeps getting worse</string>
+    <string name="moodle_carga">Heavy pack: you move slower</string>
     <string name="wm_survival_paused">Paused</string>
     <string name="wm_survival_infection">Infection</string>
     <string name="wm_survival_symptoms">Symptomatic</string>

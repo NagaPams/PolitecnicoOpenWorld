@@ -659,6 +659,14 @@
     <!-- Tutorial de controles (optativo, i18n 2026-07-11) -->
     <string name="wm_provider_isometric">Vista isométrica (experimental)</string>
     <string name="wm_survival_needs">Necesidades</string>
+    <string name="moodle_hambre">Hambre: come algo pronto</string>
+    <string name="moodle_sed">Sed: busca algo de beber</string>
+    <string name="moodle_cansancio">Cansancio: descansa o duerme</string>
+    <string name="moodle_aliento">Sin aliento: deja de correr</string>
+    <string name="moodle_sangrado">Sangrando: usa una venda</string>
+    <string name="moodle_fractura">Fractura: caminas más lento; un botiquín la cura</string>
+    <string name="moodle_infeccion">Infección: sigue avanzando</string>
+    <string name="moodle_carga">Mochila pesada: te mueves más lento</string>
     <string name="wm_survival_paused">En pausa</string>
     <string name="wm_survival_infection">Infección</string>
     <string name="wm_survival_symptoms">Con síntomas</string>

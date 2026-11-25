@@ -1,6 +1,8 @@
 package ovh.gabrielhuav.pow.features.map_exterior.ui.components
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,12 +11,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ovh.gabrielhuav.pow.R
 import ovh.gabrielhuav.pow.domain.models.survival.Moodle
 import ovh.gabrielhuav.pow.domain.models.survival.MoodleKind
 import ovh.gabrielhuav.pow.domain.models.survival.MoodleRules
@@ -48,8 +52,10 @@ private fun MoodleChip(moodle: Moodle) {
         3 -> Color(0xFFFF9A3C)
         else -> Color(0xFFFF6B63)
     }
+    val context = LocalContext.current
     Column(
         modifier = Modifier
+            .clickable { Toast.makeText(context, context.getString(nameOf(moodle.kind)), Toast.LENGTH_SHORT).show() }
             .background(Color(0xB3101418), RoundedCornerShape(10.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -57,6 +63,17 @@ private fun MoodleChip(moodle: Moodle) {
         Text(iconOf(moodle.kind), fontSize = 16.sp)
         Text("●".repeat(moodle.level), color = tint, fontSize = 6.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
+}
+
+private fun nameOf(kind: MoodleKind): Int = when (kind) {
+    MoodleKind.HAMBRE -> R.string.moodle_hambre
+    MoodleKind.SED -> R.string.moodle_sed
+    MoodleKind.CANSANCIO -> R.string.moodle_cansancio
+    MoodleKind.SIN_ALIENTO -> R.string.moodle_aliento
+    MoodleKind.SANGRADO -> R.string.moodle_sangrado
+    MoodleKind.FRACTURA -> R.string.moodle_fractura
+    MoodleKind.INFECCION -> R.string.moodle_infeccion
+    MoodleKind.CARGA -> R.string.moodle_carga
 }
 
 private fun iconOf(kind: MoodleKind): String = when (kind) {
