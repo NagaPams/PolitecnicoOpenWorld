@@ -168,6 +168,7 @@ internal const val NPC_CULL_MARGIN_M = 0.0
 //  distancia alrededor del jugador. Súbelo para ver más lejos, bájalo para menos.
 internal const val NPC_FOG_VISION_METERS = 70.0
 private const val FOG_DRIVING_FACTOR = 1.5
+private const val FOG_DRIVING_MAX_FRACTION = 0.58f
 // ══════════════════════════════════════════════════════════════════════════
 
 /** Radio de culling de NPCs: fijo en metros, independiente del zoom. */
@@ -600,6 +601,7 @@ fun WorldMapScreen(
                     vehicleHeading = uiState.vehicleRotation,
                     // t58: en coche se va más rápido, así que se ve más lejos (la cámara también se aleja).
                     fogVisionMeters = if (uiState.isDriving) NPC_FOG_VISION_METERS * FOG_DRIVING_FACTOR else NPC_FOG_VISION_METERS,
+                    fogMaxFraction = if (uiState.isDriving) FOG_DRIVING_MAX_FRACTION else 0.40f,
                     playerMoveAngle = uiState.playerMoveAngle,
                     playerAction = uiState.playerAction,
                     vehicleColor = uiState.currentVehicleColor,

@@ -234,6 +234,8 @@ fun IsoWorldView(
     isDriving: Boolean,
     vehicleHeading: Float,
     fogVisionMeters: Double,
+    /** Tope del radio de la niebla como fracción del lado menor de la pantalla (t60: más amplio al conducir). */
+    fogMaxFraction: Float = 0.40f,
     modifier: Modifier = Modifier,
     playerMoveAngle: Float? = null,
     playerAction: PlayerAction = PlayerAction.IDLE,
@@ -540,7 +542,7 @@ fun IsoWorldView(
                     drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame)
                 }
             }
-            val maxRadius = (size.minDimension * 0.40f).coerceAtLeast(1f)
+            val maxRadius = (size.minDimension * fogMaxFraction).coerceAtLeast(1f)
             val radius = (fogVisionMeters * projection.pixelsPerMeter * scale).toFloat()
                 .coerceIn(minOf(40f * density.toFloat(), maxRadius), maxRadius)
             // t34: viñeta radial suave en vez de un óvalo de borde duro; el degradado se arma solo si cambia el radio o el tamaño.
