@@ -147,6 +147,12 @@ Las dos juntas dejarían el AAB en torno a **330 MB**: margen de 170 MB en vez d
 
 El arte isométrico ya no usa PNG provisionales (2026-11-22): `assets/ISOMETRIC/` quedó vacío y las **hojas fuente** (PNG de ~1,3 MB, ~50 MB en total) viven FUERA de `assets` en `tools/iso_art_sources/` para que no entren al AAB (solo `student_sheet_v1.png` está versionada; las demás se excluyen en local). Lo que se empaqueta son los WebP ya cortados con `tools/slice_iso_actor.py` (lienzo 193×249 para personajes, 384 px de ancho para vehículos): `SPRITES/PLAYER/EstudianteIso/` (40 cuadros), `SPRITES/NPC/Iso/<skin>/` (9 skins), `SPRITES/ZOMBIE/Iso/<skin>/` (10), `SPRITES/POLICE/Iso/police_officer/` y `SPRITES/VEHICLES/Iso/<modelo>/` (7 modelos × 5 vistas). Total ≈ 11 MB de WebP (875 archivos). **Procedencia (confirmada por el responsable, 2026-11-22):** todas las hojas isométricas (jugador, NPC, zombis, policía y vehículos) se generaron con IA generativa de imágenes a partir de prompts propios (`tools/PROMPT_sprites_chatgpt.md`); no incluyen material de terceros ni de Project Zomboid. Las condiciones de uso del generador concreto no están registradas aquí: revísalas antes de una publicación comercial. Para una skin nueva: generar la hoja, `python tools/slice_iso_actor.py character <hoja.png> app/src/main/assets/SPRITES/<GRUPO>/Iso/<skin>` y añadirla a `IsoActorArt.kt`.
 
+### 🆕 Paquete de edificios exteriores (2026-11-25)
+
+`assets/CONFIG/outer_buildings_pack.json` (**≈ 115 KB**, 353 edificios de OpenStreetMap, ODbL) cubre ~2 × 2 km alrededor de ESCOM y la ENCB (19,495–19,515 N × −99,160–−99,135 E) para que la vista isométrica no dependa de Overpass. Lo genera `tools/build_outer_buildings_pack.py` (por teselas, con reintentos; sale con código 2 si alguna tesela no respondió) y lo lee `cargarPaqueteEdificios()`; si el archivo falta, la app sigue como antes. Una zona mayor pesaría unos 25 KB por km² (115 KB en ~4,8 km²), así que cabe de sobra en el presupuesto: antes de ampliarla, revisa que la atribución (`source`) siga en el JSON.
+
+---
+
 ## 5. La barrera del CI
 
 `.github/workflows/android-release.yml`, paso *"Validar tamaño máximo de Play Store"*:
