@@ -33,6 +33,12 @@ object StaminaRules {
         return StaminaState(next, state.exhausted && next < RECOVER_AT)
     }
 
+    /** Gasta [cost] de aliento de golpe (un empujón); si llega a 0 queda agotado. */
+    fun spend(state: StaminaState, cost: Double): StaminaState {
+        val next = (state.value - cost).coerceAtLeast(0.0)
+        return StaminaState(next, state.exhausted || next <= 0.0)
+    }
+
     /** ¿Este paso corre de verdad? Solo si lo pide el jugador y no está agotado. */
     fun runsNow(state: StaminaState, running: Boolean): Boolean = running && !state.exhausted
 }

@@ -50,6 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onClaimCollectiblePressed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.onInteractButtonPressed
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.shoveNearbyZombies
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.settings.models.ControlSlotLayout
 import ovh.gabrielhuav.pow.features.settings.models.ControlType
@@ -57,6 +58,7 @@ import ovh.gabrielhuav.pow.features.settings.models.ControlType
 // MANTENER Y (a pie) este tiempo = abrir el INVENTARIO del mapa (paridad con interiores,
 // petición del dueño 2026-07-13). Un toque más corto = subir/bajar del auto (al SOLTAR).
 private const val Y_HOLD_INVENTORY_MS = 450L
+private const val X_HOLD_SHOVE_MS = 450L
 
 /** Aplica el ajuste del editor de controles (desplazamiento y opacidad); la escala se aplica aparte. */
 private fun Modifier.controlSlot(slot: ControlSlotLayout): Modifier =
@@ -212,6 +214,7 @@ fun BoxScope.WorldMapControls(
                 val yScope = rememberCoroutineScope()
                 var yHoldJob by remember { mutableStateOf<Job?>(null) }
                 var yPressedAtMs by remember { mutableStateOf(0L) }
+                var xHoldJob by remember { mutableStateOf<Job?>(null) }
                 val actionComponent = @Composable { m: Modifier ->
                   Column(modifier = m.controlSlot(layout.actions), horizontalAlignment = Alignment.CenterHorizontally) {
                     shoulders(uiState.swapControls)
@@ -230,8 +233,16 @@ fun BoxScope.WorldMapControls(
                     ActionButtonsController(
                         modifier = Modifier.scale(actionScale),
                         onActionChanged = { action, isPressed ->
-                            if (action == GameAction.X && isPressed) {
-                                viewModel.handleInteraction()
+                            if (action == GameAction.X) {
+                                xHoldJob?.cancel()
+                                if (isPressed) {
+                                    viewModel.handleInteraction()
+                                    // t02: mantener X empuja a los zombis pegados (como el empujón de Project Zomboid).
+                                    xHoldJob = yScope.launch {
+                                        delay(X_HOLD_SHOVE_MS)
+                                        viewModel.shoveNearbyZombies()
+                                    }
+                                }
                             }
                             if (action == GameAction.Y) {
                                 if (isPressed) {

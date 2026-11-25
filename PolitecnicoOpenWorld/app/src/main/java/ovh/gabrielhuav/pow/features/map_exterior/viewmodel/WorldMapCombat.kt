@@ -26,6 +26,8 @@ import ovh.gabrielhuav.pow.domain.models.map.CarModel
 import ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint
 import ovh.gabrielhuav.pow.domain.models.map.offsetMeters
 import ovh.gabrielhuav.pow.domain.models.survival.ShotOutcome
+import ovh.gabrielhuav.pow.domain.models.survival.ShoveRules
+import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponCatalog
 import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
@@ -33,11 +35,36 @@ import ovh.gabrielhuav.pow.domain.models.survival.WeaponRules
 import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.survival_no_ammo
+import ovh.gabrielhuav.pow.shared.recursos.survival_shove_tired
 import ovh.gabrielhuav.pow.shared.recursos.survival_weapon_broke
 import ovh.gabrielhuav.pow.domain.models.map.resolveTrafficImpact
 import ovh.gabrielhuav.pow.domain.models.map.TrafficImpactResolution
 import kotlin.math.cos
 import kotlin.math.sin
+
+/** t02: empujón (toque largo de X): aparta a los zombis pegados, te suelta de un agarrón y gasta aliento. */
+fun WorldMapViewModel.shoveNearbyZombies() {
+    if (!survivalManager.state.value.enabled || _uiState.value.isDriving) return
+    val playerLoc = _uiState.value.currentLocation ?: return
+    val now = System.currentTimeMillis()
+    if (!ShoveRules.ready(now, lastShoveMs)) return
+    val targets = remoteEntities.entries.filter { it.value.type == NpcType.ZOMBIE && !it.value.isDying }
+        .mapNotNull { e ->
+            ShoveRules.pushedTo(e.value.location.latitude, e.value.location.longitude, playerLoc.latitude, playerLoc.longitude)?.let { e to it }
+        }
+    if (targets.isEmpty()) return
+    if (!ShoveRules.canAfford(staminaState)) {
+        lastShoveMs = now
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_shove_tired)) }
+        return
+    }
+    lastShoveMs = now
+    staminaState = StaminaRules.spend(staminaState, ShoveRules.STAMINA_COST)
+    grabbedUntilMs = 0L
+    targets.forEach { (entry, to) -> remoteEntities[entry.key] = entry.value.copy(location = GeoPoint(to.first, to.second)) }
+    soundManager.playPunch()
+    updateNpcsState()
+}
 
 fun WorldMapViewModel.performPlayerAttack() {
     val now = System.currentTimeMillis()

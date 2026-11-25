@@ -321,6 +321,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
 
     internal val PLAYER_PUNCH_DAMAGE = 15f
     internal var lastAttackTime = 0L
+    internal var lastShoveMs = 0L
     internal val ATTACK_COOLDOWN_MS = 1200L
     internal val ATTACK_RADIUS = 0.00008      // ~9 m: golpe CUERPO A CUERPO (antes 0.00022 ≈ ~24 m, pegaba de lejos)
 
