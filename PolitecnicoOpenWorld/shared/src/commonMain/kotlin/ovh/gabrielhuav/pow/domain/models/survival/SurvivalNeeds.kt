@@ -95,6 +95,7 @@ object SurvivalRules {
         seconds: Double,
         infection: InfectionState? = null,
         thirstScale: Double = 1.0,
+        energyScale: Double = 1.0,
     ): SurvivalNeeds {
         if (!seconds.isFinite() || seconds <= 0.0) return needs
         val multiplier = when (activity) {
@@ -108,7 +109,7 @@ object SurvivalRules {
             val gain = REST_ENERGY_GAIN * (if (night) 0.8 else 1.0) * (if (sick) 0.5 else 1.0)
             needs.energy + seconds * gain
         } else {
-            val drain = ENERGY_RATE * multiplier * (if (night) 1.25 else 1.0) * (if (sick) 1.5 else 1.0)
+            val drain = ENERGY_RATE * multiplier * energyScale * (if (night) 1.25 else 1.0) * (if (sick) 1.5 else 1.0)
             needs.energy - seconds * drain
         }
         return SurvivalNeeds(

@@ -665,6 +665,7 @@
     <string name="moodle_fractura">Fracture: you walk slower; a medkit cures it</string>
     <string name="moodle_infeccion">Infection: it keeps getting worse</string>
     <string name="moodle_carga">Heavy pack: you move slower</string>
+    <string name="moodle_frio">Cold: night and rain tire you faster</string>
     <string name="wm_survival_paused">Paused</string>
     <string name="wm_survival_infection">Infection</string>
     <string name="wm_survival_symptoms">Symptomatic</string>

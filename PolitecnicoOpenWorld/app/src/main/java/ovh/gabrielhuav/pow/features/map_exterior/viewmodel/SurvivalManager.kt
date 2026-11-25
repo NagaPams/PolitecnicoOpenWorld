@@ -13,6 +13,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
@@ -210,7 +211,7 @@ class SurvivalManager(enabled: Boolean = false) {
         if (!enabled || paused || deltaMs <= 0) return null
         val current = mutableState.value
         val infection = current.infection.advance(deltaMs)
-        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather))
+        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night))
         val next = current.copy(needs = needs, infection = infection)
         mutableState.value = next
         return next

@@ -23,6 +23,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.Moodle
 import ovh.gabrielhuav.pow.domain.models.survival.MoodleKind
 import ovh.gabrielhuav.pow.domain.models.survival.MoodleRules
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
+import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapState
 
 /** Moodles (t11): fila de iconos con gravedad (puntos) para lo que molesta ahora; vacía si todo va bien. */
@@ -31,11 +32,11 @@ fun MoodleColumn(state: WorldMapState, modifier: Modifier = Modifier) {
     val weight = SurvivalCrafting.weightOf(state.survivalPack)
     val moodles = remember(
         state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-        state.survivalInfection, weight,
+        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f,
     ) {
         MoodleRules.active(
             state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-            state.survivalInfection, weight,
+            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f),
         )
     }
     if (moodles.isEmpty()) return
@@ -74,6 +75,7 @@ private fun nameOf(kind: MoodleKind): Int = when (kind) {
     MoodleKind.FRACTURA -> R.string.moodle_fractura
     MoodleKind.INFECCION -> R.string.moodle_infeccion
     MoodleKind.CARGA -> R.string.moodle_carga
+    MoodleKind.FRIO -> R.string.moodle_frio
 }
 
 private fun iconOf(kind: MoodleKind): String = when (kind) {
@@ -85,4 +87,5 @@ private fun iconOf(kind: MoodleKind): String = when (kind) {
     MoodleKind.FRACTURA -> "🦴"
     MoodleKind.INFECCION -> "🦠"
     MoodleKind.CARGA -> "🎒"
+    MoodleKind.FRIO -> "🥶"
 }
