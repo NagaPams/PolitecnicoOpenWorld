@@ -36,8 +36,11 @@ object SurvivalRules {
     // t37: el ritmo se mide en DÍAS de juego (DayRules.DAY_MS), así cambiar la duración del día no desajusta la
     // supervivencia. En reposo el hambre dura 1,2 días, la sed 0,8 y la energía 1 día; correr triplica el gasto.
     private const val SECONDS_PER_DAY = DayRules.DAY_MS / 1000.0
-    private const val HUNGER_RATE = 100.0 / (SECONDS_PER_DAY * 1.2)
-    private const val THIRST_RATE = 100.0 / (SECONDS_PER_DAY * 0.8)
+    /** Cuánto baja cada necesidad en un día entero de reposo (t46: dormir lo usa para su costo). */
+    const val HUNGER_PER_DAY = 100.0 / 1.2
+    const val THIRST_PER_DAY = 100.0 / 0.8
+    private const val HUNGER_RATE = HUNGER_PER_DAY / SECONDS_PER_DAY
+    private const val THIRST_RATE = THIRST_PER_DAY / SECONDS_PER_DAY
     private const val ENERGY_RATE = 100.0 / SECONDS_PER_DAY
     private const val REST_ENERGY_GAIN = 0.05
     private const val FOOD_RESTORE = 40.0

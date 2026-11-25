@@ -17,8 +17,10 @@ object SleepRules {
     const val WAKE_METERS = 25.0
     private const val ENERGY_GAIN_NIGHT = 70.0
     private const val ENERGY_GAIN_DAY = 40.0
-    private const val HUNGER_COST = 12.0
-    private const val THIRST_COST = 16.0
+    /** t46: dormir equivale a pasar estas horas de juego; el costo sale de los ritmos de [SurvivalRules] (en reposo). */
+    private const val SLEEP_GAME_HOURS = 3.0
+    private const val HUNGER_COST = SurvivalRules.HUNGER_PER_DAY * SLEEP_GAME_HOURS / 24.0
+    private const val THIRST_COST = SurvivalRules.THIRST_PER_DAY * SLEEP_GAME_HOURS / 24.0
     /** Dormir no deja el hambre ni la sed por debajo de esto (si ya estaban peor, no empeoran). */
     private const val FLOOR = 5.0
 
