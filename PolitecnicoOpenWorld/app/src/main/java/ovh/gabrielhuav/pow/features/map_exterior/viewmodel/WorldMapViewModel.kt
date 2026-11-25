@@ -1185,12 +1185,16 @@ class WorldMapViewModel @javax.inject.Inject constructor(
 
 
     internal var exteriorCollisions: ExteriorCollisionsConfig? = null
+    /** t42: colisión de los edificios exteriores descargados; se suma a la del campus cada vez que esta se reconstruye. */
+    /** t44: el aviso de "sin datos de edificios" sale una vez por racha de fallos. */
+    @Volatile internal var outerNoDataShown = false
+    @Volatile internal var outerCollisionPolygons: List<ovh.gabrielhuav.pow.domain.models.map.CollisionPolygon> = emptyList()
 
     // Llama esta función en el init{} de tu ViewModel
     internal fun loadExteriorCollisions() { // llamado desde WorldMapDesigner.kt
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                exteriorCollisions = cargarColisionesConHuellas(survivalManager.state.value.doors)
+                exteriorCollisions = withOuterCollisions(cargarColisionesConHuellas(survivalManager.state.value.doors))
 
                 npcAiManager.setExteriorCollisions(exteriorCollisions)
                 // Exponer al estado para el overlay de Debug Interiores (zonas no caminables).

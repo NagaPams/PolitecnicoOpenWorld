@@ -33,6 +33,15 @@ object OuterBuildingRules {
         return base + nearest
     }
 
+    /**
+     * t42: colisión maciza para los edificios que [merge] añadió después de las primeras [baseSize] huellas (los del
+     * campus ya tienen la suya). Quien ya esté dentro de uno sale caminando libre (resolveCirclePath).
+     */
+    fun collisionPolygons(merged: List<CampusFootprint>, baseSize: Int): List<CollisionPolygon> =
+        if (merged.size <= baseSize) emptyList() else merged.subList(baseSize, merged.size).map { fp ->
+            CollisionPolygon(name = "OUT_${fp.id}", nodes = fp.points.map { GeoNode(it.latitude, it.longitude) })
+        }
+
     /** ¿Toca pedir otra zona? [lastLat]/[lastLon] nulos = nunca se ha pedido. */
     fun shouldFetch(lastLat: Double?, lastLon: Double?, lat: Double, lon: Double): Boolean {
         if (lastLat == null || lastLon == null) return true

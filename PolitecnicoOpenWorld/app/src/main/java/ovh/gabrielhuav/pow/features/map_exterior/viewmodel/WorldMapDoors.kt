@@ -30,7 +30,7 @@ internal fun WorldMapViewModel.rebuildDoorCollisions() {
     val doors = survivalManager.state.value.doors
     viewModelScope.launch(Dispatchers.IO) {
         try {
-            val config = cargarColisionesConHuellas(doors)
+            val config = withOuterCollisions(cargarColisionesConHuellas(doors))
             exteriorCollisions = config
             npcAiManager.setExteriorCollisions(config)
             withContext(Dispatchers.Main) { _uiState.update { it.copy(exteriorCollisions = config) } }
