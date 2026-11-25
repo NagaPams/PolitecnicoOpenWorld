@@ -669,6 +669,8 @@
     <string name="moodle_carga">Mochila pesada: te mueves más lento</string>
     <string name="moodle_frio">Frío: la noche y la lluvia te cansan más</string>
     <string name="moodle_herido">Herido: poca vida, cúrate con un botiquín</string>
+    <string name="pack_craft_splint">Férula (1 tablón + 1 venda)</string>
+    <string name="pack_coat_on">🧥 Abrigo puesto</string>
     <string name="wm_survival_paused">En pausa</string>
     <string name="wm_survival_infection">Infección</string>
     <string name="wm_survival_symptoms">Con síntomas</string>

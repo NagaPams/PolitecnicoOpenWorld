@@ -271,6 +271,9 @@ fun WorldMapOverlays(
             occupation = uiState.survivalOccupation,
             onChooseOccupation = { viewModel.chooseSurvivalOccupation(it) },
             onCraftNailBat = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.PALO_CLAVOS) },
+            fractured = uiState.survivalFractured,
+            onCraftSplint = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.FERULA) },
+            coat = uiState.survivalCoat,
         )
     }
 }

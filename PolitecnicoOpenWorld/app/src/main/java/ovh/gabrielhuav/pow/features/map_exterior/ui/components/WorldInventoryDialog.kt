@@ -80,6 +80,9 @@ fun WorldInventoryDialog(
     occupation: Occupation = Occupation.NINGUNO,
     onChooseOccupation: (Occupation) -> Unit = {},
     onCraftNailBat: () -> Unit = {},
+    fractured: Boolean = false,
+    onCraftSplint: () -> Unit = {},
+    coat: Boolean = false,
 ) {
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x88000000))
@@ -166,6 +169,12 @@ fun WorldInventoryDialog(
                         enabled = boards >= RecipeRules.NAIL_BAT_BOARDS,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D4037), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_craft_nailbat), fontSize = 12.sp) }
+                    if (fractured) Button(
+                        onClick = onCraftSplint,
+                        enabled = boards >= 1 && survivalPack.vendas >= 1,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D4C41), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_craft_splint), fontSize = 12.sp) }
+                    if (coat) Text(stringResource(R.string.pack_coat_on), color = Color(0xFF80CBC4), fontSize = 12.sp)
                 }
                 if (survivalPack != null) {
                     Text(stringResource(R.string.car_health_counts, carHealth.toInt(), boards), color = Color.White, fontSize = 14.sp)

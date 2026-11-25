@@ -456,6 +456,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var vehicleWreckAnnounced = false
     /** t15: el aviso de elegir oficio se da una sola vez por sesión. */
     internal var occupationHintShown = false
+    /** Cerrojos de los avisos de estado (poca gasolina, frío) y si la fractura seguía activa en el tick anterior. */
+    internal val lowFuelLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val coldLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal var wasFractured = false
     /** Hasta cuándo el coche no arranca tras subir (puerta, t05). */
     @Volatile internal var carDoorLockedUntilMs = 0L
     internal var lastVehicleCrashMs = 0L

@@ -667,6 +667,8 @@
     <string name="moodle_carga">Heavy pack: you move slower</string>
     <string name="moodle_frio">Cold: night and rain tire you faster</string>
     <string name="moodle_herido">Hurt: low health, heal with a medkit</string>
+    <string name="pack_craft_splint">Splint (1 board + 1 bandage)</string>
+    <string name="pack_coat_on">🧥 Coat on</string>
     <string name="wm_survival_paused">Paused</string>
     <string name="wm_survival_infection">Infection</string>
     <string name="wm_survival_symptoms">Symptomatic</string>

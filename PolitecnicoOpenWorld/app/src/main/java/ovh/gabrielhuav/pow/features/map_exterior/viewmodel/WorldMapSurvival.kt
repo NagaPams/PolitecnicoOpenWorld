@@ -12,6 +12,7 @@ import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
+import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
@@ -57,7 +58,11 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_craft_nailbat
 import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
+import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_fracture_healed
+import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_low
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_hint
+import ovh.gabrielhuav.pow.shared.recursos.survival_splint_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_combate
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_punteria
@@ -258,6 +263,7 @@ internal fun WorldMapViewModel.startCraft(recipe: Recipe) {
     if (!state.enabled || survivalPaused() || _uiState.value.isDriving) return
     if (RecipeRules.isCrafting(now, craftUntilMs) || SleepRules.isSleeping(now, sleepUntilMs)) return
     if (!RecipeRules.canCraft(recipe, CraftInventory(state.pack, state.boards, state.arsenal))) return
+    if (recipe == Recipe.FERULA && !FractureRules.isFractured(state.activeMs, state.fractureHealsAtMs)) return
     if (RecipeRules.shouldInterrupt(nearestZombieMeters())) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_craft_zombies)) }
         return
@@ -283,7 +289,12 @@ private suspend fun WorldMapViewModel.finishCraft(recipe: Recipe) {
     survivalManager.setArsenal(result.arsenal)
     soundManager.playItem()
     if (recipe == Recipe.PALO_CLAVOS) onSkillUse(Skill.CARPINTERIA, 3)
-    showSurvivalPrompt(getString(if (recipe == Recipe.BOTIQUIN) Res.string.survival_kit_crafted else Res.string.survival_craft_nailbat))
+    if (recipe == Recipe.FERULA) survivalManager.setFractureHealsAt(0L)
+    showSurvivalPrompt(getString(when (recipe) {
+        Recipe.BOTIQUIN -> Res.string.survival_kit_crafted
+        Recipe.FERULA -> Res.string.survival_splint_crafted
+        Recipe.PALO_CLAVOS -> Res.string.survival_craft_nailbat
+    }))
 }
 
 /** Corta el crafteo sin gastar nada (zombi cerca, mordida o partida nueva). */
@@ -395,6 +406,26 @@ private fun WorldMapViewModel.buyBoards(price: Int) {
     }
 }
 
+/** Avisos de estado, una vez cada uno (t11): poca gasolina al volante, frío sin abrigo ni refugio y fractura sanada sola. */
+private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
+    val sv = survivalManager.state.value
+    if (lowFuelLatch.fire(s.isDriving && fuelTank > 0.0 && fuelTank < LOW_FUEL_NOTICE, fuelTank >= LOW_FUEL_NOTICE + 10.0)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_low)) }
+    }
+    val cold = TemperatureRules.coldLevel(sv.weather, s.nightAlpha > 0.05f, sv.coat, s.isDriving)
+    if (coldLatch.fire(cold >= 1, cold == 0)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_cold)) }
+    }
+    val fractured = FractureRules.isFractured(sv.activeMs, sv.fractureHealsAtMs)
+    // fractureHealsAtMs = 0 es una cura con botiquín o férula (que ya tienen su propio aviso): solo se avisa la que sanó sola.
+    if (wasFractured && !fractured && sv.fractureHealsAtMs != 0L) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fracture_healed)) }
+    }
+    wasFractured = fractured
+}
+
+private const val LOW_FUEL_NOTICE = 15.0
+
 /** Reloj monotónico; durante una escena no se acumula tiempo de supervivencia. */
 internal fun WorldMapViewModel.updateSurvivalTick() {
     val now = SystemClock.elapsedRealtime()
@@ -448,6 +479,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
             SurvivalActivity.IDLE -> Unit
         }
     }
+    announceConditions(s)
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     survivalManager.setFuel(fuelTank)
     survivalManager.setVehicleHealth(vehicleHealth)
