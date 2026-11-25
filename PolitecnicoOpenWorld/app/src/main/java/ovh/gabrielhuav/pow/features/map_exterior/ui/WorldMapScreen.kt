@@ -1019,6 +1019,7 @@ fun WorldMapScreen(
             // Con un objetivo de misión visible ese centro lo usa su widget: los moodles se esconden.
             if (uiState.currentObjective == null) ovh.gabrielhuav.pow.features.map_exterior.ui.components.MoodleColumn(
                 state = uiState,
+                health = viewModel.playerHealth.toInt(),
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
             )
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.SurvivalStatusBar(

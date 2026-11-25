@@ -28,15 +28,15 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.WorldMapState
 
 /** Moodles (t11): fila de iconos con gravedad (puntos) para lo que molesta ahora; vacía si todo va bien. */
 @Composable
-fun MoodleColumn(state: WorldMapState, modifier: Modifier = Modifier) {
+fun MoodleColumn(state: WorldMapState, health: Int, modifier: Modifier = Modifier) {
     val weight = SurvivalCrafting.weightOf(state.survivalPack)
     val moodles = remember(
         state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving,
+        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, health,
     ) {
         MoodleRules.active(
             state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving),
+            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving), health.toDouble(),
         )
     }
     if (moodles.isEmpty()) return
@@ -76,6 +76,7 @@ private fun nameOf(kind: MoodleKind): Int = when (kind) {
     MoodleKind.INFECCION -> R.string.moodle_infeccion
     MoodleKind.CARGA -> R.string.moodle_carga
     MoodleKind.FRIO -> R.string.moodle_frio
+    MoodleKind.HERIDO -> R.string.moodle_herido
 }
 
 private fun iconOf(kind: MoodleKind): String = when (kind) {
@@ -88,4 +89,5 @@ private fun iconOf(kind: MoodleKind): String = when (kind) {
     MoodleKind.INFECCION -> "🦠"
     MoodleKind.CARGA -> "🎒"
     MoodleKind.FRIO -> "🥶"
+    MoodleKind.HERIDO -> "❤️‍🩹"
 }

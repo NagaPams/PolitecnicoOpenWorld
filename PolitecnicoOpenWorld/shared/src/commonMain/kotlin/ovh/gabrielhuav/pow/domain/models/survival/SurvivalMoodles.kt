@@ -4,7 +4,7 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // iconos vive en la UI de :app. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Al final de la lista de valores: no insertar en medio (el orden podría usarse al ordenar los iconos). */
-enum class MoodleKind { HAMBRE, SED, CANSANCIO, SIN_ALIENTO, SANGRADO, FRACTURA, INFECCION, CARGA, FRIO }
+enum class MoodleKind { HAMBRE, SED, CANSANCIO, SIN_ALIENTO, SANGRADO, FRACTURA, INFECCION, CARGA, FRIO, HERIDO }
 
 data class Moodle(val kind: MoodleKind, val level: Int)
 
@@ -29,6 +29,15 @@ object MoodleRules {
         else -> 4
     }
 
+    /** Gravedad de la vida (0-100): por encima de 60 no molesta. */
+    fun healthLevel(health: Double): Int = when {
+        health >= 60.0 -> 0
+        health >= 40.0 -> 1
+        health >= 25.0 -> 2
+        health >= 12.0 -> 3
+        else -> 4
+    }
+
     /** Gravedad de la carga según el peso de la mochila (máximo [SurvivalCrafting.MAX_WEIGHT]). */
     fun loadLevel(weight: Double): Int {
         val max = SurvivalCrafting.MAX_WEIGHT
@@ -44,7 +53,7 @@ object MoodleRules {
     /** Moodles activos (solo los de gravedad ≥ 1), de más a menos grave. */
     fun active(
         needs: SurvivalNeeds, stamina: Double, bleeding: Boolean, fractured: Boolean,
-        infection: InfectionState, weight: Double, cold: Int = 0,
+        infection: InfectionState, weight: Double, cold: Int = 0, health: Double = 100.0,
     ): List<Moodle> {
         val all = listOf(
             Moodle(MoodleKind.HAMBRE, needLevel(needs.hunger)),
@@ -55,6 +64,7 @@ object MoodleRules {
             Moodle(MoodleKind.FRACTURA, if (fractured) 2 else 0),
             Moodle(MoodleKind.INFECCION, if (!infection.infected) 0 else if (infection.symptomatic) 3 else 1),
             Moodle(MoodleKind.CARGA, loadLevel(weight)),
+            Moodle(MoodleKind.HERIDO, healthLevel(health)),
             Moodle(MoodleKind.FRIO, cold.coerceIn(0, TemperatureRules.MAX_COLD) * 2 - (if (cold > 0) 1 else 0)),
         )
         return all.filter { it.level > 0 }.sortedByDescending { it.level }

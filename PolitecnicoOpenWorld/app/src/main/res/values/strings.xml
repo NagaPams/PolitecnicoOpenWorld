@@ -668,6 +668,7 @@
     <string name="moodle_infeccion">Infección: sigue avanzando</string>
     <string name="moodle_carga">Mochila pesada: te mueves más lento</string>
     <string name="moodle_frio">Frío: la noche y la lluvia te cansan más</string>
+    <string name="moodle_herido">Herido: poca vida, cúrate con un botiquín</string>
     <string name="wm_survival_paused">En pausa</string>
     <string name="wm_survival_infection">Infección</string>
     <string name="wm_survival_symptoms">Con síntomas</string>
