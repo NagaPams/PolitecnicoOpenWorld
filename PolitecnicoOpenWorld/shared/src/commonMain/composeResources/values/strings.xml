@@ -454,4 +454,20 @@
     <string name="survival_door_barricaded">🪵 Puerta barricada</string>
     <string name="survival_door_dismantled">🪵 Barricada desmontada</string>
     <string name="survival_door_broken">🧟 ¡Los zombis rompieron una barricada!</string>
+    <string name="zinterior_salon_empty">🎒 ¡El salón quedó vacío! Ahí está la mochila de Prankedy.</string>
+    <string name="zinterior_leave_without_backpack">🎒 Aún no tienes la mochila de Prankedy. Pulsa de nuevo para salir.</string>
+    <string name="zinterior_inventory_full">🎒 Inventario lleno (%1$d slot(s)). Prueba o desecha una llave (mantén Y).</string>
+    <string name="zinterior_stink_thrown">💨 ¡Lanzaste la LATA APESTOSA! El olor es INSOPORTABLE…</string>
+    <string name="zinterior_backpack_taken">🎒 ¡Mochila de Prankedy! Inventario DESBLOQUEADO (%1$d slots).</string>
+    <string name="zinterior_evidence_recovered">🧪 ¡Evidencia recuperada! Saliendo de la ENCB…</string>
+    <string name="zinterior_key_need">🔒 Necesitas la llave correcta. Vuelve al Laboratorio 1 (←) y recoge una.</string>
+    <string name="zinterior_key_try">🔒 Prueba la llave en tu inventario (mantén Y). Si no es, deséchala y busca otra.</string>
+    <string name="zinterior_no_firearm">🔒 Aún no tienes un arma de fuego. Complétala en la Misión 3 (ENCB).</string>
+    <string name="zinterior_lab2_only">🔬 Solo puedes probar la llave en el Laboratorio 2.</string>
+    <string name="zinterior_key_correct">🔑 ¡Es la correcta! La puerta del fondo se abrió. Crúzala (X).</string>
+    <string name="zinterior_key_wrong">🔒 No es la correcta. Mantén pulsada la llave para desecharla y busca otra (←).</string>
+    <string name="zinterior_can_locked">🔒 Objeto de misión: la lata se usa en el salón de la mochila (X), no se tira.</string>
+    <string name="zinterior_key_locked">🔒 Objeto de misión: no puedes desechar esta llave todavía.</string>
+    <string name="zinterior_key_test_first">🔒 No puedes desechar esta llave todavía. Pruébala primero en la puerta (Lab 2).</string>
+    <string name="zinterior_key_discarded">🗑️ Llave desechada. Busca otra en el Laboratorio 1 (←).</string>
 </resources>

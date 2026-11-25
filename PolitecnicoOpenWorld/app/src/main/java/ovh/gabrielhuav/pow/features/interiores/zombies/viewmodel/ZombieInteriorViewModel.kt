@@ -1,5 +1,22 @@
 package ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel
 
+import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_salon_empty
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_leave_without_backpack
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_inventory_full
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stink_thrown
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_backpack_taken
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_evidence_recovered
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_need
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_try
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_no_firearm
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_lab2_only
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_correct
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_wrong
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_can_locked
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_locked
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_test_first
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_key_discarded
 import kotlinx.serialization.encodeToString
 import ovh.gabrielhuav.pow.data.json.PowJson
 import ovh.gabrielhuav.pow.data.json.jsonOf
@@ -640,7 +657,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
             val clock = System.currentTimeMillis()
             if (clock > m2LeaveConfirmUntilMs) {
                 m2LeaveConfirmUntilMs = clock + 4_000L
-                showKeyMessage("🎒 Aún no tienes la mochila de Prankedy. Pulsa de nuevo para salir.")
+                showKeyRes(Res.string.zinterior_leave_without_backpack)
                 return
             }
         }
@@ -757,7 +774,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
             val key = s.keys.firstOrNull { it.id == keyId } ?: return
             // Slots USABLES dinámicos: 1 al inicio; TODOS tras recuperar la mochila (Misión 2).
             if (s.inventoryKeys.size >= s.inventoryUnlockedSlots) {
-                showKeyMessage("🎒 Inventario lleno (${s.inventoryUnlockedSlots} slot(s)). Prueba o desecha una llave (mantén Y).")
+                showKeyRes(Res.string.zinterior_inventory_full, s.inventoryUnlockedSlots)
                 return
             }
             soundManager.playItem()
@@ -788,7 +805,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
                     mission2StinkY = s.playerY - 30f,
                     inventoryKeys = it.inventoryKeys.filter { k -> k != stinkEntry }
                 ) }
-                showKeyMessage("💨 ¡Lanzaste la LATA APESTOSA! El olor es INSOPORTABLE…")
+                showKeyRes(Res.string.zinterior_stink_thrown)
                 return
             }
             if (s.mission2BackpackNearby && !s.mission2BackpackTaken) {
@@ -799,7 +816,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
                     mission2BackpackNearby = false,
                     inventoryUnlockedSlots = INVENTORY_TOTAL_SLOTS
                 ) }
-                showKeyMessage("🎒 ¡Mochila de Prankedy! Inventario DESBLOQUEADO ($INVENTORY_TOTAL_SLOTS slots).")
+                showKeyRes(Res.string.zinterior_backpack_taken, INVENTORY_TOTAL_SLOTS)
                 return
             }
         }
@@ -808,7 +825,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
         if (s.mission3EvidenceNearby && !s.mission3EvidenceTaken) {
             soundManager.playItem()
             _state.update { it.copy(mission3EvidenceTaken = true, mission3EvidenceNearby = false) }
-            showKeyMessage("🧪 ¡Evidencia recuperada! Saliendo de la ENCB…")
+            showKeyRes(Res.string.zinterior_evidence_recovered)
             // Auto-regreso al mapa: el waypoint de salida no existe en la cadena ENCB.
             viewModelScope.launch {
                 delay(2600)
@@ -849,10 +866,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
             door.kind == ovh.gabrielhuav.pow.domain.models.zombie.DoorKind.EXIT_NEXT &&
             door.targetRoomId == ZombieRoomCatalog.EXIT_TO_STORY_OUTRO &&
             !s.lab1KeyFound) {
-            showKeyMessage(
-                if (s.inventoryKeys.isEmpty()) "🔒 Necesitas la llave correcta. Vuelve al Laboratorio 1 (←) y recoge una."
-                else "🔒 Prueba la llave en tu inventario (mantén Y). Si no es, deséchala y busca otra."
-            )
+            showKeyRes(if (s.inventoryKeys.isEmpty()) Res.string.zinterior_key_need else Res.string.zinterior_key_try)
             return
         }
 
@@ -1048,7 +1062,7 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
         // MISIÓN 3 (recompensa): sin ARMA DE FUEGO el modo RANGED está bloqueado (solo campaña;
         // fuera de campaña firearmUnlocked llega true y no cambia nada).
         if (mode == CombatMode.RANGED && !_state.value.firearmUnlocked) {
-            showKeyMessage("🔒 Aún no tienes un arma de fuego. Complétala en la Misión 3 (ENCB).")
+            showKeyRes(Res.string.zinterior_no_firearm)
             return
         }
         // El modo de golpe vive en el MENÚ COMBINADO (con el inventario, se abre con Y): elegir
@@ -1081,14 +1095,14 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
         val correct = ovh.gabrielhuav.pow.domain.models.zombie.KeyDrop.LAB1_CORRECT_KEY
         when {
             currentRoom().id != ZombieRoomCatalog.ENCB_LAB2_ID ->
-                showKeyMessage("🔬 Solo puedes probar la llave en el Laboratorio 2.")
+                showKeyRes(Res.string.zinterior_lab2_only)
             asset == correct -> {
                 _state.update { it.copy(lab1KeyFound = true) }
                 soundManager.playItem()
-                showKeyMessage("🔑 ¡Es la correcta! La puerta del fondo se abrió. Crúzala (X).")
+                showKeyRes(Res.string.zinterior_key_correct)
             }
             else ->
-                showKeyMessage("🔒 No es la correcta. Mantén pulsada la llave para desecharla y busca otra (←).")
+                showKeyRes(Res.string.zinterior_key_wrong)
         }
     }
 
@@ -1105,19 +1119,19 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
         val kd = ovh.gabrielhuav.pow.domain.models.zombie.KeyDrop
         val asset = kd.entryAsset(entry)
         if (kd.entryMission(entry) == kd.MISSION_2) {
-            showKeyMessage("🔒 Objeto de misión: la lata se usa en el salón de la mochila (X), no se tira.")
+            showKeyRes(Res.string.zinterior_can_locked)
             return
         }
         if (asset == kd.LAB1_CORRECT_KEY && missionItemsLocked) {
-            showKeyMessage("🔒 Objeto de misión: no puedes desechar esta llave todavía.")
+            showKeyRes(Res.string.zinterior_key_locked)
             return
         }
         if (asset == kd.LAB1_CORRECT_KEY && !s.lab1KeyFound) {
-            showKeyMessage("🔒 No puedes desechar esta llave todavía. Pruébala primero en la puerta (Lab 2).")
+            showKeyRes(Res.string.zinterior_key_test_first)
             return
         }
         _state.update { it.copy(inventoryKeys = it.inventoryKeys.filter { k -> k != entry }) }
-        showKeyMessage("🗑️ Llave desechada. Busca otra en el Laboratorio 1 (←).")
+        showKeyRes(Res.string.zinterior_key_discarded)
     }
 
     // Mensajes transitorios del puzzle de llaves (se limpian solos a los ~2.8 s).
@@ -1130,6 +1144,13 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
             _state.update { if (it.keyMessage == msg) it.copy(keyMessage = null) else it }
         }
     }
+    /** t56: mensaje transitorio desde un recurso (es/en); `getString` es suspend, por eso se lanza en el scope del ViewModel. */
+    internal fun showKeyRes(res: org.jetbrains.compose.resources.StringResource, vararg args: Any) {
+        viewModelScope.launch {
+            showKeyMessage(if (args.isEmpty()) org.jetbrains.compose.resources.getString(res) else org.jetbrains.compose.resources.getString(res, *args))
+        }
+    }
+
     internal fun showKeyMessage(msg: String) {
         _state.update { it.copy(keyMessage = msg) }
         clearKeyMessageSoon()

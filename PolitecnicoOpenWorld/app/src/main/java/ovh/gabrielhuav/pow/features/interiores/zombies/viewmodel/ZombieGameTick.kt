@@ -1,5 +1,7 @@
 package ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel
 
+import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_salon_empty
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
@@ -268,7 +270,7 @@ internal fun ZombieInteriorViewModel.tickOffline(s: ZombieGameState, now: Long) 
         }
         if (spawnBackpack) {
             soundManager.playItem()
-            showKeyMessage("🎒 ¡El salón quedó vacío! Ahí está la mochila de Prankedy.")
+            showKeyRes(Res.string.zinterior_salon_empty)
         }
 
         deadZombieIds.forEach { id ->
