@@ -84,6 +84,10 @@ private val ISO_ROOF = Color(0xFFCDBF9B)
 private val ISO_ROOF_EDGE = Color(0xFF4E4637)
 private val ISO_WALL_LIGHT = Color(0xFF8A7A62)
 private val ISO_WALL_DARK = Color(0xFF574E40)
+private const val ISO_PATCH_METERS = 3f
+private const val ISO_PATCH_MIN_PX = 14f
+private val ISO_PATCH_DARK = Color(0x1A1B2A18)
+private val ISO_PATCH_LIGHT = Color(0x14C8DCB0)
 private val ISO_SHADOW = Color(0x47101510)
 private const val ISO_SHADOW_MAX_DX = 16f
 private const val ISO_SHADOW_MAX_DY = 7f
@@ -399,6 +403,26 @@ fun IsoWorldView(
             val ty = size.height / 2f - playerY * scale
             val left = -tx / scale; val top = -ty / scale
             val right = (size.width - tx) / scale; val bottom = (size.height - ty) / scale
+            // t50: manchas de pasto/tierra repartidas por celdas de ~3 m (fijas en el mundo, sin asignaciones); con zoom
+            // muy lejano las celdas serían de pocos píxeles y se omiten.
+            val patchCell = (ISO_PATCH_METERS * projection.pixelsPerMeter).toFloat()
+            if (patchCell * scale >= ISO_PATCH_MIN_PX) {
+                val ix0 = floor(left / patchCell).toInt(); val ix1 = floor(right / patchCell).toInt()
+                val iy0 = floor(top / patchCell).toInt(); val iy1 = floor(bottom / patchCell).toInt()
+                val patchW = patchCell * scale * 0.55f
+                val patchH = patchW * 0.5f
+                for (iy in iy0..iy1) for (ix in ix0..ix1) {
+                    val h = (ix * 73856093) xor (iy * 19349663)
+                    if (h and 3 != 0) continue
+                    val jx = ((h ushr 4) and 15) / 15f
+                    val jy = ((h ushr 8) and 15) / 15f
+                    drawOval(
+                        if (h and 64 == 0) ISO_PATCH_DARK else ISO_PATCH_LIGHT,
+                        Offset((ix + jx) * patchCell * scale + tx, (iy + jy) * patchCell * scale + ty),
+                        Size(patchW, patchH),
+                    )
+                }
+            }
             actors.clear()
             val sector = moveAngleState?.let { isoScreenSector(isoWorldAngleToScreenHeading(it.toDouble())) } ?: 4
             val elapsed = clock.elapsedNow().inWholeMilliseconds
