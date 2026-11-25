@@ -17,6 +17,8 @@ object SleepRules {
     const val WAKE_METERS = 25.0
     private const val ENERGY_GAIN_NIGHT = 70.0
     private const val ENERGY_GAIN_DAY = 40.0
+    /** Dormir con frío (sin abrigo ni refugio) rinde un 15 % menos por nivel de frío. */
+    const val COLD_PENALTY_PER_LEVEL = 0.15
     /** t46: dormir equivale a pasar estas horas de juego; el costo sale de los ritmos de [SurvivalRules] (en reposo). */
     private const val SLEEP_GAME_HOURS = 3.0
     private const val HUNGER_COST = SurvivalRules.HUNGER_PER_DAY * SLEEP_GAME_HOURS / 24.0
@@ -38,10 +40,10 @@ object SleepRules {
     fun sleepUntil(nowMs: Long): Long = nowMs + SLEEP_MS
 
     /** Necesidades tras dormir una vez; nunca baja el hambre o la sed por debajo de [FLOOR] ni sube de 100. */
-    fun rested(needs: SurvivalNeeds, night: Boolean): SurvivalNeeds = SurvivalNeeds(
+    fun rested(needs: SurvivalNeeds, night: Boolean, coldLevel: Int = 0): SurvivalNeeds = SurvivalNeeds(
         hunger = lowered(needs.hunger, HUNGER_COST),
         thirst = lowered(needs.thirst, THIRST_COST),
-        energy = (needs.energy + if (night) ENERGY_GAIN_NIGHT else ENERGY_GAIN_DAY).coerceAtMost(100.0),
+        energy = (needs.energy + (if (night) ENERGY_GAIN_NIGHT else ENERGY_GAIN_DAY) * (1.0 - COLD_PENALTY_PER_LEVEL * coldLevel.coerceIn(0, TemperatureRules.MAX_COLD))).coerceAtMost(100.0),
     )
 
     private fun lowered(value: Double, cost: Double): Double =

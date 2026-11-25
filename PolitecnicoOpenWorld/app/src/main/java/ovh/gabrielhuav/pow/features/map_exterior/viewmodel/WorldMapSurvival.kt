@@ -10,6 +10,7 @@ import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.ai.setSurvivalNoiseEnabled
 import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.ConditionSpeedRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
@@ -124,7 +125,7 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
     if (SleepRules.isSleeping(clock, sleepUntilMs) || RecipeRules.isCrafting(clock, craftUntilMs)) return 0.0
     val running = playerRunsThisStep()
     val sv = survivalManager.state.value
-    val load = if (sv.enabled) SurvivalCrafting.speedFactor(SurvivalCrafting.weightOf(sv.pack)) * FractureRules.speedFactor(sv.activeMs, sv.fractureHealsAtMs) else 1.0
+    val load = if (sv.enabled) SurvivalCrafting.speedFactor(SurvivalCrafting.weightOf(sv.pack)) * FractureRules.speedFactor(sv.activeMs, sv.fractureHealsAtMs) * ConditionSpeedRules.factor(sv.needs.energy, playerHealth.toDouble()) else 1.0
     return WalkRules.stepSize(running, load, GrabRules.speedFactor(System.currentTimeMillis(), grabbedUntilMs))
 }
 
@@ -358,7 +359,9 @@ private fun WorldMapViewModel.updateSleep() {
     }
     if (SleepRules.isSleeping(now, sleepUntilMs)) return
     sleepUntilMs = 0L
-    survivalManager.setNeeds(SleepRules.rested(survivalManager.state.value.needs, _uiState.value.nightAlpha > 0.05f))
+    val sv = survivalManager.state.value
+    val night = _uiState.value.nightAlpha > 0.05f
+    survivalManager.setNeeds(SleepRules.rested(sv.needs, night, TemperatureRules.coldLevel(sv.weather, night, sv.coat)))
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_done)) }
 }
 

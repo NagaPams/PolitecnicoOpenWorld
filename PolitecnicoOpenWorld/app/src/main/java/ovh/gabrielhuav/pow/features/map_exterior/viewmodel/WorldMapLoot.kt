@@ -18,6 +18,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
@@ -344,6 +345,11 @@ internal fun WorldMapViewModel.damageVehicle(speed: Double, againstWall: Boolean
     if (after == vehicleHealth) return
     lastVehicleCrashMs = now
     vehicleHealth = after
+    if (survivalManager.state.value.enabled) {
+        // t04: un choque fuerte también lastima al jugador (nunca por debajo del piso de vida del modo).
+        val hurt = CrashInjuryRules.damage(speed, MAX_SPEED, againstWall)
+        if (hurt > 0.0) combatManager.updateHealth { h -> CrashInjuryRules.healthAfter(h.toDouble(), hurt).toFloat() }
+    }
     if (survivalManager.state.value.enabled && FractureRules.fracturesOnCrash(speed, MAX_SPEED, kotlin.random.Random.nextDouble())) {
         val st = survivalManager.state.value
         if (!FractureRules.isFractured(st.activeMs, st.fractureHealsAtMs)) {
