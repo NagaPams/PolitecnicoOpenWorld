@@ -454,6 +454,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Salud del coche en modo supervivencia (t04); un solo valor que sigue al jugador, como el tanque. */
     internal var vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.MAX
     internal var vehicleWreckAnnounced = false
+    /** t15: el aviso de elegir oficio se da una sola vez por sesión. */
+    internal var occupationHintShown = false
     /** Hasta cuándo el coche no arranca tras subir (puerta, t05). */
     @Volatile internal var carDoorLockedUntilMs = 0L
     internal var lastVehicleCrashMs = 0L

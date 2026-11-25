@@ -57,6 +57,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_craft_nailbat
 import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
+import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_hint
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_combate
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_punteria
@@ -416,6 +417,11 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     }
     if (lastSurvivalUpdateMs == 0L) {
         lastSurvivalUpdateMs = now
+        // t15: al empezar el modo sin oficio, un aviso (una vez por sesión) recuerda que se elige en el inventario.
+        if (!occupationHintShown && survivalManager.state.value.occupation == Occupation.NINGUNO) {
+            occupationHintShown = true
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_occupation_hint)) }
+        }
         return
     }
     val elapsed = now - lastSurvivalUpdateMs
