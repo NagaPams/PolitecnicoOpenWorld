@@ -470,4 +470,5 @@
     <string name="zinterior_key_locked">🔒 Mission item: you can't discard this key yet.</string>
     <string name="zinterior_key_test_first">🔒 You can't discard this key yet. Try it on the door first (Lab 2).</string>
     <string name="zinterior_key_discarded">🗑️ Key discarded. Look for another in Lab 1 (←).</string>
+    <string name="survival_pack_full">🎒 Pack full: you can't carry more weight</string>
 </resources>

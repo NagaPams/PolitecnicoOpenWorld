@@ -40,6 +40,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_item_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_used
 import ovh.gabrielhuav.pow.shared.recursos.survival_not_needed
+import ovh.gabrielhuav.pow.shared.recursos.survival_pack_full
 
 // Saqueo de consumibles sueltos (t09, modo supervivencia): los puntos salen de `SurvivalLoot` (determinista, sin
 // guardar), se anclan a la calle más cercana y se recogen con X; lo recogido tarda en reaparecer. Ver 04_MAP_EXTERIOR.md.
@@ -156,7 +157,7 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 taken = true
                 Res.string.survival_bandage_stored
             } else {
-                Res.string.survival_not_needed
+                Res.string.survival_pack_full
             }
         }
         point.kind == LootKind.GASOLINA -> {
@@ -171,7 +172,7 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 taken = true
                 Res.string.survival_fuel_stored
             } else {
-                Res.string.survival_not_needed
+                Res.string.survival_pack_full
             }
         }
         point.kind == LootKind.MUNICION -> {
