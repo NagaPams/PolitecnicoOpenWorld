@@ -82,6 +82,10 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
 
     internal val soundManager = ovh.gabrielhuav.pow.features.audio.SoundManager.getInstance(applicationContext)
     internal var lastZombieSoundMs = 0L
+    /** Mordida de contacto única y con aviso previo, como en el mundo abierto (h27): ver `contactBiteLands`. */
+    internal var lastContactMs = 0L
+    internal var biteReadyAtMs = 0L
+    internal var lastBiteMs = 0L
 
     internal val _state = MutableStateFlow(
         ZombieGameState(

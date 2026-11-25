@@ -18,6 +18,6 @@ object ZombieBiteRules {
     fun startsNewContact(sinceLastContactMs: Long): Boolean = sinceLastContactMs > CONTACT_GAP_MS
 
     /** ¿Ya puede morder? Pasó el aviso previo y el cooldown global. */
-    fun canBite(nowMs: Long, readyAtMs: Long, lastBiteMs: Long): Boolean =
-        nowMs >= readyAtMs && nowMs - lastBiteMs >= INTERVAL_MS
+    fun canBite(nowMs: Long, readyAtMs: Long, lastBiteMs: Long, intervalMs: Long = INTERVAL_MS): Boolean =
+        nowMs >= readyAtMs && nowMs - lastBiteMs >= intervalMs
 }

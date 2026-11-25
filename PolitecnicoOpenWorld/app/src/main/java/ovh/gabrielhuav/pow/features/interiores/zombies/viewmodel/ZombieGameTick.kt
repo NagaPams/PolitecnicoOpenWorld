@@ -15,6 +15,7 @@ import ovh.gabrielhuav.pow.domain.models.zombie.ZombieType
 import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import kotlin.math.abs
 import kotlin.math.hypot
+import ovh.gabrielhuav.pow.domain.models.survival.ZombieBiteRules
 
 internal fun ZombieInteriorViewModel.tick() {
         val s = _state.value
@@ -46,6 +47,19 @@ internal fun ZombieInteriorViewModel.tick() {
         if (isMultiplayer) tickOnline(s, now) else tickOffline(s, now)
     }
 
+/**
+ * ¿Cae una mordida de contacto ahora? Un solo cooldown global ([ZOMBIE_DAMAGE_COOLDOWN_MS]) sin importar cuántos zombis
+ * rodeen al jugador, y el primer contacto de cada encuentro espera el aviso previo de [ZombieBiteRules].
+ */
+internal fun ZombieInteriorViewModel.contactBiteLands(now: Long, inContact: Boolean): Boolean {
+    if (!inContact) return false
+    if (ZombieBiteRules.startsNewContact(now - lastContactMs)) biteReadyAtMs = now + ZombieBiteRules.WINDUP_MS
+    lastContactMs = now
+    if (!ZombieBiteRules.canBite(now, biteReadyAtMs, lastBiteMs, ZOMBIE_DAMAGE_COOLDOWN_MS)) return false
+    lastBiteMs = now
+    return true
+}
+
 internal fun ZombieInteriorViewModel.tickOffline(s: ZombieGameState, now: Long) {
         val room = ZombieRoomCatalog.rooms[s.currentRoomIndex]
 
@@ -71,13 +85,13 @@ internal fun ZombieInteriorViewModel.tickOffline(s: ZombieGameState, now: Long) 
 
         var workingZombies = s.zombies.map { z ->
             if (z.isDying) return@map z
-            val moved = moveZombie(z, s.playerX, s.playerY, now, room, speedFactor)
-            val dist = hypot(moved.x - s.playerX, moved.y - s.playerY)
-            if (dist <= CONTACT_DIST && now - moved.lastDamageToPlayerMs >= ZOMBIE_DAMAGE_COOLDOWN_MS) {
-                newHealth -= ZOMBIE_DAMAGE * dmgFactor
-                pulse += 1
-                moved.copy(lastDamageToPlayerMs = now)
-            } else moved
+            moveZombie(z, s.playerX, s.playerY, now, room, speedFactor)
+        }
+        // h27: una sola mordida a la vez (sin sumar por zombi) y con aviso previo al primer contacto.
+        val contactNow = workingZombies.any { !it.isDying && hypot(it.x - s.playerX, it.y - s.playerY) <= CONTACT_DIST }
+        if (contactBiteLands(now, contactNow)) {
+            newHealth -= ZOMBIE_DAMAGE * dmgFactor
+            pulse += 1
         }
 
         val deadZombieIds = mutableListOf<String>()
@@ -316,17 +330,10 @@ internal fun ZombieInteriorViewModel.tickOnline(s: ZombieGameState, now: Long) {
         }
 
         // Daño de contacto al jugador local (su vida sigue siendo local).
-        s.zombies.forEach { z ->
-            if (z.isDying) return@forEach
-            val dist = hypot(z.x - s.playerX, z.y - s.playerY)
-            if (dist <= CONTACT_DIST) {
-                val last = contactCooldown[z.id] ?: 0L
-                if (now - last >= ZOMBIE_DAMAGE_COOLDOWN_MS) {
-                    newHealth -= ZOMBIE_DAMAGE * dmgFactor
-                    pulse += 1
-                    contactCooldown[z.id] = now
-                }
-            }
+        val contactNow = s.zombies.any { !it.isDying && hypot(it.x - s.playerX, it.y - s.playerY) <= CONTACT_DIST }
+        if (contactBiteLands(now, contactNow)) {
+            newHealth -= ZOMBIE_DAMAGE * dmgFactor
+            pulse += 1
         }
 
         if (newHealth <= 0f) { triggerWastedSequence(); return }

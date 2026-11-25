@@ -189,6 +189,8 @@ PLAYER_WALK_STEP=7  PLAYER_RUN_STEP=13  PLAYER_RADIUS=28
 ZOMBIE_SPEED=1.3  ZOMBIE_FRAME_COUNT=9  ZOMBIE_FRAME_INTERVAL_MS=140  ZOMBIE_RADIUS=30
 STALKER_WALK_FRAME_COUNT=4  STALKER_ATTACK_FRAME_COUNT=4  STALKER_ATTACK_DIST=85
 CONTACT_DIST=44  ZOMBIE_DAMAGE=12  ZOMBIE_DAMAGE_COOLDOWN_MS=3000  LOBBY_REGEN_PER_TICK=0.35
+
+> **Mordida de contacto única y con aviso (h27, 2026-11-25):** antes cada zombi en contacto mordía por su cuenta cada 3 s (tres zombis ≈ 12 HP/s). Ahora `contactBiteLands` (en `ZombieGameTick.kt`, mismo código fuera de línea y en línea) da UNA mordida de `ZOMBIE_DAMAGE` cada `ZOMBIE_DAMAGE_COOLDOWN_MS` en total, sin importar cuántos zombis rodeen al jugador, y el primer contacto de cada encuentro espera el aviso previo de `ZombieBiteRules` (600 ms; nuevo contacto tras 1,5 s sin tocar). El daño de la mordida y el intervalo del interior no cambian; `ZombieBiteRules.canBite` ganó un parámetro `intervalMs` (por defecto el del mundo abierto). Sin probar en el teléfono.
 PLAYER_PUNCH_DAMAGE=34  PLAYER_ATTACK_RADIUS=120  PLAYER_ATTACK_COOLDOWN_MS=600
 MELEE_KNOCKBACK=46  PROJECTILE_KNOCKBACK=34  PLAYER_RECOIL=10
 PROJECTILE_SPEED=22  PROJECTILE_LIFETIME_MS=1500  PROJECTILE_DAMAGE=50  PROJECTILE_HIT_RADIUS=36
