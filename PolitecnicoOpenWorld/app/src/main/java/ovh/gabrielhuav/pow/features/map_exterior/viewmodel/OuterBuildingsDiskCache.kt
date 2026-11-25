@@ -17,9 +17,11 @@ internal object OuterBuildingsDiskCache {
         "outer_${(lat * 1000.0).roundToLong()}_${(lon * 1000.0).roundToLong()}.json"
 
     /** `null` si no hay archivo, caducó o está dañado (se borra para no repetir el fallo). */
-    fun read(dir: File, lat: Double, lon: Double, nowMs: Long = System.currentTimeMillis()): List<FootprintWay>? {
+    fun read(
+        dir: File, lat: Double, lon: Double, nowMs: Long = System.currentTimeMillis(), ignoreAge: Boolean = false,
+    ): List<FootprintWay>? {
         val file = File(dir, fileName(lat, lon))
-        if (!file.isFile || nowMs - file.lastModified() > MAX_AGE_MS) return null
+        if (!file.isFile || (!ignoreAge && nowMs - file.lastModified() > MAX_AGE_MS)) return null
         return try {
             PowJson.decodeFromString<List<FootprintWay>>(file.readText())
         } catch (e: Exception) {
