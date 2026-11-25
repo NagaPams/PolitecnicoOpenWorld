@@ -47,7 +47,8 @@ object WeatherRules {
 
 /** Apagón (t14): pasado cierto día de supervivencia se va la luz y la tienda del campus deja de vender. */
 object BlackoutRules {
-    const val FROM_DAY = 4
+    /** t47: con el día de 48 min el día 4 llegaba a las 2 h 24 min reales (antes 1 h 12); el día 3 llega a la 1 h 36 min. */
+    const val FROM_DAY = 3
     /** Sin alumbrado las noches se ven más oscuras: el velo nocturno se multiplica por esto. */
     const val NIGHT_VEIL_FACTOR = 1.5f
     const val MAX_VEIL = 0.6f
