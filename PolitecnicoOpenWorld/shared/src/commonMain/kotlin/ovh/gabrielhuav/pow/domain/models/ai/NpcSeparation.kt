@@ -2,7 +2,10 @@ package ovh.gabrielhuav.pow.domain.models.ai
 
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.Npc
+import ovh.gabrielhuav.pow.domain.models.map.NpcNavState
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
+import ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint
+import ovh.gabrielhuav.pow.domain.models.map.offsetMeters
 import kotlin.math.cos
 import kotlin.math.sqrt
 
@@ -73,3 +76,54 @@ private fun NpcAiManager.pushTo(npcs: MutableList<Npc>, index: Int, fromLat: Dou
     if (exteriorCollisions?.segmentBlocked(npc.location, target) == true) return
     npcs[index] = npc.copy(location = target)
 }
+
+/** Lo máximo que se mueve un coche por tick al separarlo de otro (evita saltos visibles). */
+internal const val CAR_SEPARATION_MAX_STEP_METERS = 0.5
+/** Dos coches a más de esto (m) en latitud no pueden solaparse: descarta rápido sin construir rectángulos. */
+private const val CAR_COARSE_METERS = 8.0
+
+private fun Npc.isTrafficCar(): Boolean = type == NpcType.CAR && displayName.isNullOrEmpty() && !isDying
+
+private fun Npc.footprint() = VehicleFootprint(location, (rotationAngle + 90f) % 360f, carModel.collisionDimensions)
+
+/**
+ * Separa a los coches del tráfico que ya quedaron solapados (cruces, giros, aparición). Un estacionado no se mueve:
+ * el otro sale entero; entre dos en marcha, cada uno cede la mitad. Máximo [CAR_SEPARATION_MAX_STEP_METERS] por tick,
+ * y un empujón que metería al coche en un edificio se descarta. Modifica la lista en su sitio.
+ */
+internal fun NpcAiManager.separateCars(npcs: MutableList<Npc>) {
+    for (i in npcs.indices) {
+        if (!npcs[i].isTrafficCar()) continue
+        for (j in i + 1 until npcs.size) {
+            val a = npcs[i]
+            val b = npcs[j]
+            if (!b.isTrafficCar()) continue
+            val dy = (b.location.latitude - a.location.latitude) * METERS_PER_DEGREE_LAT
+            if (dy > CAR_COARSE_METERS || dy < -CAR_COARSE_METERS) continue
+            val fa = a.footprint()
+            val fb = b.footprint()
+            if (!fa.intersects(fb)) continue
+            val aFixed = a.navState == NpcNavState.PARKED
+            val bFixed = b.navState == NpcNavState.PARKED
+            if (aFixed && bFixed) continue
+            val exitA = fa.separatingOffsetFrom(fb)
+            val share = if (aFixed || bFixed) 1.0 else 0.5
+            if (!aFixed) moveCar(npcs, i, exitA.northMeters * share, exitA.eastMeters * share)
+            if (!bFixed) {
+                val exitB = npcs[j].footprint().separatingOffsetFrom(npcs[i].footprint())
+                moveCar(npcs, j, exitB.northMeters * share, exitB.eastMeters * share)
+            }
+        }
+    }
+}
+
+private fun NpcAiManager.moveCar(npcs: MutableList<Npc>, index: Int, north: Double, east: Double) {
+    val length = sqrt(north * north + east * east)
+    if (length < 1e-6) return
+    val k = if (length > CAR_SEPARATION_MAX_STEP_METERS) CAR_SEPARATION_MAX_STEP_METERS / length else 1.0
+    val npc = npcs[index]
+    val target = npc.location.offsetMeters(north * k, east * k)
+    if (exteriorCollisions?.segmentBlocked(npc.location, target) == true) return
+    npcs[index] = npc.copy(location = target)
+}
+

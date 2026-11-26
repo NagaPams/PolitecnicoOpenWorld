@@ -867,6 +867,7 @@ class NpcAiManager {
             // Los cuerpos a pie no se encimen con el jugador ni entre sí (NpcSeparation.kt).
             val separated = updated.toMutableList()
             separateBodies(separated, pLat0, pLon0)
+            separateCars(separated)
             serverNpcs.clear()
             serverNpcs.addAll(separated)
         }
