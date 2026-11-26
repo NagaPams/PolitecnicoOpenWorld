@@ -29,7 +29,7 @@ object SmokeRules {
     /** Cuanto menos salud, más opaco; se desvanece al subir. */
     fun alpha(phase: Float, health: Double): Float {
         val density = (1.0 - health / SMOKE_BELOW).toFloat().coerceIn(0.15f, 1f)
-        return ((1f - phase) * 0.5f * (0.5f + density * 0.5f)).coerceIn(0f, 0.6f)
+        return ((1f - phase) * 0.95f * (0.5f + density * 0.5f)).coerceIn(0f, 0.85f)
     }
 
     /** Desvío lateral (m) de la bocanada: ondula con el tiempo y crece al subir. */
