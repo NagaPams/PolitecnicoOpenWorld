@@ -687,6 +687,8 @@
     <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
     <string name="recipes_title">📖 Recipes</string>
     <string name="recipes_body">• First-aid kit: 2 sodas + 1 pizza (3 s)\n• Nail bat: 2 boards (4 s)\n• Splint: 1 board + 1 bandage, if fractured (3 s)\n• Campfire: 2 boards (3 s)\n• Can trap: 1 board + 1 soda (2 s)\n• Cooking: X at a stove or campfire with raw or ready food; dirty water is boiled there</string>
+    <string name="howto_title">🎮 How to play</string>
+    <string name="howto_body">• Joystick: walk. B: hit or shoot. Y: get in the car; hold Y: inventory.\n• X: search buildings, open doors, pick up, use furniture, windows and survivors.\n• Hold X: shove zombies off you.\n• Hunger, thirst and energy drop; cold, rain and wet clothes matter too.\n• Search buildings from outside and go in through their door; inside there are beds, taps, a stove and a generator.\n• No water from day 5 and no power from day 3.\n• Noise and hordes: gunshots and the horn draw zombies.</string>
     <string name="pack_weight">⚖️ Weight: %1$.1f / %2$.1f</string>
     <string name="pack_craft_kit">Craft medkit (2 🥤 + 1 🍕)</string>
     <string name="pack_use_kit">Use medkit (+40 HP)</string>

@@ -196,6 +196,9 @@ fun WorldInventoryDialog(
                 if (survivalPack != null) {
                     Text(stringResource(R.string.recipes_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Text(stringResource(R.string.recipes_body), color = Color(0xFFCFD8DC), fontSize = 12.sp)
+                    // Cómo jugar (t81): controles y sistemas de supervivencia en un solo lugar.
+                    Text(stringResource(R.string.howto_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.howto_body), color = Color(0xFFCFD8DC), fontSize = 12.sp)
                 }
                 if (survivalPack != null) {
                     Text(stringResource(R.string.car_health_counts, carHealth.toInt(), boards), color = Color.White, fontSize = 14.sp)

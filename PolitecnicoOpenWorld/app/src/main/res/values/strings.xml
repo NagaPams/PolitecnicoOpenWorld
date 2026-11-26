@@ -689,6 +689,8 @@
     <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
     <string name="recipes_title">📖 Recetas</string>
     <string name="recipes_body">• Botiquín: 2 refrescos + 1 pizza (3 s)\n• Palo con clavos: 2 tablones (4 s)\n• Férula: 1 tablón + 1 venda, si estás fracturado (3 s)\n• Fogata: 2 tablones (3 s)\n• Trampa de latas: 1 tablón + 1 refresco (2 s)\n• Cocinar: X en una estufa o fogata con comida cruda o lista; agua sucia se hierve ahí</string>
+    <string name="howto_title">🎮 Cómo jugar</string>
+    <string name="howto_body">• Joystick: caminar. B: golpear o disparar. Y: subir al coche; mantén Y: inventario.\n• X: buscar edificios, abrir puertas, recoger, usar muebles, ventanas y superviviente.\n• X mantenido: empujar a los zombis pegados.\n• Hambre, sed y energía bajan; el frío, la lluvia y la ropa mojada también cuentan.\n• Los edificios se buscan por fuera y se entra por su puerta; adentro hay camas, grifos, estufa y generador.\n• Sin agua desde el día 5 y sin luz desde el día 3.\n• Ruido y hordas: los disparos y el claxon atraen zombis.</string>
     <string name="pack_weight">⚖️ Peso: %1$.1f / %2$.1f</string>
     <string name="pack_craft_kit">Craftear botiquín (2 🥤 + 1 🍕)</string>
     <string name="pack_use_kit">Usar botiquín (+40 HP)</string>
