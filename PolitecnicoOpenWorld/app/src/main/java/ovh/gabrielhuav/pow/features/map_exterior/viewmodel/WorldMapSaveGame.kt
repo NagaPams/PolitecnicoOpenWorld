@@ -206,6 +206,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     npcAiManager.zoneKills = zoneKills
     lastRegrowDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs)
     // Si la partida cargada ya estaba en apagón no se vuelve a avisar.
+    waterCutAnnounced = !ovh.gabrielhuav.pow.domain.models.survival.WaterRules.running(ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs))
     blackoutAnnounced = ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(
         ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs),
     )

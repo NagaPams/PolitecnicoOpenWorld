@@ -8,11 +8,15 @@ import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.interior.WindowState
 import kotlinx.coroutines.flow.update
 import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
+import ovh.gabrielhuav.pow.domain.models.survival.TapResult
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_not_tired
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_slept
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_cooldown
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_drank
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_dry
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_not_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_boarded
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_broken
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_covered
@@ -38,6 +42,8 @@ object InteriorLootBridge {
     /** Gasta [WindowRules.BOARDS_TO_COVER] tablones; false si no alcanzan. */
     @Volatile var spendBoards: ((Int) -> Boolean)? = null
     @Volatile var boardsCarried: (() -> Int)? = null
+    /** Bebe de un grifo: el mapa sabe el día y la sed. */
+    @Volatile var drinkFromTap: (() -> TapResult)? = null
 
     /** Estado de las ventanas por clave (`WindowRules.key`): vive mientras la app, así un edificio sigue como se dejó. */
     val windowStates = java.util.concurrent.ConcurrentHashMap<String, WindowState>()
@@ -108,6 +114,14 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     }
     if (bestIndex < 0) return false
     val furniture = layout.furniture[bestIndex]
+    if (furniture.kind == FurnitureKind.GRIFO) {
+        showKeyRes(when (InteriorLootBridge.drinkFromTap?.invoke()) {
+            TapResult.DRANK -> Res.string.zinterior_tap_drank
+            TapResult.NOT_THIRSTY -> Res.string.zinterior_tap_not_thirsty
+            else -> Res.string.zinterior_tap_dry
+        })
+        return true
+    }
     if (furniture.kind == FurnitureKind.CAMA) {
         val slept = InteriorLootBridge.sleepInBed?.invoke() == true
         showKeyRes(if (slept) Res.string.zinterior_bed_slept else Res.string.zinterior_bed_not_tired)

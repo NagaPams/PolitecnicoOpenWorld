@@ -22,9 +22,12 @@ import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
 import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.survival.BailoutRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
+import ovh.gabrielhuav.pow.domain.models.survival.TapResult
+import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
+import ovh.gabrielhuav.pow.domain.models.survival.DayRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
@@ -304,6 +307,7 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.applyGains = { gains -> giveSearchGains(gains) == SearchOutcome.GAVE }
     InteriorLootBridge.onCooldown = { key -> (lootTaken[key] ?: 0L) > SystemClock.elapsedRealtime() }
     InteriorLootBridge.sleepInBed = { sleepInBed() }
+    InteriorLootBridge.drinkFromTap = { drinkFromTap() }
     InteriorLootBridge.boardsCarried = { survivalManager.state.value.boards }
     InteriorLootBridge.spendBoards = { n -> if (survivalManager.state.value.boards >= n) { survivalManager.addBoards(-n); true } else false }
     InteriorLootBridge.onWindowBroken = { breakWindowByHand() }
@@ -311,6 +315,14 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
     transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
     return true
+}
+
+/** Beber de un grifo (t14): hay agua hasta el día [WaterRules.CUT_FROM_DAY]; después el grifo está seco. */
+private fun WorldMapViewModel.drinkFromTap(): TapResult {
+    val sv = survivalManager.state.value
+    val result = WaterRules.check(DayRules.daysSurvived(sv.activeMs), sv.needs.thirst)
+    if (result == TapResult.DRANK) survivalManager.setNeeds(WaterRules.drink(sv.needs))
+    return result
 }
 
 /** Romper una ventana a mano (t07): hace ruido de cristales y puede cortar (algo de vida y sangrado). */

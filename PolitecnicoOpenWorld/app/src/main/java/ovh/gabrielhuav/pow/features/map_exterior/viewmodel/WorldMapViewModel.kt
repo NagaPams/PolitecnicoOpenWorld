@@ -442,6 +442,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal var craftJob: kotlinx.coroutines.Job? = null
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
+    internal var waterCutAnnounced = false
     internal var lastMemoryCheckMs = 0L
     /** Cola de avisos de supervivencia (t31). */
     internal val promptQueue = ovh.gabrielhuav.pow.domain.models.survival.PromptQueue()

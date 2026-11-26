@@ -18,6 +18,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
+import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
 import ovh.gabrielhuav.pow.domain.models.survival.WetnessRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
@@ -66,6 +67,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_water_cut_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_pumping
 import ovh.gabrielhuav.pow.shared.recursos.survival_wet
@@ -163,6 +165,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     sleepUntilMs = 0L
     cancelCraft(announce = false)
     blackoutAnnounced = false
+    waterCutAnnounced = false
     promptQueue.clear()
     zoneKills = emptyMap()
     lastRegrowDay = 1
@@ -235,6 +238,12 @@ private fun WorldMapViewModel.announceBlackout() {
         zoneKills = ZoneKillRules.regrow(zoneKills, dayNow - lastRegrowDay)
         npcAiManager.zoneKills = zoneKills
         lastRegrowDay = dayNow
+    }
+    if (!WaterRules.running(dayNow) && !waterCutAnnounced) {
+        waterCutAnnounced = true
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_water_cut_started)) }
+    } else if (WaterRules.running(dayNow)) {
+        waterCutAnnounced = false
     }
     val blackout = BlackoutRules.active(dayNow)
     if (blackout && !blackoutAnnounced) {

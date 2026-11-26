@@ -478,6 +478,10 @@
     <string name="zinterior_window_boarded">🪵 You boarded the window up</string>
     <string name="zinterior_window_need_board">🪟 It is broken: you need a board to cover it</string>
     <string name="zinterior_window_covered">🪵 The window is already boarded</string>
+    <string name="survival_water_cut_started">🚰 The water was cut: taps no longer run</string>
+    <string name="zinterior_tap_drank">🚰 You drank tap water</string>
+    <string name="zinterior_tap_not_thirsty">🚰 You are not thirsty</string>
+    <string name="zinterior_tap_dry">🚰 The tap is dry: no more running water</string>
     <string name="zinterior_furniture_found">🔎 You found something useful</string>
     <string name="zinterior_furniture_empty">🔎 Nothing here</string>
     <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>
