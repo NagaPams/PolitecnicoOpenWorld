@@ -4,7 +4,8 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // coche (sale de su id) y casi siempre poco. Reglas puras. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 object TrunkRules {
-    const val ID_PREFIX = "cajuela_"
+    /** Debe empezar con [SurvivalLoot.ID_PREFIX]: así X lo enruta al botín de supervivencia y no al aviso de coleccionable. */
+    const val ID_PREFIX = SurvivalLoot.ID_PREFIX + "c_"
     /** A esta distancia (m) del coche aparece el punto para registrar su cajuela. */
     const val REACH_METERS = 3.5
     /** Cuánto tarda una cajuela en volver a tener algo (ms de reloj real). */
