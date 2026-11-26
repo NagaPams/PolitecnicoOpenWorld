@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -159,7 +160,7 @@ private fun isoWallQuad(
     }
 }
 
-private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color, val edge: Color, val edgeStroke: Stroke)
+private data class IsoGroundPath(val path: Path, val bounds: Rect, val color: Color, val edge: Color, val edgeStroke: Stroke, val pattern: IsoGroundPattern? = null, val patternStroke: Stroke? = null)
 private data class IsoRoadPath(val path: Path, val bounds: Rect, val stroke: Stroke, val color: Color, val casing: Stroke)
 private class IsoBuildingLayer(
     val layer: GraphicsLayer,
@@ -304,7 +305,9 @@ fun IsoWorldView(
                     FootprintKind.PARKING -> Color(0x99444440) to 0.45f
                     else -> Color(0x883F5A3C) to 0.45f
                 }
-                grounds.add(IsoGroundPath(path, path.getBounds(), color, edge, Stroke(width = edgeMeters * ppmBake)))
+                val groundBounds = path.getBounds()
+                val pattern = isoGroundPattern(kind, groundBounds, ppmBake, footprint.id.hashCode())
+                grounds.add(IsoGroundPath(path, groundBounds, color, edge, Stroke(width = edgeMeters * ppmBake), pattern, pattern?.let { Stroke(width = it.strokeMeters * ppmBake) }))
                 continue
             }
             val rise = (footprint.heightMeters.coerceAtLeast(0.0) * projection.pixelsPerMeter).toFloat()
@@ -496,6 +499,7 @@ fun IsoWorldView(
                 for (ground in grounds) {
                     if (isoOnScreen(ground.bounds, left, top, right, bottom)) {
                         drawPath(ground.path, ground.color)
+                        ground.pattern?.let { pattern -> clipPath(ground.path) { drawPath(pattern.path, pattern.color, style = ground.patternStroke ?: ground.edgeStroke) } }
                         drawPath(ground.path, ground.edge, style = ground.edgeStroke)
                     }
                 }
