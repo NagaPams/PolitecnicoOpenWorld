@@ -18,7 +18,10 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
 import ovh.gabrielhuav.pow.domain.models.survival.BailoutRules
+import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
+import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
@@ -193,6 +196,8 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
             }
         }
         point.kind == LootKind.EDIFICIO -> {
+            // Con supervivencia el edificio se abre: se entra a su interior procedural y ahí se registran los muebles.
+            if (enterBuildingInterior(point)) return
             val outcome = searchBuilding(point)
             taken = outcome == SearchOutcome.GAVE
             when (outcome) {
@@ -275,7 +280,7 @@ private fun WorldMapViewModel.grantConsumable(item: SurvivalItem): Boolean {
 }
 
 /** t68: resultado de registrar un edificio; WEIGHT = algo no cupo por el peso (no por el tope del tipo). */
-private enum class SearchOutcome { GAVE, EMPTY, WEIGHT }
+internal enum class SearchOutcome { GAVE, EMPTY, WEIGHT }
 
 /** t68: si no se recogió nada y la mochila ya no admite un bidón, el motivo es el peso y no que no hiciera falta. */
 private fun emptyHandedMessage(state: SurvivalSubState): org.jetbrains.compose.resources.StringResource =
@@ -285,9 +290,27 @@ private fun emptyHandedMessage(state: SurvivalSubState): org.jetbrains.compose.r
 private fun WorldMapViewModel.searchBuilding(point: LootPoint): SearchOutcome {
     val profile = BuildingSearchRules.profileOf(point.variant)
     val buildingId = point.id.removePrefix(BuildingSearchRules.ID_PREFIX).toLongOrNull() ?: return SearchOutcome.EMPTY
+    return giveSearchGains(BuildingSearchRules.gainsFor(profile, buildingId))
+}
+
+/** Entra al interior procedural de un edificio registrable; false si no se pudo (el registro de afuera sigue valiendo). */
+private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
+    if (!survivalManager.state.value.enabled) return false
+    val buildingId = point.id.removePrefix(BuildingSearchRules.ID_PREFIX).toLongOrNull() ?: return false
+    val building = searchBuildings?.firstOrNull { it.id == buildingId } ?: return false
+    InteriorLootBridge.applyGains = { gains -> giveSearchGains(gains) == SearchOutcome.GAVE }
+    InteriorLootBridge.onCooldown = { key -> (lootTaken[key] ?: 0L) > SystemClock.elapsedRealtime() }
+    InteriorLootBridge.markTaken = { key -> lootTaken[key] = SystemClock.elapsedRealtime() + InteriorLoot.COOLDOWN_MS }
+    val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
+    transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
+    return true
+}
+
+/** Da lo de [gains] a la mochila (y cura el sangrado con la venda); lo que no cabe no se gasta. */
+internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchOutcome {
     var gave = false
     var weightBlocked = false
-    for (gain in BuildingSearchRules.gainsFor(profile, buildingId)) {
+    for (gain in gains) {
         val current = survivalManager.state.value
         when (gain) {
             SearchGain.PIZZA -> if (grantConsumable(SurvivalItem.PIZZA)) gave = true

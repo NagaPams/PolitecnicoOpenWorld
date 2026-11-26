@@ -215,6 +215,8 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
             try {
                 withContext(Dispatchers.IO) {
                     ZombieRoomCatalog.init(applicationContext)
+                    // Interior procedural de un edificio del mapa: se genera a partir del id (huella, tipo y tamaño).
+                    ZombieRoomCatalog.ensureGenerated(startRoomId)
                     // Aplicar matrices guardadas (Modo Diseñador) sobre el catálogo.
                     CollisionMatrixRepository.loadAll(applicationContext).forEach { (roomId, rows) ->
                         if (rows.isNotEmpty()) {
@@ -792,6 +794,8 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
             clearKeyMessageSoon()
             return
         }
+        // 1b2. Interior procedural: registrar el mueble de al lado (botín según su tipo, con enfriamiento).
+        if (currentRoom().generatedLayout != null && searchNearbyFurniture()) return
         // 1c. MISIÓN 2 · SALÓN DE LA MOCHILA (escom_salon_m2): lanzar la LATA APESTOSA (vacía el
         // salón) y, con el salón vacío, RECOGER la mochila de Prankedy. Prioridad sobre puertas.
         // 🆕 2026-07-13: la lata es un ÍTEM DEL INVENTARIO (te la da Prankedy en la plática):

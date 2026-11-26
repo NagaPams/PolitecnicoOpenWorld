@@ -113,7 +113,9 @@ object ZombieRoomCatalog {
         else -> "Palapas"
     }
 
-    val rooms: List<ZombieRoom> = buildList {
+    // Copia al escribir: las salas generadas se añaden en caliente (`ensureGenerated`) y los lectores ven la lista nueva.
+    @Volatile
+    var rooms: List<ZombieRoom> = buildList {
         add(
             ZombieRoom(
                 id = LOBBY_ID,
@@ -338,7 +340,18 @@ object ZombieRoomCatalog {
         }
     }
 
-    private val byId = rooms.associateBy { it.id }
+    private var byId: Map<String, ZombieRoom> = rooms.associateBy { it.id }
+
+    /** Sala de un interior procedural por su id (`gen_...`): se genera y registra la primera vez; null si no es de ese tipo. */
+    @Synchronized
+    fun ensureGenerated(id: String): ZombieRoom? {
+        byId[id]?.let { return it }
+        val room = GeneratedInteriors.build(id) ?: return null
+        rooms = rooms + room
+        byId = byId + (room.id to room)
+        return room
+    }
+
     fun roomById(id: String) = byId[id]
     fun indexOfRoom(id: String) = rooms.indexOfFirst { it.id == id }
 

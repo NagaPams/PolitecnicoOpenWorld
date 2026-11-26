@@ -472,6 +472,10 @@
     <string name="survival_door_dismantled">🪵 Barricade dismantled</string>
     <string name="survival_door_broken">🧟 Zombies broke a barricade!</string>
     <string name="zinterior_salon_empty">🎒 The classroom is empty! There is Prankedy's backpack.</string>
+    <string name="zinterior_furniture_found">🔎 You found something useful</string>
+    <string name="zinterior_furniture_empty">🔎 Nothing here</string>
+    <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>
+    <string name="zinterior_furniture_nothing_useful">🔎 There is something, but you do not need it now</string>
     <string name="zinterior_leave_without_backpack">🎒 You don't have Prankedy's backpack yet. Press again to leave.</string>
     <string name="zinterior_inventory_full">🎒 Inventory full (%1$d slot(s)). Try or discard a key (hold Y).</string>
     <string name="zinterior_stink_thrown">💨 You threw the STINK CAN! The smell is UNBEARABLE…</string>

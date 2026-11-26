@@ -145,7 +145,9 @@ data class ZombieRoom(
     // sobreescribirla en caliente desde el Modo Diseñador. null = sin colisiones.
     @Volatile var collisionMatrix: CollisionMatrix? = null,
     @Volatile var dimensionsLoaded: Boolean = false,
-    @Volatile var initAttempted: Boolean = false
+    @Volatile var initAttempted: Boolean = false,
+    // Planta de un interior procedural (edificios del mapa); null en las salas hechas a mano.
+    val generatedLayout: ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout? = null,
 ) {
     /** ¿La celda fraccionaria (fx,fy) está bloqueada por la matriz de la sala? */
     fun isBlockedFrac(fx: Float, fy: Float): Boolean =

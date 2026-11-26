@@ -275,6 +275,7 @@ fun ZombieGameScreen(
     // Avisa la sala actual (entrada + cada transición interna) para el guardado de partida.
     LaunchedEffect(state.currentRoomIndex) { onRoomChanged(room.id) }
     val effectiveBgAsset = when {
+        room.generatedLayout != null -> room.id
         room.id == ZombieRoomCatalog.LOBBY_ID && state.zombieModeActivated ->
             "BUILDINGS/building_escom_zombie.webp"
         room.type == ZoneType.BUILDING && !state.zombieModeActivated ->
@@ -283,6 +284,11 @@ fun ZombieGameScreen(
     }
     var background by remember(effectiveBgAsset) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(effectiveBgAsset) {
+        val generated = room.generatedLayout
+        if (generated != null) {
+            background = withContext(Dispatchers.Default) { GeneratedInteriorRenderer.render(generated).asImageBitmap() }
+            return@LaunchedEffect
+        }
         background = withContext(Dispatchers.IO) {
             try { context.assets.open(effectiveBgAsset).use { BitmapFactory.decodeStream(it)?.asImageBitmap() } }
             catch (e: Exception) {

@@ -19,7 +19,15 @@ enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERI
 enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO }
 
 /** Un edificio registrable con el punto (afuera de su pared) donde se registra. */
-data class SearchableBuilding(val id: Long, val profile: SearchProfile, val latitude: Double, val longitude: Double)
+data class SearchableBuilding(
+    val id: Long,
+    val profile: SearchProfile,
+    val latitude: Double,
+    val longitude: Double,
+    /** Ancho y fondo aproximados de la huella (m): de ahí sale la planta del interior procedural. */
+    val widthM: Double = 12.0,
+    val depthM: Double = 10.0,
+)
 
 object BuildingSearchRules {
     const val ID_PREFIX = SurvivalLoot.ID_PREFIX + "b_"
@@ -92,7 +100,14 @@ object BuildingSearchRules {
         for (fp in footprints) {
             if ((fp.kind != FootprintKind.BUILDING && fp.kind != FootprintKind.ROOF) || fp.doors.isNotEmpty() || fp.id in ART_IDS) continue
             val point = outsidePoint(fp.points) ?: continue
-            out.add(SearchableBuilding(fp.id, profileFor(fp.name, fp.amenity, fp.buildingType), point.latitude, point.longitude))
+            val minLat = fp.points.minOf { it.latitude }
+            val maxLat = fp.points.maxOf { it.latitude }
+            val minLon = fp.points.minOf { it.longitude }
+            val maxLon = fp.points.maxOf { it.longitude }
+            val lonScale = cos((minLat + maxLat) / 2.0 * PI_OVER_180)
+            val spanX = (maxLon - minLon) * METERS_PER_DEGREE * lonScale
+            val spanY = (maxLat - minLat) * METERS_PER_DEGREE
+            out.add(SearchableBuilding(fp.id, profileFor(fp.name, fp.amenity, fp.buildingType), point.latitude, point.longitude, maxOf(spanX, spanY), minOf(spanX, spanY)))
         }
         return out
     }

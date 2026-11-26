@@ -472,6 +472,10 @@
     <string name="survival_door_dismantled">🪵 Barricada desmontada</string>
     <string name="survival_door_broken">🧟 ¡Los zombis rompieron una barricada!</string>
     <string name="zinterior_salon_empty">🎒 ¡El salón quedó vacío! Ahí está la mochila de Prankedy.</string>
+    <string name="zinterior_furniture_found">🔎 Encontraste algo útil</string>
+    <string name="zinterior_furniture_empty">🔎 No hay nada aquí</string>
+    <string name="zinterior_furniture_cooldown">🔎 Ya lo registraste hace poco</string>
+    <string name="zinterior_furniture_nothing_useful">🔎 Hay algo, pero no te hace falta ahora</string>
     <string name="zinterior_leave_without_backpack">🎒 Aún no tienes la mochila de Prankedy. Pulsa de nuevo para salir.</string>
     <string name="zinterior_inventory_full">🎒 Inventario lleno (%1$d slot(s)). Prueba o desecha una llave (mantén Y).</string>
     <string name="zinterior_stink_thrown">💨 ¡Lanzaste la LATA APESTOSA! El olor es INSOPORTABLE…</string>
