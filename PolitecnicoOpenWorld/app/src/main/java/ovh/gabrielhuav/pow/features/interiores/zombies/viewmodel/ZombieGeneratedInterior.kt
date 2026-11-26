@@ -7,6 +7,7 @@ import ovh.gabrielhuav.pow.domain.models.interior.WindowAction
 import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.interior.WindowState
 import kotlinx.coroutines.flow.update
+import ovh.gabrielhuav.pow.domain.models.survival.CookResult
 import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
 import ovh.gabrielhuav.pow.domain.models.survival.TapResult
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
@@ -14,6 +15,9 @@ import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_not_tired
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_slept
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_cooldown
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_no_food
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_not_hungry
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_drank
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_dry
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_not_thirsty
@@ -44,6 +48,8 @@ object InteriorLootBridge {
     @Volatile var boardsCarried: (() -> Int)? = null
     /** Bebe de un grifo: el mapa sabe el día y la sed. */
     @Volatile var drinkFromTap: (() -> TapResult)? = null
+    /** Cocina una comida de la mochila en la estufa. */
+    @Volatile var cookMeal: (() -> CookResult)? = null
 
     /** Estado de las ventanas por clave (`WindowRules.key`): vive mientras la app, así un edificio sigue como se dejó. */
     val windowStates = java.util.concurrent.ConcurrentHashMap<String, WindowState>()
@@ -114,6 +120,14 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     }
     if (bestIndex < 0) return false
     val furniture = layout.furniture[bestIndex]
+    if (furniture.kind == FurnitureKind.COCINA) {
+        showKeyRes(when (InteriorLootBridge.cookMeal?.invoke()) {
+            CookResult.COOKED -> Res.string.zinterior_stove_cooked
+            CookResult.NOT_HUNGRY -> Res.string.zinterior_stove_not_hungry
+            else -> Res.string.zinterior_stove_no_food
+        })
+        return true
+    }
     if (furniture.kind == FurnitureKind.GRIFO) {
         showKeyRes(when (InteriorLootBridge.drinkFromTap?.invoke()) {
             TapResult.DRANK -> Res.string.zinterior_tap_drank

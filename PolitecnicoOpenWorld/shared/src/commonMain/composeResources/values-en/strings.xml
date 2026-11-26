@@ -482,6 +482,9 @@
     <string name="zinterior_tap_drank">🚰 You drank tap water</string>
     <string name="zinterior_tap_not_thirsty">🚰 You are not thirsty</string>
     <string name="zinterior_tap_dry">🚰 The tap is dry: no more running water</string>
+    <string name="zinterior_stove_cooked">🍳 You heated the meal: it feeds you a lot more</string>
+    <string name="zinterior_stove_no_food">🍳 You are not carrying food to cook</string>
+    <string name="zinterior_stove_not_hungry">🍳 You are not hungry</string>
     <string name="zinterior_furniture_found">🔎 You found something useful</string>
     <string name="zinterior_furniture_empty">🔎 Nothing here</string>
     <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>

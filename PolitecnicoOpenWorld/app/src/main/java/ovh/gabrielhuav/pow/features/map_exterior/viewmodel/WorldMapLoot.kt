@@ -26,6 +26,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.TapResult
 import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
+import ovh.gabrielhuav.pow.domain.models.survival.CookResult
+import ovh.gabrielhuav.pow.domain.models.survival.CookRules
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
 import ovh.gabrielhuav.pow.domain.models.survival.DayRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
@@ -308,6 +310,7 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.onCooldown = { key -> (lootTaken[key] ?: 0L) > SystemClock.elapsedRealtime() }
     InteriorLootBridge.sleepInBed = { sleepInBed() }
     InteriorLootBridge.drinkFromTap = { drinkFromTap() }
+    InteriorLootBridge.cookMeal = { cookMeal() }
     InteriorLootBridge.boardsCarried = { survivalManager.state.value.boards }
     InteriorLootBridge.spendBoards = { n -> if (survivalManager.state.value.boards >= n) { survivalManager.addBoards(-n); true } else false }
     InteriorLootBridge.onWindowBroken = { breakWindowByHand() }
@@ -315,6 +318,18 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
     transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
     return true
+}
+
+/** Cocinar en la estufa (t16): gasta una comida de la mochila y alimenta más que comerla fría. */
+private fun WorldMapViewModel.cookMeal(): CookResult {
+    val sv = survivalManager.state.value
+    val result = CookRules.check(sv.pack, sv.needs)
+    if (result == CookResult.COOKED) {
+        val (pack, needs) = CookRules.cook(sv.pack, sv.needs)
+        survivalManager.setPack(pack)
+        survivalManager.setNeeds(needs)
+    }
+    return result
 }
 
 /** Beber de un grifo (t14): hay agua hasta el día [WaterRules.CUT_FROM_DAY]; después el grifo está seco. */
