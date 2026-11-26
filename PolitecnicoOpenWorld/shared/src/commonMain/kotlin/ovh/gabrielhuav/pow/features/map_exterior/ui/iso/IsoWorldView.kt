@@ -102,6 +102,8 @@ private const val ISO_WINDOW_BASE_M = 1.0
 private const val ISO_WINDOW_HEIGHT_M = 1.3
 private const val ISO_DOOR_HEIGHT_M = 2.2
 private const val ISO_MIN_PERSON_PX = 44f
+/** El gato usa la misma hoja de personaje: se dibuja a ~1/4 del alto de una persona. */
+private const val ISO_CAT_SIZE = 0.3f
 private const val ISO_MAX_SPRITE_BOOST = 2.5f
 
 // Hoja del jugador al estándar POW (tools/slice_iso_player.py): 5 direcciones x 8 cuadros.
@@ -691,7 +693,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIsoActor(
                 drawIsoCarSprite(sprite, x, y, width, height, tint)
             }
         } else {
-            drawIsoPlayerFrame(sprite, x, y, pixelsPerMeter * personBoost, actors.mirrors[index], if (type == NpcType.ZOMBIE) ISO_ZOMBIE_TINT else null)
+            drawIsoPlayerFrame(sprite, x, y, pixelsPerMeter * personBoost * (if (type == NpcType.CAT) ISO_CAT_SIZE else 1f), actors.mirrors[index], if (type == NpcType.ZOMBIE) ISO_ZOMBIE_TINT else null)
         }
         return
     }

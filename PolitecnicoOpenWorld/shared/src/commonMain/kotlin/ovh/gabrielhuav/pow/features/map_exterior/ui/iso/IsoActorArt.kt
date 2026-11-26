@@ -47,6 +47,12 @@ private val ZOMBIE_SKINS = arrayOf(
     "ZOMBIE/Iso/zombie_10_mantenimiento",
 )
 private const val COP_SKIN = "POLICE/Iso/police_officer"
+// Skins añadidas sin quitar las anteriores (t22, arte provisional generado por código; ver tools/make_iso_derived_sheets.py):
+// paramédico y Prankedy como peatones raros, granaderos como parte de la policía a pie y el gato del campus.
+private const val PARAMEDIC_SKIN = "NPC/Iso/paramedico"
+private const val PRANKEDY_SKIN = "NPC/Iso/prankedy"
+private const val CAT_SKIN = "NPC/Iso/cat"
+private val RIOT_COP_SKINS = arrayOf("POLICE/Iso/granadero_hombre", "POLICE/Iso/granadero_mujer")
 
 /** Vehículos isométricos: carpeta y largo en metros con el que se dibuja el lienzo (ancho del sprite). */
 internal enum class IsoVehicle(val folder: String, val drawMeters: Float, val tintable: Boolean) {
@@ -78,10 +84,24 @@ internal fun isoVehicleFor(type: NpcType?, model: CarModel, id: String): IsoVehi
 
 /** Carpeta de la skin de un personaje (estable por id) o null si el tipo no usa hojas. */
 internal fun isoSkinFor(type: NpcType?, id: String): String? = when (type) {
-    NpcType.PERSON -> PERSON_SKINS[id.hashCode().mod(PERSON_SKINS.size)]
+    NpcType.PERSON -> personSkin(id)
     NpcType.ZOMBIE -> ZOMBIE_SKINS[id.hashCode().mod(ZOMBIE_SKINS.size)]
-    NpcType.POLICE_COP -> COP_SKIN
+    NpcType.POLICE_COP -> copSkin(id)
+    NpcType.CAT -> CAT_SKIN
     else -> null
+}
+
+/** Peatón: 1 de cada 24 es paramédico o Prankedy; el resto conserva el reparto de siempre por id. */
+internal fun personSkin(id: String): String = when ((id.hashCode() ushr 7).mod(24)) {
+    0 -> PARAMEDIC_SKIN
+    1 -> PRANKEDY_SKIN
+    else -> PERSON_SKINS[id.hashCode().mod(PERSON_SKINS.size)]
+}
+
+/** Policía a pie: 1 de cada 3 es granadero (hombre o mujer); el resto, el oficial de siempre. */
+internal fun copSkin(id: String): String {
+    val h = (id.hashCode() ushr 5).mod(6)
+    return if (h < 2) RIOT_COP_SKINS[h] else COP_SKIN
 }
 
 /** Última posición y sector de pantalla de un actor, para elegir dirección y animar sin que el modelo traiga rumbo. */
