@@ -606,6 +606,7 @@ fun WorldMapScreen(
                     playerMoveAngle = uiState.playerMoveAngle,
                     playerAction = uiState.playerAction,
                     vehicleColor = uiState.currentVehicleColor,
+                    vehicleHealth = uiState.survivalVehicleHealth,
                     lootPoints = uiState.survivalLoot,
                 )
             }

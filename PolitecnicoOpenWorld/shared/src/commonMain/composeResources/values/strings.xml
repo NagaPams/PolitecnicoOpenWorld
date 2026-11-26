@@ -455,6 +455,8 @@
     <string name="survival_horde_arrived">🧟 Una horda llegó a esta zona: corre o escóndete</string>
     <string name="survival_trap_built">🥫 Armaste una trampa de latas: suena cuando pasa un zombi</string>
     <string name="survival_trap_fired">🥫 Sonó una trampa de latas: los zombis van hacia allá</string>
+    <string name="survival_trunk_searched">🧰 Registraste la cajuela y encontraste algo</string>
+    <string name="survival_trunk_empty">🧰 La cajuela está vacía</string>
     <string name="survival_trap_dismantled">🥫 Desarmaste la trampa y recuperaste el tablón</string>
     <string name="survival_cold">🥶 Hace frío: busca un abrigo o sube a un coche</string>
     <string name="survival_fracture_healed">🦴 Tu fractura sanó</string>

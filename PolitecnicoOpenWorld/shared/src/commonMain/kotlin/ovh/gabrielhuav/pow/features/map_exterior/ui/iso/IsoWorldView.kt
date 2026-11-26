@@ -42,6 +42,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import ovh.gabrielhuav.pow.platform.assets.PowAssets
 import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
+import ovh.gabrielhuav.pow.domain.models.map.SmokeRules
 import ovh.gabrielhuav.pow.domain.models.map.VehicleDepthRules
 import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
@@ -249,6 +250,8 @@ fun IsoWorldView(
     playerAction: PlayerAction = PlayerAction.IDLE,
     vehicleColor: Int? = null,
     lootPoints: List<LootPoint> = emptyList(),
+    /** Salud del coche del jugador (0-100): con poca sale humo del motor (t04). */
+    vehicleHealth: Double = 100.0,
 ) {
     if (center == null) return
     val graphicsContext = LocalGraphicsContext.current
@@ -270,6 +273,7 @@ fun IsoWorldView(
     val moveAngleState by rememberUpdatedState(playerMoveAngle)
     val actionState by rememberUpdatedState(playerAction)
     val vehicleColorState by rememberUpdatedState(vehicleColor)
+    val vehicleHealthState by rememberUpdatedState(vehicleHealth)
     val layerPool = remember { IsoLayerPool(graphicsContext) }
     val density = LocalDensity.current.density.toDouble()
     val reference = remember(footprints) { footprints.firstOrNull()?.points?.firstOrNull() ?: center }
@@ -575,6 +579,18 @@ fun IsoWorldView(
                 while (actorIndex < actors.size) {
                     drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame)
                 }
+                if (drivingState && SmokeRules.smokes(vehicleHealthState)) {
+                    // Humo del motor: bocanadas grises que suben y se ensanchan (sin asignaciones: solo círculos).
+                    val ppm = projection.pixelsPerMeter.toFloat()
+                    for (i in 0 until SmokeRules.PUFFS) {
+                        val phase = SmokeRules.phase(elapsed, i)
+                        drawCircle(
+                            Color(0xFF9AA0A6).copy(alpha = SmokeRules.alpha(phase, vehicleHealthState)),
+                            ppm * SmokeRules.radiusMeters(phase),
+                            Offset(playerX + ppm * SmokeRules.driftMeters(elapsed, i, phase), playerY - ppm * SmokeRules.riseMeters(phase)),
+                        )
+                    }
+                }
             }
             val radius = IsoFogRules.radiusPx(fogVisionMeters, projection.pixelsPerMeter, scale, density.toFloat(), size.minDimension, fogMaxFraction)
             // t34: viñeta radial suave en vez de un óvalo de borde duro; el degradado se arma solo si cambia el radio o el tamaño.
@@ -812,4 +828,5 @@ private fun isoLootColor(kind: LootKind): Color = when (kind) {
     LootKind.EDIFICIO -> Color(0xFF7FD6C8)
     LootKind.FOGATA -> Color(0xFFFF6A00)
     LootKind.TRAMPA -> Color(0xFF9E9E9E)
+    LootKind.COCHE -> Color(0xFF90A4AE)
 }

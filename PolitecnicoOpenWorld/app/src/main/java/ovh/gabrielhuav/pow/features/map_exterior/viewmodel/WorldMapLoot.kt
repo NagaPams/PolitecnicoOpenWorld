@@ -8,6 +8,8 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
+import ovh.gabrielhuav.pow.domain.models.map.NpcNavState
+import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
 import ovh.gabrielhuav.pow.domain.models.survival.BuildingSearchRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
@@ -18,6 +20,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
+import ovh.gabrielhuav.pow.domain.models.survival.TrunkRules
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
 import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.survival.BailoutRules
@@ -30,6 +33,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
 import ovh.gabrielhuav.pow.domain.models.survival.GroupRules
 import ovh.gabrielhuav.pow.domain.models.survival.CookResult
 import ovh.gabrielhuav.pow.shared.recursos.survival_trap_dismantled
+import ovh.gabrielhuav.pow.shared.recursos.survival_trunk_empty
+import ovh.gabrielhuav.pow.shared.recursos.survival_trunk_searched
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_boiled
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked_raw
@@ -90,7 +95,7 @@ private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -131,6 +136,14 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
             if (lootTaken.containsKey(id)) continue
             anchored.add(LootPoint(id, LootKind.EDIFICIO, b.latitude, b.longitude, b.profile.ordinal))
         }
+    }
+    // Cajuelas de los coches estacionados cercanos (cooldown por coche en lootTaken).
+    for (npc in remoteEntities.values) {
+        if (npc.type != NpcType.CAR || npc.navState != NpcNavState.PARKED || !npc.displayName.isNullOrEmpty()) continue
+        if (abs(npc.location.latitude - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(npc.location.longitude - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        val id = TrunkRules.key(npc.id)
+        if (lootTaken.containsKey(id)) continue
+        anchored.add(LootPoint(id, LootKind.COCHE, npc.location.latitude, npc.location.longitude))
     }
     for ((id, pos) in traps) {
         if (abs(pos.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(pos.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
@@ -224,6 +237,22 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 Res.string.survival_ammo_found
             }
         }
+        point.kind == LootKind.COCHE -> {
+            // Cajuela de un coche estacionado: lo que hay depende de su id.
+            val gains = TrunkRules.gainsFor(point.id.removePrefix(TrunkRules.ID_PREFIX))
+            if (gains.isEmpty()) {
+                taken = true
+                Res.string.survival_trunk_empty
+            } else {
+                val outcome = giveSearchGains(gains)
+                taken = outcome == SearchOutcome.GAVE
+                when (outcome) {
+                    SearchOutcome.GAVE -> Res.string.survival_trunk_searched
+                    SearchOutcome.WEIGHT -> Res.string.survival_pack_full
+                    SearchOutcome.EMPTY -> Res.string.survival_not_needed
+                }
+            }
+        }
         point.kind == LootKind.TRAMPA -> {
             // X sobre una trampa la desarma y devuelve el tablón.
             if (traps.remove(point.id) != null) {
@@ -280,7 +309,7 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
     }
     if (taken) {
         soundManager.playItem()
-        lootTaken[id] = SystemClock.elapsedRealtime() + when (point.kind) { LootKind.CONTENEDOR -> CONTAINER_COOLDOWN_MS; LootKind.EDIFICIO -> BuildingSearchRules.COOLDOWN_MS; else -> LOOT_COOLDOWN_MS }
+        lootTaken[id] = SystemClock.elapsedRealtime() + when (point.kind) { LootKind.CONTENEDOR -> CONTAINER_COOLDOWN_MS; LootKind.EDIFICIO -> BuildingSearchRules.COOLDOWN_MS; LootKind.COCHE -> TrunkRules.COOLDOWN_MS; else -> LOOT_COOLDOWN_MS }
         collectiblesManager.clearNearby()
         lootCellKey = Long.MIN_VALUE
         refreshSurvivalLoot()

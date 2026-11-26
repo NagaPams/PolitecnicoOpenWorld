@@ -455,6 +455,8 @@
     <string name="survival_horde_arrived">🧟 A horde has reached this area: run or hide</string>
     <string name="survival_trap_built">🥫 You set a can trap: it rings when a zombie walks by</string>
     <string name="survival_trap_fired">🥫 A can trap went off: zombies are heading there</string>
+    <string name="survival_trunk_searched">🧰 You searched the trunk and found something</string>
+    <string name="survival_trunk_empty">🧰 The trunk is empty</string>
     <string name="survival_trap_dismantled">🥫 You took the trap apart and got the board back</string>
     <string name="survival_cold">🥶 It is cold: find a coat or get in a car</string>
     <string name="survival_fracture_healed">🦴 Your fracture healed</string>
