@@ -691,6 +691,28 @@ fun ZombieGameScreen(
                     }
                 }
 
+                if (isoLayout != null && isoBlocks.isNotEmpty() && state.zombies.isNotEmpty()) {
+                    // t82: lo mismo que con el jugador, pero para cada zombi (antes de dibujar al jugador, para no tapar a quien va delante).
+                    val cellPx = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        translate(cam.offsetX, cam.offsetY) {
+                            scale(cam.scale, cam.scale, pivot = Offset.Zero) {
+                                for (z in state.zombies) {
+                                    val zKey = (z.x / cellPx).toInt() + (z.y / cellPx).toInt()
+                                    val zbx = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(z.x / cellPx, z.y / cellPx, isoLayout.rows)
+                                    val zby = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(z.x / cellPx, z.y / cellPx)
+                                    for (blk in isoBlocks) {
+                                        if (blk.key <= zKey) continue
+                                        if (blk.x > zbx + 70f || blk.x + blk.image.width < zbx - 70f) continue
+                                        if (blk.y > zby + 24f || blk.y + blk.image.height < zby - 150f) continue
+                                        drawImage(blk.image, IntOffset(blk.x, blk.y))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Jugadores remotos y NPCs. `room.playerScaleMul` aplica IGUAL que al jugador:
                 // en salas con fondo que achica los sprites (salones ENCB / salón M2, ×3) los
                 // NPCs ambientales se veían diminutos junto al jugador (QA 2026-07-13).

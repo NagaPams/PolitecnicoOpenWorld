@@ -310,7 +310,7 @@ internal object GeneratedInteriorRenderer {
             val onThis = when (win.side) {
                 WallSide.NORTE -> col == win.index && row == 0
                 WallSide.OESTE -> col == 0 && row == win.index
-                WallSide.ESTE -> false
+                WallSide.ESTE -> col == layout.cols - 1 && row == win.index
             }
             if (onThis) drawWindowFace(canvas, paint, layout.rows, col, row, win.side, height, windowState(index))
         }
@@ -327,6 +327,12 @@ internal object GeneratedInteriorRenderer {
             WindowState.REFORZADA -> 0xFFB8C2CC.toInt()
             WindowState.TAPIADA -> 0xFF9A7345.toInt()
             else -> 0
+        }
+        if (side == WallSide.ESTE) {
+            // El muro este es bajo y su cara interior mira para otro lado: la ventana se marca sobre su tapa.
+            fillQuad(canvas, paint, rows, color, col, row, 1, 1, height + 0.5f)
+            if (bar != 0) fillQuad(canvas, paint, rows, bar, col, row, 1, 1, height + 1f)
+            return
         }
         // La cara visible del muro norte es la de +fila; la del muro oeste, la de +columna.
         val edge = if (side == WallSide.NORTE) {
