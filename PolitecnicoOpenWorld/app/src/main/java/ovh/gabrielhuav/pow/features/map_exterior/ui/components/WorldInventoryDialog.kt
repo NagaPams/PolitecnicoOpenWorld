@@ -82,6 +82,7 @@ fun WorldInventoryDialog(
     onCraftNailBat: () -> Unit = {},
     fractured: Boolean = false,
     onCraftSplint: () -> Unit = {},
+    onCraftCampfire: () -> Unit = {},
     coat: Boolean = false,
 ) {
     Box(
@@ -172,6 +173,11 @@ fun WorldInventoryDialog(
                         enabled = boards >= RecipeRules.NAIL_BAT_BOARDS,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D4037), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_craft_nailbat), fontSize = 12.sp) }
+                    Button(
+                        onClick = onCraftCampfire,
+                        enabled = boards >= RecipeRules.CAMPFIRE_BOARDS,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBF360C), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_craft_campfire), fontSize = 12.sp) }
                     if (fractured) Button(
                         onClick = onCraftSplint,
                         enabled = boards >= 1 && survivalPack.vendas >= 1,

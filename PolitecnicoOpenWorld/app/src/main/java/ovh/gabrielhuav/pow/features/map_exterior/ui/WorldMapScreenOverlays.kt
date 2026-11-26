@@ -273,6 +273,7 @@ fun WorldMapOverlays(
             onCraftNailBat = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.PALO_CLAVOS) },
             fractured = uiState.survivalFractured,
             onCraftSplint = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.FERULA) },
+            onCraftCampfire = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.FOGATA) },
             coat = uiState.survivalCoat,
         )
     }

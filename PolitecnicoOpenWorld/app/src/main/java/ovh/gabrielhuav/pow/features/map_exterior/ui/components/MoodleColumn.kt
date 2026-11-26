@@ -33,11 +33,11 @@ fun MoodleColumn(state: WorldMapState, health: Int, modifier: Modifier = Modifie
     val weight = SurvivalCrafting.weightOf(state.survivalPack)
     val moodles = remember(
         state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, health, state.survivalWetness,
+        state.survivalInfection, weight, state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, state.survivalWarm, health, state.survivalWetness,
     ) {
         MoodleRules.active(
             state.survivalNeeds, state.survivalStamina, state.survivalBleeding, state.survivalFractured,
-            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving, WetnessRules.isSoaked(state.survivalWetness)), health.toDouble(), state.survivalWetness,
+            state.survivalInfection, weight, TemperatureRules.coldLevel(state.survivalWeather, state.nightAlpha > 0.05f, state.survivalCoat, state.isDriving || state.survivalWarm, WetnessRules.isSoaked(state.survivalWetness)), health.toDouble(), state.survivalWetness,
         )
     }
     if (moodles.isEmpty()) return

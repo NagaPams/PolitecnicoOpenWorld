@@ -16,6 +16,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.NeedEffectRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
+import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
 import ovh.gabrielhuav.pow.domain.models.survival.PoliceSweepRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
@@ -67,6 +68,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_craft_nailbat
 import ovh.gabrielhuav.pow.shared.recursos.survival_craft_zombies
 import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
+import ovh.gabrielhuav.pow.shared.recursos.survival_campfire_built
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
 import ovh.gabrielhuav.pow.shared.recursos.survival_water_cut_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_full
@@ -276,6 +278,36 @@ private fun WorldMapViewModel.updatePoliceSweep(player: GeoPoint) {
     if (policeLastShotMs.size > 40) policeLastShotMs.clear()
 }
 
+/** t14: arma una fogata en la posición del jugador; arde [CampfireRules.BURN_MS] y es un punto de botín que sirve de estufa. */
+private fun WorldMapViewModel.placeCampfire() {
+    val here = _uiState.value.currentLocation ?: return
+    if (campfires.size >= CampfireRules.MAX_FIRES) campfires.remove(campfires.keys.first())
+    campfireCounter++
+    campfires["${LOOT_FIRE_PREFIX}$campfireCounter"] = Triple(here.latitude, here.longitude, SystemClock.elapsedRealtime() + CampfireRules.BURN_MS)
+    lootCellKey = Long.MIN_VALUE
+}
+
+/** Una vez por segundo: apaga las fogatas gastadas y dice si el jugador está al calor de alguna. */
+private fun WorldMapViewModel.updateCampfires(s: WorldMapState): Boolean {
+    val now = SystemClock.elapsedRealtime()
+    val here = s.currentLocation
+    var warm = false
+    var expired = false
+    val iterator = campfires.entries.iterator()
+    while (iterator.hasNext()) {
+        val (id, fire) = iterator.next()
+        if (!CampfireRules.isLit(now, fire.third)) {
+            iterator.remove()
+            expired = true
+            continue
+        }
+        if (here != null && CampfireRules.warms(here.latitude, here.longitude, fire.first, fire.second)) warm = true
+    }
+    if (expired) lootCellKey = Long.MIN_VALUE
+    if (s.survivalWarm != warm) _uiState.update { it.copy(survivalWarm = warm) }
+    return warm
+}
+
 /** Un zombi murió a manos del jugador (t18): se anota en su zona y, al despejarla, se avisa. */
 internal fun WorldMapViewModel.onZombieKilled(at: GeoPoint) {
     if (!survivalManager.state.value.enabled) return
@@ -350,11 +382,13 @@ private suspend fun WorldMapViewModel.finishCraft(recipe: Recipe) {
     survivalManager.setArsenal(result.arsenal)
     soundManager.playItem()
     if (recipe == Recipe.PALO_CLAVOS) onSkillUse(Skill.CARPINTERIA, 3)
+    if (recipe == Recipe.FOGATA) placeCampfire()
     if (recipe == Recipe.FERULA) survivalManager.setFractureHealsAt(0L)
     showSurvivalPrompt(getString(when (recipe) {
         Recipe.BOTIQUIN -> Res.string.survival_kit_crafted
         Recipe.FERULA -> Res.string.survival_splint_crafted
         Recipe.PALO_CLAVOS -> Res.string.survival_craft_nailbat
+        Recipe.FOGATA -> Res.string.survival_campfire_built
     }))
 }
 
@@ -475,7 +509,7 @@ private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
     if (lowFuelLatch.fire(s.isDriving && fuelTank > 0.0 && fuelTank < LOW_FUEL_NOTICE, fuelTank >= LOW_FUEL_NOTICE + 10.0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fuel_low)) }
     }
-    val cold = TemperatureRules.coldLevel(sv.weather, s.nightAlpha > 0.05f, sv.coat, s.isDriving, WetnessRules.isSoaked(sv.wetness))
+    val cold = TemperatureRules.coldLevel(sv.weather, s.nightAlpha > 0.05f, sv.coat, s.isDriving || s.survivalWarm, WetnessRules.isSoaked(sv.wetness))
     if (coldLatch.fire(cold >= 1, cold == 0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_cold)) }
     }
@@ -559,7 +593,8 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))
     survivalManager.addActiveMs(elapsed.coerceAtMost(1000L))
     val dressed = survivalManager.state.value
-    survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving, elapsed.coerceAtMost(1000L) / 1000.0))
+    val warm = updateCampfires(s)
+    survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving || warm, elapsed.coerceAtMost(1000L) / 1000.0))
     announceBlackout()
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING
@@ -586,6 +621,6 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     survivalManager.setStamina(staminaState.value)
     // El avance de necesidades corre fuera del bloqueo de vida; dentro solo se aplica el daño (h12).
     val deltaMs = elapsed.coerceAtMost(1000L)
-    val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f) ?: return
+    val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f, warm) ?: return
     combatManager.updateHealth { health -> survivalManager.healthAfter(health, advanced, deltaMs) }
 }

@@ -668,6 +668,7 @@
     <string name="moodle_mojado">Wet clothes: rain chills you more</string>
     <string name="moodle_frio">Cold: night and rain tire you faster</string>
     <string name="moodle_herido">Hurt: low health, heal with a medkit</string>
+    <string name="pack_craft_campfire">Campfire (2 boards)</string>
     <string name="pack_craft_splint">Splint (1 board + 1 bandage)</string>
     <string name="pack_coat_on">🧥 Coat on</string>
     <string name="ctx_board_car">Y: get in the car</string>

@@ -223,11 +223,11 @@ class SurvivalManager(enabled: Boolean = false) {
      * Avanza necesidades e infección y devuelve el estado resultante, o null si no corre (apagado, en pausa o
      * sin tiempo). NO toca la vida: así el cálculo va FUERA del bloqueo de vida (h12) y solo el daño se aplica dentro.
      */
-    fun advance(deltaMs: Long, enabled: Boolean, paused: Boolean, activity: SurvivalActivity, night: Boolean): SurvivalSubState? {
+    fun advance(deltaMs: Long, enabled: Boolean, paused: Boolean, activity: SurvivalActivity, night: Boolean, warm: Boolean = false): SurvivalSubState? {
         if (!enabled || paused || deltaMs <= 0) return null
         val current = mutableState.value
         val infection = current.infection.advance(deltaMs)
-        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night, current.coat, activity == SurvivalActivity.DRIVING, WetnessRules.isSoaked(current.wetness)))
+        val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather), TemperatureRules.energyScale(current.weather, night, current.coat, activity == SurvivalActivity.DRIVING || warm, WetnessRules.isSoaked(current.wetness)))
         val next = current.copy(needs = needs, infection = infection)
         mutableState.value = next
         return next

@@ -75,6 +75,8 @@ data class WorldMapState(
     /** t20: hay un coche al alcance de Y (subir); lo calcula `updateContextActionTick` a ~4 Hz. */
     val nearCar: Boolean = false,
     val survivalCoat: Boolean = false,
+    /** t14: está al calor de una fogata (cuenta como estar a cubierto del frío). */
+    val survivalWarm: Boolean = false,
     /** t11: humedad de la ropa (0-100), de `SurvivalManager`. */
     val survivalWetness: Double = 0.0,
     val survivalStamina: Double = 100.0,

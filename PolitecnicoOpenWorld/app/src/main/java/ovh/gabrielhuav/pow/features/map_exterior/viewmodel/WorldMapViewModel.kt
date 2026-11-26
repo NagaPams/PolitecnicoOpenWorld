@@ -443,6 +443,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
     internal var waterCutAnnounced = false
+    /** t14: fogatas encendidas (id → posición y hasta cuándo arden, reloj real). */
+    internal val campfires = HashMap<String, Triple<Double, Double, Long>>()
+    internal var campfireCounter = 0
     internal val policeLastShotMs = HashMap<String, Long>()
     internal var lastMemoryCheckMs = 0L
     /** Cola de avisos de supervivencia (t31). */

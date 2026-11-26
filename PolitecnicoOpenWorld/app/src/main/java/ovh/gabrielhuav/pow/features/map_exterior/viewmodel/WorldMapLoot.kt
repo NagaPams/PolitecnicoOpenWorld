@@ -26,7 +26,14 @@ import ovh.gabrielhuav.pow.domain.models.survival.TapResult
 import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
+import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
 import ovh.gabrielhuav.pow.domain.models.survival.CookResult
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_boiled
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked_raw
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_no_food
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_not_hungry
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_not_thirsty
 import ovh.gabrielhuav.pow.domain.models.survival.CookRules
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
 import ovh.gabrielhuav.pow.domain.models.survival.DayRules
@@ -72,12 +79,15 @@ private const val LOOT_MAX_SNAP_DEGREES = 0.0006
 /** Los edificios registrables se muestran a menos de esto (grados, ~110 m) del jugador. */
 private const val BUILDING_VISIBLE_DEGREES = 0.001
 
+/** Prefijo del id de las fogatas como punto de botín (la X sobre una cocina la comida). */
+internal const val LOOT_FIRE_PREFIX = "fogata_"
+
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -118,6 +128,10 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
             if (lootTaken.containsKey(id)) continue
             anchored.add(LootPoint(id, LootKind.EDIFICIO, b.latitude, b.longitude, b.profile.ordinal))
         }
+    }
+    for ((id, fire) in campfires) {
+        if (abs(fire.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fire.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        anchored.add(LootPoint(id, LootKind.FOGATA, fire.first, fire.second))
     }
     publishLoot(anchored)
 }
@@ -202,6 +216,11 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 taken = true
                 Res.string.survival_ammo_found
             }
+        }
+        point.kind == LootKind.FOGATA -> {
+            // X junto a la fogata cocina lo que lleves (sin gastar la fogata, que se apaga sola).
+            val near = campfires[point.id]?.let { CampfireRules.warms(_uiState.value.currentLocation?.latitude ?: 0.0, _uiState.value.currentLocation?.longitude ?: 0.0, it.first, it.second) } == true
+            if (near) stoveMessage(cookMeal()) else Res.string.survival_not_needed
         }
         point.kind == LootKind.EDIFICIO -> {
             // Con supervivencia el edificio se abre: se entra a su interior procedural y ahí se registran los muebles.
@@ -321,6 +340,16 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
     transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
     return true
+}
+
+/** Aviso de lo que pasó al cocinar (el mismo texto en la estufa de un interior y en una fogata). */
+private fun stoveMessage(result: CookResult): org.jetbrains.compose.resources.StringResource = when (result) {
+    CookResult.COOKED -> Res.string.zinterior_stove_cooked
+    CookResult.COOKED_RAW -> Res.string.zinterior_stove_cooked_raw
+    CookResult.BOILED -> Res.string.zinterior_stove_boiled
+    CookResult.NOT_THIRSTY -> Res.string.zinterior_stove_not_thirsty
+    CookResult.NOT_HUNGRY -> Res.string.zinterior_stove_not_hungry
+    CookResult.NO_FOOD -> Res.string.zinterior_stove_no_food
 }
 
 /** Cocinar en la estufa (t16): gasta una comida de la mochila y alimenta más que comerla fría. */
