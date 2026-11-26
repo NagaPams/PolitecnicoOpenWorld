@@ -446,6 +446,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** t14: fogatas encendidas (id → posición y hasta cuándo arden, reloj real). */
     internal val campfires = HashMap<String, Triple<Double, Double, Long>>()
     internal var campfireCounter = 0
+    /** t18: día de la última migración, zona destino de la horda y si ya se avisó (en memoria). */
+    internal var hordeDay = 0
+    internal var hordeTarget: Long? = null
+    internal var hordeWarned = false
     internal val policeLastShotMs = HashMap<String, Long>()
     internal var lastMemoryCheckMs = 0L
     /** Cola de avisos de supervivencia (t31). */

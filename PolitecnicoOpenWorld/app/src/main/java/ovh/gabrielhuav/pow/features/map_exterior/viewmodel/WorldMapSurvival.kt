@@ -17,6 +17,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
+import ovh.gabrielhuav.pow.domain.models.survival.HordeRules
 import ovh.gabrielhuav.pow.domain.models.survival.PoliceSweepRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
@@ -70,6 +71,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_campfire_built
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_horde_arrived
 import ovh.gabrielhuav.pow.shared.recursos.survival_water_cut_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_full
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_pumping
@@ -168,6 +170,9 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     sleepUntilMs = 0L
     cancelCraft(announce = false)
     blackoutAnnounced = false
+    hordeDay = 0
+    hordeTarget = null
+    hordeWarned = false
     waterCutAnnounced = false
     promptQueue.clear()
     zoneKills = emptyMap()
@@ -248,6 +253,7 @@ private fun WorldMapViewModel.announceBlackout() {
     } else if (WaterRules.running(dayNow)) {
         waterCutAnnounced = false
     }
+    updateHordeMigration(dayNow)
     val blackout = BlackoutRules.active(dayNow)
     if (blackout && !blackoutAnnounced) {
         blackoutAnnounced = true
@@ -306,6 +312,26 @@ private fun WorldMapViewModel.updateCampfires(s: WorldMapState): Boolean {
     if (expired) lootCellKey = Long.MIN_VALUE
     if (s.survivalWarm != warm) _uiState.update { it.copy(survivalWarm = warm) }
     return warm
+}
+
+/**
+ * t18: cada día nuevo una horda se pone en marcha hacia una zona vecina sin despejar; al entrar el jugador a ella aparece
+ * (el administrador de NPC la genera aunque no haya humanos cerca) y se avisa una vez. Vive en memoria.
+ */
+private fun WorldMapViewModel.updateHordeMigration(day: Int) {
+    val here = _uiState.value.currentLocation ?: return
+    if (day != hordeDay) {
+        hordeDay = day
+        hordeWarned = false
+        hordeTarget = HordeRules.targetFor(day, ZoneKillRules.keyOf(here.latitude, here.longitude), zoneKills)
+    }
+    val target = hordeTarget ?: return
+    if (!hordeWarned && HordeRules.isInZone(target, here.latitude, here.longitude)) {
+        hordeWarned = true
+        hordeTarget = null
+        npcAiManager.forceHorde = true
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_horde_arrived), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
+    }
 }
 
 /** Un zombi murió a manos del jugador (t18): se anota en su zona y, al despejarla, se avisa. */

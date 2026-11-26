@@ -226,6 +226,8 @@ class NpcAiManager {
     val HORDE_MIN_HUMANS = 4
     @Volatile var lastHordeMs = 0L
     @Volatile var hordeIncomingAt = 0L
+    /** t18: la horda migrada llegó a la zona del jugador: la próxima pasada la genera sin esperar a los humanos cercanos. */
+    @Volatile var forceHorde = false
 
     val POLICE_HUNTER_MAX = 4
     val POLICE_SPAWN_INTERVAL_MS = 9000L
@@ -731,13 +733,14 @@ class NpcAiManager {
                     }
                 }
 
-                if (now - lastHordeMs >= HORDE_INTERVAL_MS) {
+                if (now - lastHordeMs >= HORDE_INTERVAL_MS || forceHorde) {
                     val nearbyHumans = serverNpcs.count {
                         it.type == NpcType.PERSON && it.health > 0f && it.displayName.isNullOrEmpty() &&
                                 calculateDistance(it.location.latitude, it.location.longitude,
                                     playerLocation.latitude, playerLocation.longitude) <= simRadius
                     }
-                    if (nearbyHumans >= HORDE_MIN_HUMANS) {
+                    if (nearbyHumans >= HORDE_MIN_HUMANS || forceHorde) {
+                        forceHorde = false
                         lastHordeMs = now
                         hordeIncomingAt = now
                         startHordeNoise(survivalNoiseMemory.lastStrong(100.0, survivalNoiseNowMs), survivalNoiseNowMs)
