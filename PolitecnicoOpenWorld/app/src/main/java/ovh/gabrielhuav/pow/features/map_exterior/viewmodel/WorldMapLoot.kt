@@ -27,6 +27,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
+import ovh.gabrielhuav.pow.domain.models.survival.GroupRules
 import ovh.gabrielhuav.pow.domain.models.survival.CookResult
 import ovh.gabrielhuav.pow.shared.recursos.survival_trap_dismantled
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_boiled
@@ -345,6 +346,7 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.sleepInBed = { sleepInBed() }
     InteriorLootBridge.drinkFromTap = { drinkFromTap() }
     InteriorLootBridge.cookMeal = { cookMeal() }
+    InteriorLootBridge.joinGroup = { if (GroupRules.canJoin(groupSize)) { groupSize++; true } else false }
     InteriorLootBridge.currentDay = { DayRules.daysSurvived(survivalManager.state.value.activeMs) }
     InteriorLootBridge.cansCarried = { survivalManager.state.value.pack.bidones }
     InteriorLootBridge.spendCan = { val pack = survivalManager.state.value.pack; if (pack.bidones > 0) { survivalManager.setPack(pack.copy(bidones = pack.bidones - 1)); true } else false }

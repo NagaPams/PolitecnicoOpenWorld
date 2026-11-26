@@ -17,6 +17,8 @@ import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_not_tired
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_slept
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_cooldown
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_survivor_full
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_survivor_joined
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_needs_fuel
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_not_needed
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_on
@@ -60,6 +62,10 @@ object InteriorLootBridge {
     @Volatile var drinkFromTap: (() -> TapResult)? = null
     /** Cocina una comida de la mochila en la estufa. */
     @Volatile var cookMeal: (() -> CookResult)? = null
+    /** Un superviviente se une al grupo: false si ya no caben más. */
+    @Volatile var joinGroup: (() -> Boolean)? = null
+    /** Edificios cuyo superviviente ya se rescató (vive mientras la app). */
+    val rescued: MutableSet<Long> = java.util.concurrent.ConcurrentHashMap.newKeySet()
     /** Día de supervivencia actual (para el apagón). */
     @Volatile var currentDay: (() -> Int)? = null
     @Volatile var cansCarried: (() -> Int)? = null
@@ -80,9 +86,28 @@ internal fun interiorIsDark(buildingId: Long): Boolean {
     return PowerRules.isDark(day, android.os.SystemClock.elapsedRealtime(), InteriorLootBridge.poweredUntil[buildingId] ?: 0L)
 }
 
+/** ¿Se ve el superviviente del edificio [buildingId]? Hay uno en la planta y aún no se rescató. */
+internal fun survivorVisible(buildingId: Long): Boolean = buildingId !in InteriorLootBridge.rescued
+
 /** Estado de la ventana [index] de la planta del edificio [buildingId]. */
 internal fun windowStateOf(buildingId: Long, index: Int): WindowState =
     InteriorLootBridge.windowStates[WindowRules.key(buildingId, index)] ?: WindowState.CERRADA
+
+/** X junto al superviviente: lo rescata y se une al grupo (si caben). true si había uno al alcance. */
+private fun ZombieInteriorViewModel.interactNearbySurvivor(layout: ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout, buildingId: Long, cx: Float, cy: Float): Boolean {
+    val cell = layout.survivorCell ?: return false
+    if (!survivorVisible(buildingId)) return false
+    if (hypot(cx - (cell.first + 0.5f), cy - (cell.second + 0.5f)) > FURNITURE_REACH_CELLS) return false
+    if (InteriorLootBridge.joinGroup?.invoke() == true) {
+        InteriorLootBridge.rescued.add(buildingId)
+        soundManager.playItem()
+        showKeyRes(Res.string.zinterior_survivor_joined)
+        _state.update { it.copy(generatedRevision = it.generatedRevision + 1) }
+    } else {
+        showKeyRes(Res.string.zinterior_survivor_full)
+    }
+    return true
+}
 
 /** X junto a una ventana: romperla (ruido, quizá un corte) o tapiarla con un tablón. true si había una al alcance. */
 private fun ZombieInteriorViewModel.interactNearbyWindow(layout: ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout, buildingId: Long, cx: Float, cy: Float): Boolean {
@@ -128,6 +153,7 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     val s = _state.value
     val cx = s.playerX / GeneratedInteriors.CELL_PX
     val cy = s.playerY / GeneratedInteriors.CELL_PX
+    if (interactNearbySurvivor(layout, spec.buildingId, cx, cy)) return true
     if (interactNearbyWindow(layout, spec.buildingId, cx, cy)) return true
     var bestIndex = -1
     var bestDistance = FURNITURE_REACH_CELLS

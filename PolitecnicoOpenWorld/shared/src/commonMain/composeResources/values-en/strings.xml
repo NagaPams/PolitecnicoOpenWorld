@@ -498,6 +498,9 @@
     <string name="zinterior_stove_boiled">💧 You boiled the dirty water: it is safe to drink</string>
     <string name="zinterior_stove_not_thirsty">💧 You are not thirsty enough to boil water</string>
     <string name="zinterior_tap_dirty">🚰 No supply: you collected some dirty water (boil it at the stove)</string>
+    <string name="survival_group_warns">👥 Your group warns you: zombies nearby</string>
+    <string name="zinterior_survivor_joined">🧍 You rescued a survivor: they travel with you and cover you</string>
+    <string name="zinterior_survivor_full">🧍 Your group is full: no more seats in the car</string>
     <string name="zinterior_furniture_found">🔎 You found something useful</string>
     <string name="zinterior_furniture_empty">🔎 Nothing here</string>
     <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>

@@ -18,7 +18,7 @@ internal object GeneratedInteriorRenderer {
     /** Píxeles de la imagen por celda (el mundo usa el doble). */
     private const val CELL = 56f
 
-    fun render(layout: InteriorLayout, dark: Boolean = false, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
+    fun render(layout: InteriorLayout, dark: Boolean = false, survivorVisible: Boolean = true, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
         val bitmap = Bitmap.createBitmap((layout.cols * CELL).toInt(), (layout.rows * CELL).toInt(), Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -27,6 +27,7 @@ internal object GeneratedInteriorRenderer {
         drawWindows(canvas, paint, layout, windowState)
         drawDoor(canvas, paint, layout)
         drawFurniture(canvas, paint, layout)
+        layout.survivorCell?.takeIf { survivorVisible }?.let { drawSurvivor(canvas, paint, it) }
         if (dark) {
             // Apagón sin generador: el interior queda a oscuras (se sigue viendo lo suficiente para moverse).
             paint.style = Paint.Style.FILL
@@ -109,6 +110,15 @@ internal object GeneratedInteriorRenderer {
         // Felpudo dentro de la casa, para ver dónde está la salida.
         paint.color = 0x88C9A24B.toInt()
         canvas.drawRect(cell(layout.doorCol, layout.rows - 2), paint)
+    }
+
+    private fun drawSurvivor(canvas: Canvas, paint: Paint, cell: Pair<Int, Int>) {
+        val rect = cell(cell.first, cell.second)
+        paint.style = Paint.Style.FILL
+        paint.color = 0x55FFD54F
+        canvas.drawCircle(rect.centerX(), rect.centerY(), CELL * 0.42f, paint)
+        val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = CELL * 0.62f; textAlign = Paint.Align.CENTER }
+        canvas.drawText("🧍", rect.centerX(), rect.centerY() + CELL * 0.2f, text)
     }
 
     private fun furnitureColors(kind: FurnitureKind): Pair<Int, Int> = when (kind) {

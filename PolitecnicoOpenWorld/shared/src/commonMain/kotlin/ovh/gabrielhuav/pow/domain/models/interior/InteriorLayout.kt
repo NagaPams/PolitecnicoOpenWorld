@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.pow.domain.models.interior
 
+import ovh.gabrielhuav.pow.domain.models.survival.GroupRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 
 // Interiores procedurales: a partir del id de un edificio de OSM, su tipo de lugar y su tamaño se genera, de forma
@@ -36,6 +37,8 @@ data class InteriorLayout(
     val doorways: List<Pair<Int, Int>>,
     /** Columna de la puerta de entrada, en la fila `rows - 1`. */
     val doorCol: Int,
+    /** Celda (col, fila) de un superviviente rescatable, o null si el edificio no tiene (t05). */
+    val survivorCell: Pair<Int, Int>? = null,
 ) {
     /** Muro (exterior o interior) sin paso: la puerta de entrada y los pasos interiores no cuentan. */
     fun isWall(col: Int, row: Int): Boolean {
@@ -97,7 +100,9 @@ object InteriorGenerator {
         }
         windows.add(InteriorWindow(WallSide.ESTE, 1 + hash(seed, 0, 13) % (rows - 2)))
         windows.add(InteriorWindow(WallSide.OESTE, 1 + hash(seed, 1, 13) % (rows - 2)))
-        return InteriorLayout(cols, rows, rooms, furniture, windows, partitions, doorways, doorCol)
+        // Un superviviente espera en el primer cuarto, lejos de los muebles (que van pegados al muro norte).
+        val survivor = if (GroupRules.hasSurvivor(buildingId)) rooms[0].left + 1 to rows - 3 else null
+        return InteriorLayout(cols, rows, rooms, furniture, windows, partitions, doorways, doorCol, survivor)
     }
 
     private fun roomTypes(profile: SearchProfile): List<RoomType> = when (profile) {

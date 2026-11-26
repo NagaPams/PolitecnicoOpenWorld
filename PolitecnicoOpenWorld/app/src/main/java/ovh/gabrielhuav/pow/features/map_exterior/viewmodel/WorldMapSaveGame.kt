@@ -120,6 +120,7 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalFractureHealsAtMs = survivalManager.state.value.fractureHealsAtMs,
         survivalBandages = survivalManager.state.value.pack.vendas,
         survivalRaw = survivalManager.state.value.pack.cruda,
+        survivalGroup = groupSize,
         survivalDirty = survivalManager.state.value.pack.sucia,
         survivalVehicleHealth = vehicleHealth,
         survivalActiveMs = survivalManager.state.value.activeMs,
@@ -208,6 +209,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     npcAiManager.zoneKills = zoneKills
     lastRegrowDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs)
     // Si la partida cargada ya estaba en apagón no se vuelve a avisar.
+    groupSize = data.survivalGroup.coerceIn(0, ovh.gabrielhuav.pow.domain.models.survival.GroupRules.MAX_MEMBERS)
     waterCutAnnounced = !ovh.gabrielhuav.pow.domain.models.survival.WaterRules.running(ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs))
     blackoutAnnounced = ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(
         ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs),

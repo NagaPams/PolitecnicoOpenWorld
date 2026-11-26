@@ -51,6 +51,7 @@ fun SurvivalStatusBar(state: WorldMapState, paused: Boolean, modifier: Modifier 
                 red,
             )
         }
+        if (state.survivalGroup > 0) BarText("👥 ${state.survivalGroup}", Color(0xFF80CBC4))
         if (state.survivalBleeding) BarText("🩸", red)
         if (state.survivalFractured) BarText("🦴", red)
         if (state.survivalStamina < 99.0) {

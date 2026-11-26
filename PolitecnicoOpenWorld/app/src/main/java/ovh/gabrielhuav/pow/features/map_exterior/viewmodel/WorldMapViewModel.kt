@@ -446,6 +446,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** t14: fogatas encendidas (id → posición y hasta cuándo arden, reloj real). */
     internal val campfires = HashMap<String, Triple<Double, Double, Long>>()
     internal var campfireCounter = 0
+    /** t05: supervivientes rescatados (0..3), cuándo avisaron y dispararon por última vez (reloj real). */
+    internal var groupSize = 0
+    internal var groupLastWarnMs = 0L
+    internal var groupLastShotMs = 0L
     /** t09: trampas de latas puestas (id → posición). */
     internal val traps = LinkedHashMap<String, Pair<Double, Double>>()
     internal var trapCounter = 0

@@ -17,6 +17,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
+import ovh.gabrielhuav.pow.domain.models.survival.GroupRules
 import ovh.gabrielhuav.pow.domain.models.survival.HordeRules
 import ovh.gabrielhuav.pow.domain.models.survival.PoliceSweepRules
 import ovh.gabrielhuav.pow.domain.models.survival.TrapRules
@@ -72,6 +73,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_campfire_built
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_group_warns
 import ovh.gabrielhuav.pow.shared.recursos.survival_trap_built
 import ovh.gabrielhuav.pow.shared.recursos.survival_trap_fired
 import ovh.gabrielhuav.pow.shared.recursos.survival_horde_arrived
@@ -174,6 +176,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     cancelCraft(announce = false)
     blackoutAnnounced = false
     hordeDay = 0
+    groupSize = 0
     hordeTarget = null
     hordeWarned = false
     waterCutAnnounced = false
@@ -294,6 +297,28 @@ private fun WorldMapViewModel.placeCampfire() {
     campfireCounter++
     campfires["${LOOT_FIRE_PREFIX}$campfireCounter"] = Triple(here.latitude, here.longitude, SystemClock.elapsedRealtime() + CampfireRules.BURN_MS)
     lootCellKey = Long.MIN_VALUE
+}
+
+/**
+ * t05: el grupo de supervivientes avisa de zombis cercanos (cada 30 s) y cada miembro dispara a uno a tiro cada 10 s; la baja
+ * cuenta para la zona. Publica el tamaño del grupo para el chip.
+ */
+private fun WorldMapViewModel.updateGroup(s: WorldMapState) {
+    if (s.survivalGroup != groupSize) _uiState.update { it.copy(survivalGroup = groupSize) }
+    if (groupSize <= 0) return
+    val here = s.currentLocation ?: return
+    val now = SystemClock.elapsedRealtime()
+    if (GroupRules.shouldWarn(nearestZombieMeters(), now, groupLastWarnMs)) {
+        groupLastWarnMs = now
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_group_warns)) }
+    }
+    if (!GroupRules.canShoot(now, groupLastShotMs)) return
+    val target = remoteEntities.values.firstOrNull {
+        it.type == NpcType.ZOMBIE && !it.isDying && GroupRules.inShotRange(here.latitude, here.longitude, it.location.latitude, it.location.longitude)
+    } ?: return
+    groupLastShotMs = now - (GroupRules.SHOT_INTERVAL_MS - GroupRules.SHOT_INTERVAL_MS / groupSize)
+    remoteEntities[target.id] = target.copy(health = 0f, isDying = true)
+    onZombieKilled(target.location)
 }
 
 /** t09: pone una trampa de latas en la posición del jugador (la más vieja se pierde si ya hay [TrapRules.MAX_TRAPS]). */
@@ -655,6 +680,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val dressed = survivalManager.state.value
     val warm = updateCampfires(s)
     updateTraps(s)
+    updateGroup(s)
     survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving || warm, elapsed.coerceAtMost(1000L) / 1000.0))
     announceBlackout()
     val activity = when {
@@ -682,6 +708,6 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     survivalManager.setStamina(staminaState.value)
     // El avance de necesidades corre fuera del bloqueo de vida; dentro solo se aplica el daño (h12).
     val deltaMs = elapsed.coerceAtMost(1000L)
-    val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f, warm) ?: return
+    val advanced = survivalManager.advance(deltaMs, true, false, activity, s.nightAlpha > 0.05f, warm, groupSize) ?: return
     combatManager.updateHealth { health -> survivalManager.healthAfter(health, advanced, deltaMs) }
 }

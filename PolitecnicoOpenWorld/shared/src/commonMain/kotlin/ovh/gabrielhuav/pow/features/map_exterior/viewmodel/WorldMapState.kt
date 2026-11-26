@@ -77,6 +77,8 @@ data class WorldMapState(
     val survivalCoat: Boolean = false,
     /** t14: está al calor de una fogata (cuenta como estar a cubierto del frío). */
     val survivalWarm: Boolean = false,
+    /** t05: supervivientes rescatados que viajan contigo (0..3). */
+    val survivalGroup: Int = 0,
     /** t11: humedad de la ropa (0-100), de `SurvivalManager`. */
     val survivalWetness: Double = 0.0,
     val survivalStamina: Double = 100.0,
