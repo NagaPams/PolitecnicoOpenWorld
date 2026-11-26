@@ -217,11 +217,18 @@ internal fun NpcAiManager.carFollowScale(car: Npc, cars: List<Npc>): Float {
     if (ti < 0 || ti >= way.nodes.size) return 1f
     val target = way.nodes[ti]
     val fwd = atan2(target.lat - car.location.latitude, target.lon - car.location.longitude)
+    // El jugador (a pie o en su coche) frena al tráfico que va hacia él; antes lo atravesaban.
+    val playerScale = CarYieldRules.playerScale(car.location.latitude, car.location.longitude, fwd, aggroPlayerLat, aggroPlayerLon)
+    var crossScale = 1f
     var minAhead = Double.MAX_VALUE
     for (other in cars) {
         if (other.id == car.id) continue
         val headDiff = abs(((other.rotationAngle - car.rotationAngle + 540f) % 360f) - 180f)
-        if (headDiff > 90f) continue
+        if (headDiff > 90f) {
+            // Coche que cruza por delante: cede el de id mayor (no se bloquean los dos).
+            if (CarYieldRules.yieldsToCrossing(car.id, other.id, headDiff, car.location.latitude, car.location.longitude, fwd, other.location.latitude, other.location.longitude)) crossScale = CarYieldRules.CROSS_SCALE
+            continue
+        }
         val dLat = other.location.latitude - car.location.latitude
         val dLon = other.location.longitude - car.location.longitude
         val d = sqrt(dLat * dLat + dLon * dLon)
@@ -230,10 +237,13 @@ internal fun NpcAiManager.carFollowScale(car: Npc, cars: List<Npc>): Float {
         val diff = abs(((((ang - fwd) * 180.0 / PI) + 540) % 360) - 180)
         if (diff < 45 && d < minAhead) minAhead = d
     }
-    if (minAhead == Double.MAX_VALUE) return 1f
-    // Frenado de emergencia si está MUY cerca (< ~8m)
-    if (minAhead < 0.00008) return 0.1f
-    return (minAhead / NpcAiManager.CAR_FOLLOW_DISTANCE).toFloat().coerceIn(0.35f, 1f)
+    val follow = when {
+        minAhead == Double.MAX_VALUE -> 1f
+        // Frenado de emergencia si está MUY cerca (< ~8m)
+        minAhead < 0.00008 -> 0.1f
+        else -> (minAhead / NpcAiManager.CAR_FOLLOW_DISTANCE).toFloat().coerceIn(0.35f, 1f)
+    }
+    return minOf(follow, playerScale, crossScale)
 }
 
 internal fun NpcAiManager.pointToLineDist(px: Double, py: Double, x1: Double, y1: Double, x2: Double, y2: Double): Double {
