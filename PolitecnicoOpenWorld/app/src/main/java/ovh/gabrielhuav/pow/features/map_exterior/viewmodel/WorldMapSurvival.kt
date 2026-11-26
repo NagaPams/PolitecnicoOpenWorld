@@ -16,6 +16,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.NeedEffectRules
 import ovh.gabrielhuav.pow.domain.models.survival.HotwireRules
 import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
+import ovh.gabrielhuav.pow.domain.models.survival.PoliceSweepRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
@@ -252,6 +253,27 @@ private fun WorldMapViewModel.announceBlackout() {
     } else if (!blackout) {
         blackoutAnnounced = false
     }
+}
+
+/**
+ * t18: la policía que tienes cerca dispara al zombi que le queda a tiro (una vez cada 3 s por unidad) y la baja cuenta para
+ * la zona. Solo corre con supervivencia y con policía en pantalla (en el mundo libre casi siempre hay 0 unidades).
+ */
+private fun WorldMapViewModel.updatePoliceSweep(player: GeoPoint) {
+    val units = policeManager.activeUnits()
+    if (units.isEmpty()) return
+    val now = SystemClock.elapsedRealtime()
+    for (unit in units) {
+        if (!PoliceSweepRules.nearPlayer(unit.location.latitude, unit.location.longitude, player.latitude, player.longitude)) continue
+        if (!PoliceSweepRules.ready(now, policeLastShotMs[unit.id] ?: 0L)) continue
+        val target = remoteEntities.values.firstOrNull {
+            it.type == NpcType.ZOMBIE && !it.isDying && PoliceSweepRules.inRange(unit.location.latitude, unit.location.longitude, it.location.latitude, it.location.longitude)
+        } ?: continue
+        policeLastShotMs[unit.id] = now
+        remoteEntities[target.id] = target.copy(health = 0f, isDying = true)
+        onZombieKilled(target.location)
+    }
+    if (policeLastShotMs.size > 40) policeLastShotMs.clear()
 }
 
 /** Un zombi murió a manos del jugador (t18): se anota en su zona y, al despejarla, se avisa. */
@@ -554,6 +576,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
         }
     }
     announceConditions(s)
+    s.currentLocation?.let { updatePoliceSweep(it) }
     updateFuelPump(s, elapsed.coerceAtMost(1000L) / 1000.0)
     updateBarricadeWear(elapsed.coerceAtMost(1000L) / 1000.0)
     survivalManager.setFuel(fuelTank)

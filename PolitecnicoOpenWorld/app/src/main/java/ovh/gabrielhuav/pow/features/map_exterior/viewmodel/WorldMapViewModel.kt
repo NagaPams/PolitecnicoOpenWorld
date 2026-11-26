@@ -443,6 +443,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Ya se avisó del apagón en esta partida (t14). */
     internal var blackoutAnnounced = false
     internal var waterCutAnnounced = false
+    internal val policeLastShotMs = HashMap<String, Long>()
     internal var lastMemoryCheckMs = 0L
     /** Cola de avisos de supervivencia (t31). */
     internal val promptQueue = ovh.gabrielhuav.pow.domain.models.survival.PromptQueue()
