@@ -118,13 +118,13 @@ private const val ISO_PLAYER_REDUCTION = 2
 private const val ISO_PLAYER_CANVAS_METERS = 2.3f
 private const val ISO_PLAYER_FOOT_FRACTION = 0.036f
 private val ISO_PLAYER_DIRS = arrayOf("s", "se", "e", "ne", "n")
-private val ISO_SLOT_FOLDER = arrayOf("Idle", "Walk", "Walk", "Walk", "Run", "Run", "Run", "Special")
+internal val ISO_SLOT_FOLDER = arrayOf("Idle", "Walk", "Walk", "Walk", "Run", "Run", "Run", "Special")
 private val ISO_SLOT_LETTER = arrayOf("i", "w", "w", "w", "r", "r", "r", "s")
 private val ISO_SLOT_NUMBER = intArrayOf(1, 1, 2, 3, 1, 2, 3, 1)
-private val ISO_SECTOR_ROW = intArrayOf(4, 3, 2, 1, 0, 1, 2, 3)
+internal val ISO_SECTOR_ROW = intArrayOf(4, 3, 2, 1, 0, 1, 2, 3)
 private val ISO_STEP_ORDER = intArrayOf(0, 1, 2, 1)
 
-private suspend fun loadIsoPlayerSprites(): Array<ImageBitmap?> = withContext(Dispatchers.Default) {
+internal suspend fun loadIsoPlayerSprites(): Array<ImageBitmap?> = withContext(Dispatchers.Default) {
     val slots = ISO_SLOT_FOLDER.size
     val out = arrayOfNulls<ImageBitmap>(ISO_PLAYER_DIRS.size * slots)
     for (d in ISO_PLAYER_DIRS.indices) {

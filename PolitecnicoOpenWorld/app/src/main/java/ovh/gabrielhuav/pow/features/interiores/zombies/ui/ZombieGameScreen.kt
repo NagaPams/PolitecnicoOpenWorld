@@ -135,6 +135,8 @@ import kotlin.random.Random
 
 private const val ZOMBIE_SPRITE_BASE = 60f
 private const val PLAYER_SPRITE_BASE = 56f
+/** t82: alto de un personaje isométrico respecto al tamaño base del sprite 2D (los pies van en el suelo). */
+private const val ISO_ACTOR_HEIGHT_FACTOR = 1.5f
 
 // Colores de las auras de luz. Constantes top-level para no asignar la lista
 // en cada drawCircle de cada frame (presión de GC en gama baja).
@@ -426,6 +428,7 @@ fun ZombieGameScreen(
                 if (isoLayout != null) computeIsoCamera(state.playerX, state.playerY, ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, isoLayout.cols, isoLayout.rows, viewportWpx, viewportHpx, 1f)
                 else computeCamera(state.playerX, state.playerY, room.worldWidth, room.worldHeight, viewportWpx, viewportHpx, room.zoom)
             }
+            val isoArt = if (isoLayout != null) ovh.gabrielhuav.pow.features.map_exterior.ui.iso.rememberIsoInteriorArt() else null
             // t82: en un interior generado el mundo (x, y en píxeles) se proyecta en isométrico; los demás cuartos siguen en 2D.
             fun toScreenX(wx: Float, wy: Float): Float = if (isoLayout != null) cam.offsetX + ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(wx / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, wy / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, isoLayout.rows) * cam.scale else cam.offsetX + wx * cam.scale
             fun toScreenY(wx: Float, wy: Float): Float = if (isoLayout != null) cam.offsetY + ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(wx / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, wy / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX) * cam.scale else cam.offsetY + wy * cam.scale
@@ -664,7 +667,19 @@ fun ZombieGameScreen(
                 state.zombies.forEach { z ->
                     if (!onScreen(z.x, z.y)) return@forEach
                     key(z.id) {
-                        ZombieView(
+                        if (isoArt != null) {
+                            // t82: hojas isométricas; los pies quedan en el punto del suelo.
+                            val zh = zSize * ISO_ACTOR_HEIGHT_FACTOR
+                            ovh.gabrielhuav.pow.features.map_exterior.ui.iso.IsoInteriorZombie(
+                                art = isoArt, id = z.id, worldX = z.x, worldY = z.y,
+                                cellPx = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX,
+                                health = z.health, maxHealth = z.maxHealth, dying = z.isDying, heightPx = zh,
+                                modifier = Modifier.absoluteOffset(
+                                    x = with(density) { toScreenX(z.x, z.y).toDp() } - with(density) { (zh * 0.39f).toDp() },
+                                    y = with(density) { toScreenY(z.x, z.y).toDp() } - with(density) { zh.toDp() },
+                                ),
+                            )
+                        } else ZombieView(
                             type = z.type, frameIndex = z.frameIndex, facingRight = z.facingRight,
                             isAttacking = z.isAttacking, isDying = z.isDying,
                             health = z.health, maxHealth = z.maxHealth, sizePx = zSize,
@@ -829,7 +844,17 @@ fun ZombieGameScreen(
                 // MUERTE: al morir, el jugador queda como "fantasmita" (semitransparente),
                 // igual que la animación de muerte de un NPC.
                 val ghostAlpha = if (state.showWastedScreen) 0.3f else 1f
-                PlayerView(
+                if (isoArt != null) {
+                    // t82: el jugador con las hojas isométricas del mundo exterior; mira hacia donde camina.
+                    val ph = pSize * ISO_ACTOR_HEIGHT_FACTOR
+                    ovh.gabrielhuav.pow.features.map_exterior.ui.iso.IsoInteriorPlayer(
+                        art = isoArt, action = state.playerAction, aimDx = state.aimDirX, aimDy = state.aimDirY, heightPx = ph, alpha = ghostAlpha,
+                        modifier = Modifier.absoluteOffset(
+                            x = with(density) { toScreenX(state.playerX, state.playerY).toDp() } - with(density) { (ph * 0.39f).toDp() },
+                            y = with(density) { toScreenY(state.playerX, state.playerY).toDp() } - with(density) { ph.toDp() },
+                        ),
+                    )
+                } else PlayerView(
                     action = state.playerAction, facingRight = state.isPlayerFacingRight,
                     damagePulse = state.damagePulseTrigger, sizePx = pSize,
                     skin = state.selectedSkin,                         // ← NUEVO

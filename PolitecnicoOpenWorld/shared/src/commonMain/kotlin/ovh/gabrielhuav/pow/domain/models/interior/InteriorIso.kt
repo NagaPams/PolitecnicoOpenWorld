@@ -1,5 +1,9 @@
 package ovh.gabrielhuav.pow.domain.models.interior
 
+import ovh.gabrielhuav.pow.domain.models.map.isoScreenSector
+import ovh.gabrielhuav.pow.domain.models.map.isoSpriteHeading
+import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.sqrt
 
 // Proyección isométrica 2:1 de un interior procedural (t82): la cuadrícula (columna, fila) se ve como rombos, igual que el
@@ -24,6 +28,17 @@ object InteriorIso {
 
     /** Y en la imagen del punto (columna, fila) a una altura [z] sobre el suelo (píxeles). */
     fun y(col: Float, row: Float, z: Float = 0f): Float = TOP_PAD + (col + row) * HALF_H - z
+
+    /**
+     * Sector de pantalla (0 = N, 1 = NE, ... 7 = NW) hacia el que mira quien se mueve con dirección ([dx] columnas, [dy] filas)
+     * en la cuadrícula del interior: sirve para elegir la fila de las hojas isométricas de personajes.
+     */
+    fun spriteSector(dx: Float, dy: Float): Int {
+        if (dx == 0f && dy == 0f) return 4
+        // Las hojas usan este = -fila y norte = -columna (así la proyección del interior coincide con la del mundo exterior).
+        val heading = (atan2((-dy).toDouble(), (-dx).toDouble()) * 180.0 / PI + 360.0) % 360.0
+        return isoScreenSector(isoSpriteHeading(heading))
+    }
 
     /**
      * Dirección del mundo (dx hacia las columnas, dy hacia las filas, normalizada) que corresponde a empujar el joystick
