@@ -5,6 +5,7 @@ import ovh.gabrielhuav.pow.domain.models.map.Npc
 import ovh.gabrielhuav.pow.domain.models.map.NpcNavState
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint
+import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.domain.models.map.offsetMeters
 import kotlin.math.cos
 import kotlin.math.sqrt
@@ -84,7 +85,7 @@ private const val CAR_COARSE_METERS = 8.0
 
 private fun Npc.isTrafficCar(): Boolean = type == NpcType.CAR && displayName.isNullOrEmpty() && !isDying
 
-private fun Npc.footprint() = VehicleFootprint(location, (rotationAngle + 90f) % 360f, carModel.collisionDimensions)
+private fun Npc.footprint() = VehicleFootprint(location, (rotationAngle + 90f) % 360f, bodyDimensions)
 
 /**
  * Separa a los coches del tráfico que ya quedaron solapados (cruces, giros, aparición). Un estacionado no se mueve:

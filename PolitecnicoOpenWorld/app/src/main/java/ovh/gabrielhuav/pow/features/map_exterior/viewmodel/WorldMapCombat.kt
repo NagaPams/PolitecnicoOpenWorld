@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.ai.NpcAiManager
+import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.domain.models.map.Npc
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.CarModel
@@ -361,7 +362,7 @@ internal fun WorldMapViewModel.runOverNpcs(
     fun footprintOf(npc: Npc) = VehicleFootprint(
         center = npc.location,
         headingDegrees = (npc.rotationAngle + 90f) % 360f,
-        dimensions = npc.carModel.collisionDimensions,
+        dimensions = npc.bodyDimensions,
     )
     val vehicleIds = ArrayList<String>(4)
     for ((id, npc) in remoteEntities) {

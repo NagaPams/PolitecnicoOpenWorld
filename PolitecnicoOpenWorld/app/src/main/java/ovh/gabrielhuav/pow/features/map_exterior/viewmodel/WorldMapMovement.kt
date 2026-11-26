@@ -5,6 +5,7 @@ import android.util.Log
 import kotlinx.coroutines.flow.update
 import ovh.gabrielhuav.pow.BuildConfig
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
+import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.domain.models.map.CircleCollider
 import ovh.gabrielhuav.pow.domain.models.map.PLAYER_FOOT_COLLIDER_METERS
 import ovh.gabrielhuav.pow.domain.models.map.CollisionResolution
@@ -52,7 +53,7 @@ internal fun WorldMapViewModel.worldVehicleColliders(): List<DynamicVehicleColli
                 footprint = VehicleFootprint(
                 center = npc.location,
                 headingDegrees = (npc.rotationAngle + 90f) % 360f,
-                dimensions = npc.carModel.collisionDimensions,
+                dimensions = npc.bodyDimensions,
                 ),
                 movable = npc.isMoving && npc.navState != ovh.gabrielhuav.pow.domain.models.map.NpcNavState.PARKED,
             )

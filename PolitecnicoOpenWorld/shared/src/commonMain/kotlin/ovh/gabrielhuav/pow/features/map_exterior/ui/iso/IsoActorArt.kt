@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.domain.models.map.CarModel
+import ovh.gabrielhuav.pow.domain.models.map.CarVariantRules
+import ovh.gabrielhuav.pow.domain.models.map.WagonVariant
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.isoScreenSector
 import ovh.gabrielhuav.pow.domain.models.map.isoSpriteHeading
@@ -74,11 +76,11 @@ internal fun isoVehicleFor(type: NpcType?, model: CarModel, id: String): IsoVehi
     type == NpcType.POLICE_CAR -> IsoVehicle.POLICE
     model == CarModel.VAN -> IsoVehicle.VAN
     model == CarModel.SUV -> IsoVehicle.PICKUP
-    id.isNotEmpty() && model == CarModel.WAGON -> when (id.hashCode().mod(4)) {
-        0 -> IsoVehicle.BOX_TRUCK
-        1 -> IsoVehicle.SEMI_TRACTOR
-        2 -> IsoVehicle.BUS
-        else -> IsoVehicle.SEDAN
+    id.isNotEmpty() && model == CarModel.WAGON -> when (CarVariantRules.wagonVariant(id)) {
+        WagonVariant.BOX_TRUCK -> IsoVehicle.BOX_TRUCK
+        WagonVariant.SEMI_TRACTOR -> IsoVehicle.SEMI_TRACTOR
+        WagonVariant.BUS -> IsoVehicle.BUS
+        WagonVariant.SEDAN -> IsoVehicle.SEDAN
     }
     else -> IsoVehicle.SEDAN
 }
