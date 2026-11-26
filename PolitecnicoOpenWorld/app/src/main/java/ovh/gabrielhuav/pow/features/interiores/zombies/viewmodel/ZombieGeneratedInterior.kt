@@ -8,7 +8,11 @@ import ovh.gabrielhuav.pow.domain.models.interior.WallSide
 import ovh.gabrielhuav.pow.domain.models.interior.WindowAction
 import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.interior.WindowState
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import ovh.gabrielhuav.pow.domain.models.survival.CookResult
 import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
 import ovh.gabrielhuav.pow.domain.models.survival.TapResult
@@ -36,6 +40,7 @@ import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_not_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_boarded
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_broken
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_covered
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_zombie
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_need_board
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_empty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_found
@@ -92,6 +97,32 @@ internal fun survivorVisible(buildingId: Long): Boolean = buildingId !in Interio
 /** Estado de la ventana [index] de la planta del edificio [buildingId]. */
 internal fun windowStateOf(buildingId: Long, index: Int): WindowState =
     InteriorLootBridge.windowStates[WindowRules.key(buildingId, index)] ?: WindowState.CERRADA
+
+/**
+ * t07: cada [WindowRules.PRESSURE_MS] entra un zombi por cada ventana rota del interior (hasta [WindowRules.MAX_INSIDE] dentro);
+ * las cerradas y las tapiadas aguantan. Se cancela al salir o cambiar de sala.
+ */
+internal fun ZombieInteriorViewModel.startWindowPressure(room: ovh.gabrielhuav.pow.domain.models.zombie.ZombieRoom): kotlinx.coroutines.Job = viewModelScope.launch {
+    val layout = room.generatedLayout ?: return@launch
+    val buildingId = GeneratedInteriors.parse(room.id)?.buildingId ?: return@launch
+    while (isActive) {
+        delay(WindowRules.PRESSURE_MS)
+        var entered = false
+        layout.windows.forEachIndexed { index, window ->
+            val inside = _state.value.zombies.count { !it.isDying }
+            if (!WindowRules.letsZombieIn(windowStateOf(buildingId, index), inside)) return@forEachIndexed
+            val (col, row) = WindowRules.entryCell(window, layout.cols)
+            val zombie = ovh.gabrielhuav.pow.domain.models.zombie.ZombieEntity(
+                x = (col + 0.5f) * GeneratedInteriors.CELL_PX,
+                y = (row + 0.5f) * GeneratedInteriors.CELL_PX,
+                lastFrameAdvanceMs = System.currentTimeMillis(),
+            )
+            _state.update { it.copy(zombies = it.zombies + zombie) }
+            entered = true
+        }
+        if (entered) showKeyRes(Res.string.zinterior_window_zombie)
+    }
+}
 
 /** X junto al superviviente: lo rescata y se une al grupo (si caben). true si había uno al alcance. */
 private fun ZombieInteriorViewModel.interactNearbySurvivor(layout: ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout, buildingId: Long, cx: Float, cy: Float): Boolean {

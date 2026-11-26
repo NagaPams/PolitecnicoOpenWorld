@@ -82,6 +82,8 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
 
     internal val soundManager = ovh.gabrielhuav.pow.features.audio.SoundManager.getInstance(applicationContext)
     internal var lastZombieSoundMs = 0L
+    /** Interior procedural: mientras estás dentro, las ventanas rotas dejan entrar zombis (ver `startWindowPressure`). */
+    internal var windowPressureJob: Job? = null
     /** Mordida de contacto única y con aviso previo, como en el mundo abierto (h27): ver `contactBiteLands`. */
     internal var lastContactMs = 0L
     internal var biteReadyAtMs = 0L
@@ -461,6 +463,8 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
     // ─── CARGA DE ZONA ─────────────────────────────────────
     internal fun loadRoom(index: Int) {
         val room = ZombieRoomCatalog.rooms[index]
+        windowPressureJob?.cancel()
+        windowPressureJob = if (room.generatedLayout != null) startWindowPressure(room) else null
         val now = System.currentTimeMillis()
 
         val pendingX = _state.value.pendingSpawnX

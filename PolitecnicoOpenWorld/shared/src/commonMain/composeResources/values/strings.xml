@@ -501,6 +501,7 @@
     <string name="survival_group_warns">👥 Tu grupo avisa: hay zombis cerca</string>
     <string name="zinterior_survivor_joined">🧍 Rescataste a un superviviente: viaja contigo y te cubre</string>
     <string name="zinterior_survivor_full">🧍 Tu grupo está completo: no caben más en el coche</string>
+    <string name="zinterior_window_zombie">🧟 Un zombi entra por una ventana rota</string>
     <string name="zinterior_furniture_found">🔎 Encontraste algo útil</string>
     <string name="zinterior_furniture_empty">🔎 No hay nada aquí</string>
     <string name="zinterior_furniture_cooldown">🔎 Ya lo registraste hace poco</string>
