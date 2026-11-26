@@ -19,6 +19,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
 import ovh.gabrielhuav.pow.domain.models.survival.HordeRules
 import ovh.gabrielhuav.pow.domain.models.survival.PoliceSweepRules
+import ovh.gabrielhuav.pow.domain.models.survival.TrapRules
 import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.WaterRules
@@ -71,6 +72,8 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_kit_crafted
 import ovh.gabrielhuav.pow.shared.recursos.survival_occupation_chosen
 import ovh.gabrielhuav.pow.shared.recursos.survival_campfire_built
 import ovh.gabrielhuav.pow.shared.recursos.survival_cold
+import ovh.gabrielhuav.pow.shared.recursos.survival_trap_built
+import ovh.gabrielhuav.pow.shared.recursos.survival_trap_fired
 import ovh.gabrielhuav.pow.shared.recursos.survival_horde_arrived
 import ovh.gabrielhuav.pow.shared.recursos.survival_water_cut_started
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_full
@@ -293,6 +296,35 @@ private fun WorldMapViewModel.placeCampfire() {
     lootCellKey = Long.MIN_VALUE
 }
 
+/** t09: pone una trampa de latas en la posición del jugador (la más vieja se pierde si ya hay [TrapRules.MAX_TRAPS]). */
+private fun WorldMapViewModel.placeTrap() {
+    val here = _uiState.value.currentLocation ?: return
+    if (traps.size >= TrapRules.MAX_TRAPS) traps.remove(traps.keys.first())
+    trapCounter++
+    traps["${LOOT_TRAP_PREFIX}$trapCounter"] = here.latitude to here.longitude
+    lootCellKey = Long.MIN_VALUE
+}
+
+/** Una vez por segundo: una trampa con un zombi cerca suena (ruido que atrae) y se gasta; avisa si el jugador la oye. */
+private fun WorldMapViewModel.updateTraps(s: WorldMapState) {
+    if (traps.isEmpty()) return
+    val here = s.currentLocation
+    val iterator = traps.entries.iterator()
+    var fired = false
+    while (iterator.hasNext()) {
+        val (_, pos) = iterator.next()
+        val hit = remoteEntities.values.any { it.type == NpcType.ZOMBIE && !it.isDying && TrapRules.triggers(pos.first, pos.second, it.location.latitude, it.location.longitude) }
+        if (!hit) continue
+        iterator.remove()
+        fired = true
+        npcAiManager.queueSurvivalNoise(NoiseEvent(pos.first, pos.second, NoiseSource.LATAS, s.nightAlpha > 0.05f, survivalManager.state.value.weather == Weather.RAIN))
+        if (here != null && TrapRules.heardBy(pos.first, pos.second, here.latitude, here.longitude)) {
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_trap_fired)) }
+        }
+    }
+    if (fired) lootCellKey = Long.MIN_VALUE
+}
+
 /** Una vez por segundo: apaga las fogatas gastadas y dice si el jugador está al calor de alguna. */
 private fun WorldMapViewModel.updateCampfires(s: WorldMapState): Boolean {
     val now = SystemClock.elapsedRealtime()
@@ -409,12 +441,14 @@ private suspend fun WorldMapViewModel.finishCraft(recipe: Recipe) {
     soundManager.playItem()
     if (recipe == Recipe.PALO_CLAVOS) onSkillUse(Skill.CARPINTERIA, 3)
     if (recipe == Recipe.FOGATA) placeCampfire()
+    if (recipe == Recipe.TRAMPA) placeTrap()
     if (recipe == Recipe.FERULA) survivalManager.setFractureHealsAt(0L)
     showSurvivalPrompt(getString(when (recipe) {
         Recipe.BOTIQUIN -> Res.string.survival_kit_crafted
         Recipe.FERULA -> Res.string.survival_splint_crafted
         Recipe.PALO_CLAVOS -> Res.string.survival_craft_nailbat
         Recipe.FOGATA -> Res.string.survival_campfire_built
+        Recipe.TRAMPA -> Res.string.survival_trap_built
     }))
 }
 
@@ -620,6 +654,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     survivalManager.addActiveMs(elapsed.coerceAtMost(1000L))
     val dressed = survivalManager.state.value
     val warm = updateCampfires(s)
+    updateTraps(s)
     survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving || warm, elapsed.coerceAtMost(1000L) / 1000.0))
     announceBlackout()
     val activity = when {

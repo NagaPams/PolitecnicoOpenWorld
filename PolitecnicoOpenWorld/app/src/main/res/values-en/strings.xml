@@ -669,6 +669,7 @@
     <string name="moodle_frio">Cold: night and rain tire you faster</string>
     <string name="moodle_herido">Hurt: low health, heal with a medkit</string>
     <string name="pack_craft_campfire">Campfire (2 boards)</string>
+    <string name="pack_craft_trap">Can trap (1 board + 1 soda)</string>
     <string name="pack_craft_splint">Splint (1 board + 1 bandage)</string>
     <string name="pack_coat_on">🧥 Coat on</string>
     <string name="ctx_board_car">Y: get in the car</string>
@@ -685,11 +686,7 @@
     <string name="pack_raw_counts">🍖 Raw food %1$d   💧 Dirty water %2$d</string>
     <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
     <string name="recipes_title">📖 Recipes</string>
-    <string name="recipes_body">• First-aid kit: 2 sodas + 1 pizza (3 s)
-• Nail bat: 2 boards (4 s)
-• Splint: 1 board + 1 bandage, if fractured (3 s)
-• Campfire: 2 boards (3 s)
-• Cooking: X at a stove or campfire with raw or ready food; dirty water is boiled there</string>
+    <string name="recipes_body">• First-aid kit: 2 sodas + 1 pizza (3 s)\n• Nail bat: 2 boards (4 s)\n• Splint: 1 board + 1 bandage, if fractured (3 s)\n• Campfire: 2 boards (3 s)\n• Can trap: 1 board + 1 soda (2 s)\n• Cooking: X at a stove or campfire with raw or ready food; dirty water is boiled there</string>
     <string name="pack_weight">⚖️ Weight: %1$.1f / %2$.1f</string>
     <string name="pack_craft_kit">Craft medkit (2 🥤 + 1 🍕)</string>
     <string name="pack_use_kit">Use medkit (+40 HP)</string>

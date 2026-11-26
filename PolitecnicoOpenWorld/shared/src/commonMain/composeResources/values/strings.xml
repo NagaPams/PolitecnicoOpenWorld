@@ -453,6 +453,9 @@
     <string name="survival_wet">💦 Tu ropa está empapada: sécate en un coche o con un abrigo</string>
     <string name="survival_campfire_built">🔥 Encendiste una fogata: da calor y sirve para cocinar unos minutos</string>
     <string name="survival_horde_arrived">🧟 Una horda llegó a esta zona: corre o escóndete</string>
+    <string name="survival_trap_built">🥫 Armaste una trampa de latas: suena cuando pasa un zombi</string>
+    <string name="survival_trap_fired">🥫 Sonó una trampa de latas: los zombis van hacia allá</string>
+    <string name="survival_trap_dismantled">🥫 Desarmaste la trampa y recuperaste el tablón</string>
     <string name="survival_cold">🥶 Hace frío: busca un abrigo o sube a un coche</string>
     <string name="survival_fracture_healed">🦴 Tu fractura sanó</string>
     <string name="survival_splint_crafted">🦴 Férula puesta: la fractura sanó</string>

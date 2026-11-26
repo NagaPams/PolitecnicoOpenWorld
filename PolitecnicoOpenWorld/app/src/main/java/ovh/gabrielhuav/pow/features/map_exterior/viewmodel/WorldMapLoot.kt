@@ -28,6 +28,7 @@ import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.domain.models.survival.CampfireRules
 import ovh.gabrielhuav.pow.domain.models.survival.CookResult
+import ovh.gabrielhuav.pow.shared.recursos.survival_trap_dismantled
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_boiled
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked_raw
@@ -81,13 +82,14 @@ private const val BUILDING_VISIBLE_DEGREES = 0.001
 
 /** Prefijo del id de las fogatas como punto de botín (la X sobre una cocina la comida). */
 internal const val LOOT_FIRE_PREFIX = "fogata_"
+internal const val LOOT_TRAP_PREFIX = "trampa_"
 
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -128,6 +130,10 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
             if (lootTaken.containsKey(id)) continue
             anchored.add(LootPoint(id, LootKind.EDIFICIO, b.latitude, b.longitude, b.profile.ordinal))
         }
+    }
+    for ((id, pos) in traps) {
+        if (abs(pos.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(pos.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        anchored.add(LootPoint(id, LootKind.TRAMPA, pos.first, pos.second))
     }
     for ((id, fire) in campfires) {
         if (abs(fire.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fire.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
@@ -216,6 +222,15 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 taken = true
                 Res.string.survival_ammo_found
             }
+        }
+        point.kind == LootKind.TRAMPA -> {
+            // X sobre una trampa la desarma y devuelve el tablón.
+            if (traps.remove(point.id) != null) {
+                survivalManager.addBoards(1)
+                taken = false
+                lootCellKey = Long.MIN_VALUE
+                Res.string.survival_trap_dismantled
+            } else Res.string.survival_not_needed
         }
         point.kind == LootKind.FOGATA -> {
             // X junto a la fogata cocina lo que lleves (sin gastar la fogata, que se apaga sola).

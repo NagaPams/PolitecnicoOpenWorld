@@ -1,6 +1,6 @@
 package ovh.gabrielhuav.pow.domain.models.survival
 
-enum class NoiseSource { WALKING, RUNNING, MELEE, GUNSHOT, ENGINE, HORN, DOOR, CRISTAL }
+enum class NoiseSource { WALKING, RUNNING, MELEE, GUNSHOT, ENGINE, HORN, DOOR, CRISTAL, LATAS }
 
 data class NoiseEvent(
     val latitude: Double, val longitude: Double, val source: NoiseSource, val night: Boolean,
@@ -15,7 +15,7 @@ data class NoiseEvent(
 object NoiseRules {
     /** Disparos y claxon atraen zombis de mucho más lejos; el resto, solo a su radio. */
     fun migrationFactor(source: NoiseSource): Double = when (source) {
-        NoiseSource.GUNSHOT, NoiseSource.HORN -> 1.8
+        NoiseSource.GUNSHOT, NoiseSource.HORN, NoiseSource.LATAS -> 1.8
         else -> 1.0
     }
 
@@ -29,6 +29,7 @@ object NoiseRules {
             NoiseSource.HORN -> 140.0
             NoiseSource.DOOR -> 25.0
             NoiseSource.CRISTAL -> 70.0
+            NoiseSource.LATAS -> 90.0
         }
         return if (night) radius * 1.2 else radius
     }

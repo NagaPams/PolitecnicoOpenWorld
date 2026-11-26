@@ -5,7 +5,7 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // carpintería acorta lo que se construye con tablones. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Los valores nuevos van AL FINAL. */
-enum class Recipe { BOTIQUIN, PALO_CLAVOS, FERULA, FOGATA }
+enum class Recipe { BOTIQUIN, PALO_CLAVOS, FERULA, FOGATA, TRAMPA }
 
 /** Crafteo en curso: lo muestra la barra de acción. */
 data class CraftProgress(val recipe: Recipe, val startedMs: Long, val durationMs: Long)
@@ -19,6 +19,7 @@ object RecipeRules {
     const val NAIL_BAT_BOARDS = 2
     const val CAMPFIRE_BOARDS = 2
     private const val CAMPFIRE_MS = 3000L
+    private const val TRAP_MS = 2000L
     private const val KIT_MS = 3000L
     private const val NAIL_BAT_MS = 4000L
     private const val SPLINT_MS = 3000L
@@ -30,6 +31,7 @@ object RecipeRules {
         Recipe.BOTIQUIN -> KIT_MS
         Recipe.FERULA -> SPLINT_MS
         Recipe.FOGATA -> CAMPFIRE_MS
+        Recipe.TRAMPA -> TRAP_MS
         Recipe.PALO_CLAVOS -> {
             val factor = (1.0 - FASTER_PER_LEVEL * carpentryLevel.coerceIn(0, SkillRules.MAX_LEVEL)).coerceAtLeast(MIN_TIME_FACTOR)
             (NAIL_BAT_MS * factor).toLong()
@@ -41,6 +43,7 @@ object RecipeRules {
         Recipe.PALO_CLAVOS -> inv.boards >= NAIL_BAT_BOARDS
         Recipe.FERULA -> inv.boards >= 1 && inv.pack.vendas >= 1
         Recipe.FOGATA -> inv.boards >= CAMPFIRE_BOARDS
+        Recipe.TRAMPA -> inv.boards >= TrapRules.BOARDS && inv.pack.refresco >= TrapRules.SODAS
     }
 
     /** Resultado de terminar la receta, o null si ya no se puede (cambió el inventario mientras tanto). */
@@ -50,6 +53,7 @@ object RecipeRules {
             Recipe.BOTIQUIN -> inv.copy(pack = SurvivalCrafting.craftKit(inv.pack) ?: return null)
             Recipe.FERULA -> inv.copy(boards = inv.boards - 1, pack = inv.pack.copy(vendas = inv.pack.vendas - 1))
             Recipe.FOGATA -> inv.copy(boards = inv.boards - CAMPFIRE_BOARDS)
+            Recipe.TRAMPA -> inv.copy(boards = inv.boards - TrapRules.BOARDS, pack = inv.pack.copy(refresco = inv.pack.refresco - TrapRules.SODAS))
             Recipe.PALO_CLAVOS -> inv.copy(
                 boards = inv.boards - NAIL_BAT_BOARDS,
                 arsenal = WeaponRules.pickUp(inv.arsenal, WeaponKind.PALO_CLAVOS),

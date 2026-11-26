@@ -274,6 +274,7 @@ fun WorldMapOverlays(
             fractured = uiState.survivalFractured,
             onCraftSplint = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.FERULA) },
             onCraftCampfire = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.FOGATA) },
+            onCraftTrap = { viewModel.startCraft(ovh.gabrielhuav.pow.domain.models.survival.Recipe.TRAMPA) },
             coat = uiState.survivalCoat,
         )
     }

@@ -41,6 +41,7 @@ import kotlinx.coroutines.withContext
 import ovh.gabrielhuav.pow.R
 import ovh.gabrielhuav.pow.domain.models.survival.Occupation
 import ovh.gabrielhuav.pow.domain.models.survival.RecipeRules
+import ovh.gabrielhuav.pow.domain.models.survival.TrapRules
 import ovh.gabrielhuav.pow.domain.models.survival.Skill
 import ovh.gabrielhuav.pow.domain.models.survival.SkillRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
@@ -83,6 +84,7 @@ fun WorldInventoryDialog(
     fractured: Boolean = false,
     onCraftSplint: () -> Unit = {},
     onCraftCampfire: () -> Unit = {},
+    onCraftTrap: () -> Unit = {},
     coat: Boolean = false,
 ) {
     Box(
@@ -178,6 +180,11 @@ fun WorldInventoryDialog(
                         enabled = boards >= RecipeRules.CAMPFIRE_BOARDS,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBF360C), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_craft_campfire), fontSize = 12.sp) }
+                    Button(
+                        onClick = onCraftTrap,
+                        enabled = boards >= TrapRules.BOARDS && survivalPack.refresco >= TrapRules.SODAS,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF546E7A), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_craft_trap), fontSize = 12.sp) }
                     if (fractured) Button(
                         onClick = onCraftSplint,
                         enabled = boards >= 1 && survivalPack.vendas >= 1,
