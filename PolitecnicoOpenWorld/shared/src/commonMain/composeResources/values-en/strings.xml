@@ -279,6 +279,10 @@
     <string name="settings_swap_sides_desc">Moves the action to the left</string>
     <string name="settings_layout_section">Controls layout</string>
     <string name="settings_layout_hint">Drag the joystick and buttons wherever suits you; change size and opacity. Press SAVE to apply it.</string>
+    <string name="settings_layout_copy">Copy layout</string>
+    <string name="settings_layout_paste">Paste layout</string>
+    <string name="settings_layout_share_ok">Done: save the controls to keep it.</string>
+    <string name="settings_layout_share_bad">The clipboard has no valid layout.</string>
     <string name="settings_layout_edit">Edit layout</string>
     <string name="layout_editor_title">Controls editor</string>
     <string name="layout_editor_hint">Drag a block to move it; the selected one has a gold border.</string>

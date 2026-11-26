@@ -279,6 +279,10 @@
     <string name="settings_swap_sides_desc">Mueve la acción a la izquierda</string>
     <string name="settings_layout_section">Disposición de los controles</string>
     <string name="settings_layout_hint">Arrastra el joystick y los botones donde te acomoden; cambia tamaño y opacidad. Pulsa GUARDAR para aplicarlo.</string>
+    <string name="settings_layout_copy">Copiar diseño</string>
+    <string name="settings_layout_paste">Pegar diseño</string>
+    <string name="settings_layout_share_ok">Listo: guarda los controles para conservarlo.</string>
+    <string name="settings_layout_share_bad">El portapapeles no trae un diseño válido.</string>
     <string name="settings_layout_edit">Editar disposición</string>
     <string name="layout_editor_title">Editor de controles</string>
     <string name="layout_editor_hint">Arrastra un bloque para moverlo; el seleccionado tiene borde dorado.</string>

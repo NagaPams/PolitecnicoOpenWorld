@@ -40,6 +40,27 @@ data class ControlsLayout(
     fun encode(): String = PowJson.encodeToString(ControlsLayout.serializer(), clamped())
 
     companion object {
+        /** Tope de tamaño de un diseño pegado (uno real mide ~200 caracteres). */
+        const val IMPORT_MAX_CHARS = 2000
+
+        /**
+         * Importa un diseño compartido (t81): a diferencia de [decode] devuelve null si el texto está vacío, es demasiado largo,
+         * no es un diseño válido, trae una versión desconocida o valores que no son números finitos. Lo válido se acota a rangos seguros.
+         */
+        fun tryDecode(json: String): ControlsLayout? {
+            val text = json.trim()
+            if (text.isEmpty() || text.length > IMPORT_MAX_CHARS) return null
+            val layout = try {
+                PowJson.decodeFromString(serializer(), text)
+            } catch (e: Exception) {
+                return null
+            }
+            if (layout.version != 1) return null
+            val values = listOf(layout.movement, layout.actions).flatMap { listOf(it.offsetXDp, it.offsetYDp, it.scale, it.opacity) }
+            if (values.any { !it.isFinite() }) return null
+            return layout.clamped()
+        }
+
         /** Lee una disposición guardada; si está vacía o rota devuelve la de fábrica (nunca lanza). */
         fun decode(json: String): ControlsLayout {
             if (json.isBlank()) return ControlsLayout()

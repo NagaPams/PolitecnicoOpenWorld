@@ -160,6 +160,36 @@ internal fun SettingsSectionControls(
                 ) {
                     Text(stringResource(Res.string.settings_layout_edit), fontSize = 12.sp)
                 }
+                // t81: compartir el diseño como texto (JSON) por el portapapeles.
+                val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+                var shareMessage by remember { mutableStateOf<Boolean?>(null) }
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            clipboard.setText(androidx.compose.ui.text.AnnotatedString(state.tempControlsLayout.encode()))
+                            shareMessage = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1C21), contentColor = Color.White),
+                    ) { Text(stringResource(Res.string.settings_layout_copy), fontSize = 11.sp) }
+                    Button(
+                        onClick = {
+                            val imported = ovh.gabrielhuav.pow.features.settings.models.ControlsLayout.tryDecode(clipboard.getText()?.text ?: "")
+                            if (imported != null) controller.changeControlsLayout(imported)
+                            shareMessage = imported != null
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1C21), contentColor = Color.White),
+                    ) { Text(stringResource(Res.string.settings_layout_paste), fontSize = 11.sp) }
+                }
+                shareMessage?.let { ok ->
+                    Text(
+                        stringResource(if (ok) Res.string.settings_layout_share_ok else Res.string.settings_layout_share_bad),
+                        color = if (ok) Color(0xFF80CBC4) else Color(0xFFFF8A80),
+                        fontSize = 12.sp,
+                    )
+                }
             }
             if (editingLayout) {
                 ControlsLayoutEditor(
