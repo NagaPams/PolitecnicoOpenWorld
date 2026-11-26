@@ -288,7 +288,7 @@ fun ZombieGameScreen(
         if (generated != null) {
             val buildingId = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.parse(room.id)?.buildingId ?: 0L
             background = withContext(Dispatchers.Default) {
-                GeneratedInteriorRenderer.render(generated, ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.interiorIsDark(buildingId), ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.survivorVisible(buildingId)) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }.asImageBitmap()
+                GeneratedInteriorRenderer.renderIso(generated, ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.interiorIsDark(buildingId), ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.survivorVisible(buildingId)) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }.asImageBitmap()
             }
             return@LaunchedEffect
         }
@@ -417,9 +417,14 @@ fun ZombieGameScreen(
             val viewportWpx = with(density) { maxWidth.toPx() }
             val viewportHpx = with(density) { maxHeight.toPx() }
 
+            val isoLayout = room.generatedLayout
             val cam = remember(state.playerX, state.playerY, viewportWpx, viewportHpx, room.id) {
-                computeCamera(state.playerX, state.playerY, room.worldWidth, room.worldHeight, viewportWpx, viewportHpx, room.zoom)
+                if (isoLayout != null) computeIsoCamera(state.playerX, state.playerY, ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, isoLayout.cols, isoLayout.rows, viewportWpx, viewportHpx, 1f)
+                else computeCamera(state.playerX, state.playerY, room.worldWidth, room.worldHeight, viewportWpx, viewportHpx, room.zoom)
             }
+            // t82: en un interior generado el mundo (x, y en píxeles) se proyecta en isométrico; los demás cuartos siguen en 2D.
+            fun toScreenX(wx: Float, wy: Float): Float = if (isoLayout != null) cam.offsetX + ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(wx / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, wy / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, isoLayout.rows) * cam.scale else cam.offsetX + wx * cam.scale
+            fun toScreenY(wx: Float, wy: Float): Float = if (isoLayout != null) cam.offsetY + ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(wx / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX, wy / ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX) * cam.scale else cam.offsetY + wy * cam.scale
 
             // Brushes de luz reutilizables: centrados en (0,0) y dibujados con translate,
             // así un único shader sirve para todas las entidades (antes se creaba uno por
@@ -439,7 +444,7 @@ fun ZombieGameScreen(
             val viewRight = (viewportWpx - cam.offsetX) / cam.scale + cullMargin
             val viewBottom = (viewportHpx - cam.offsetY) / cam.scale + cullMargin
             fun onScreen(wx: Float, wy: Float) =
-                wx >= viewLeft && wx <= viewRight && wy >= viewTop && wy <= viewBottom
+                isoLayout != null || (wx >= viewLeft && wx <= viewRight && wy >= viewTop && wy <= viewBottom)
 
             // ─── CAPA DEL MUNDO (fondo) ─────────────────────────
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -449,7 +454,7 @@ fun ZombieGameScreen(
                         drawImage(
                             image = bg,
                             dstOffset = IntOffset.Zero,
-                            dstSize = IntSize(room.worldWidth.toInt(), room.worldHeight.toInt())
+                            dstSize = if (isoLayout != null) IntSize(bg.width, bg.height) else IntSize(room.worldWidth.toInt(), room.worldHeight.toInt())
                         )
                         if (debugHitboxes) {
                             room.doors.forEach { d ->
@@ -474,7 +479,22 @@ fun ZombieGameScreen(
             )
 
             // ─── CAPA DE ILUMINACIÓN DINÁMICA (auras) ───────────
-            if (room.type == ZoneType.BUILDING && !state.designerMode) {
+            if (room.type == ZoneType.BUILDING && !state.designerMode && isoLayout != null) {
+                // t82: auras en isométrico: el círculo de luz del 2D se aplasta a un óvalo y se pone en la posición proyectada.
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val sx = cam.scale * 0.55f
+                    val sy = cam.scale * 0.3f
+                    translate(toScreenX(state.playerX, state.playerY), toScreenY(state.playerX, state.playerY)) {
+                        scale(sx, sy, pivot = Offset.Zero) { drawCircle(playerLightBrush, PLAYER_LIGHT_RADIUS, Offset.Zero) }
+                    }
+                    state.zombies.forEach { z ->
+                        if (!z.isDying) translate(toScreenX(z.x, z.y), toScreenY(z.x, z.y)) {
+                            scale(sx, sy, pivot = Offset.Zero) { drawCircle(zombieLightBrush, ZOMBIE_LIGHT_RADIUS, Offset.Zero) }
+                        }
+                    }
+                }
+            }
+            if (room.type == ZoneType.BUILDING && !state.designerMode && isoLayout == null) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     translate(cam.offsetX, cam.offsetY) {
                         scale(cam.scale, cam.scale, pivot = Offset.Zero) {
@@ -497,20 +517,18 @@ fun ZombieGameScreen(
                 }
             }
 
-            fun toScreenX(wx: Float) = cam.offsetX + wx * cam.scale
-            fun toScreenY(wy: Float) = cam.offsetY + wy * cam.scale
 
             // ─── LÍNEA PUNTEADA DE SALIDA ───────────────────────
             if (state.showExitGuide && !state.designerMode) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val px = toScreenX(state.playerX)
-                    val py = toScreenY(state.playerY)
+                    val px = toScreenX(state.playerX, state.playerY)
+                    val py = toScreenY(state.playerX, state.playerY)
                     val dash = PathEffect.dashPathEffect(floatArrayOf(24f, 18f), 0f)
                     room.doors.forEach { d ->
                         if (d.kind == DoorKind.EXIT_NEXT || d.kind == DoorKind.EXIT_PREV || d.kind == DoorKind.GENERIC) {
                             val r = d.hitboxFrac.toWorldRect(room.worldWidth, room.worldHeight)
-                            val ex = toScreenX(r.centerX())
-                            val ey = toScreenY(r.centerY())
+                            val ex = toScreenX(r.centerX(), r.centerY())
+                            val ey = toScreenY(r.centerX(), r.centerY())
                             val color = when (d.kind) {
                                 DoorKind.EXIT_NEXT, DoorKind.EXIT_PREV -> Color(0xFFFF9800)
                                 else -> Color(0xFFD4AF37)
@@ -540,8 +558,8 @@ fun ZombieGameScreen(
                     DoorIndicator(
                         label = door.label, kind = door.kind,
                         modifier = Modifier.absoluteOffset(
-                            x = with(density) { toScreenX(r.centerX()).toDp() } - 40.dp,
-                            y = with(density) { toScreenY(r.centerY()).toDp() } - 40.dp
+                            x = with(density) { toScreenX(r.centerX(), r.centerY()).toDp() } - 40.dp,
+                            y = with(density) { toScreenY(r.centerX(), r.centerY()).toDp() } - 40.dp
                         )
                     )
                 }
@@ -553,8 +571,8 @@ fun ZombieGameScreen(
                         effect = item.effect,
                         highlighted = state.nearbyItemId == item.id,
                         modifier = Modifier.absoluteOffset(
-                            x = with(density) { toScreenX(item.x).toDp() } - 18.dp,
-                            y = with(density) { toScreenY(item.y).toDp() } - 18.dp
+                            x = with(density) { toScreenX(item.x, item.y).toDp() } - 18.dp,
+                            y = with(density) { toScreenY(item.x, item.y).toDp() } - 18.dp
                         )
                     )
                 }
@@ -566,8 +584,8 @@ fun ZombieGameScreen(
                         assetPath = key.assetPath,
                         highlighted = state.nearbyKeyId == key.id,
                         modifier = Modifier.absoluteOffset(
-                            x = with(density) { toScreenX(key.x).toDp() } - 22.dp,
-                            y = with(density) { toScreenY(key.y).toDp() } - 22.dp
+                            x = with(density) { toScreenX(key.x, key.y).toDp() } - 22.dp,
+                            y = with(density) { toScreenY(key.x, key.y).toDp() } - 22.dp
                         )
                     )
                 }
@@ -583,8 +601,8 @@ fun ZombieGameScreen(
                         Box(
                             modifier = Modifier
                                 .absoluteOffset(
-                                    x = with(density) { toScreenX(bpX).toDp() } - with(density) { (bpSize * 0.9f).toDp() },
-                                    y = with(density) { toScreenY(bpY).toDp() } - with(density) { (bpSize * 0.9f).toDp() },
+                                    x = with(density) { toScreenX(bpX, bpY).toDp() } - with(density) { (bpSize * 0.9f).toDp() },
+                                    y = with(density) { toScreenY(bpX, bpY).toDp() } - with(density) { (bpSize * 0.9f).toDp() },
                                 )
                                 .size(with(density) { (bpSize * 1.8f).toDp() })
                                 .background(Color(0x66FFD35A), CircleShape)
@@ -595,8 +613,8 @@ fun ZombieGameScreen(
                             fallbackEmoji = "🎒",
                             contentAlpha = if (state.mission2BackpackNearby) 1f else 0.88f,
                             modifier = Modifier.absoluteOffset(
-                                x = with(density) { toScreenX(bpX).toDp() } - with(density) { (bpSize / 2).toDp() },
-                                y = with(density) { toScreenY(bpY).toDp() } - with(density) { (bpSize / 2).toDp() }
+                                x = with(density) { toScreenX(bpX, bpY).toDp() } - with(density) { (bpSize / 2).toDp() },
+                                y = with(density) { toScreenY(bpX, bpY).toDp() } - with(density) { (bpSize / 2).toDp() }
                             )
                         )
                     }
@@ -615,8 +633,8 @@ fun ZombieGameScreen(
                             fallbackEmoji = "🧪",
                             contentAlpha = if (state.mission3EvidenceNearby) 1f else 0.88f,
                             modifier = Modifier.absoluteOffset(
-                                x = with(density) { toScreenX(evX).toDp() } - with(density) { (evSize / 2).toDp() },
-                                y = with(density) { toScreenY(evY).toDp() } - with(density) { (evSize / 2).toDp() }
+                                x = with(density) { toScreenX(evX, evY).toDp() } - with(density) { (evSize / 2).toDp() },
+                                y = with(density) { toScreenY(evX, evY).toDp() } - with(density) { (evSize / 2).toDp() }
                             )
                         )
                     }
@@ -628,8 +646,8 @@ fun ZombieGameScreen(
                     if (!onScreen(p.x, p.y)) return@forEach
                     Box(
                         modifier = Modifier.absoluteOffset(
-                            x = with(density) { toScreenX(p.x).toDp() } - with(density) { (bulletSize / 2).toDp() },
-                            y = with(density) { toScreenY(p.y).toDp() } - with(density) { (bulletSize / 2).toDp() }
+                            x = with(density) { toScreenX(p.x, p.y).toDp() } - with(density) { (bulletSize / 2).toDp() },
+                            y = with(density) { toScreenY(p.x, p.y).toDp() } - with(density) { (bulletSize / 2).toDp() }
                         ).size(with(density) { bulletSize.toDp() })
                             .clip(CircleShape)
                             .background(Color(0xFFFFEB3B))
@@ -647,8 +665,8 @@ fun ZombieGameScreen(
                             isAttacking = z.isAttacking, isDying = z.isDying,
                             health = z.health, maxHealth = z.maxHealth, sizePx = zSize,
                             modifier = Modifier.absoluteOffset(
-                                x = with(density) { toScreenX(z.x).toDp() } - with(density) { (zSize / 2).toDp() },
-                                y = with(density) { toScreenY(z.y).toDp() } - with(density) { (zSize / 2).toDp() }
+                                x = with(density) { toScreenX(z.x, z.y).toDp() } - with(density) { (zSize / 2).toDp() },
+                                y = with(density) { toScreenY(z.x, z.y).toDp() } - with(density) { (zSize / 2).toDp() }
                             )
                         )
                     }
@@ -667,8 +685,8 @@ fun ZombieGameScreen(
                             facingRight = rp.facingRight,
                             sizePx = rpSize,
                             modifier = Modifier.absoluteOffset(
-                                x = with(density) { toScreenX(rp.x).toDp() } - with(density) { (rpSize / 2).toDp() },
-                                y = with(density) { toScreenY(rp.y).toDp() } - with(density) { (rpSize / 2).toDp() }
+                                x = with(density) { toScreenX(rp.x, rp.y).toDp() } - with(density) { (rpSize / 2).toDp() },
+                                y = with(density) { toScreenY(rp.x, rp.y).toDp() } - with(density) { (rpSize / 2).toDp() }
                             )
                         )
                     }
@@ -685,8 +703,8 @@ fun ZombieGameScreen(
                             facingRight = npc.facingRight,
                             sizePx = rpSize,
                             modifier = Modifier.absoluteOffset(
-                                x = with(density) { toScreenX(npc.x).toDp() } - with(density) { (rpSize / 2).toDp() },
-                                y = with(density) { toScreenY(npc.y).toDp() } - with(density) { (rpSize / 2).toDp() }
+                                x = with(density) { toScreenX(npc.x, npc.y).toDp() } - with(density) { (rpSize / 2).toDp() },
+                                y = with(density) { toScreenY(npc.x, npc.y).toDp() } - with(density) { (rpSize / 2).toDp() }
                             )
                         )
                     }
@@ -704,8 +722,8 @@ fun ZombieGameScreen(
                             sizePx = rpSize,
                             modifier = Modifier
                                 .absoluteOffset(
-                                    x = with(density) { toScreenX(npc.x).toDp() } - with(density) { (rpSize / 2).toDp() },
-                                    y = with(density) { toScreenY(npc.y).toDp() } - with(density) { (rpSize / 2).toDp() }
+                                    x = with(density) { toScreenX(npc.x, npc.y).toDp() } - with(density) { (rpSize / 2).toDp() },
+                                    y = with(density) { toScreenY(npc.x, npc.y).toDp() } - with(density) { (rpSize / 2).toDp() }
                                 )
                                 // 🆕 COMBATE: colapsado en el piso (rotado + desvanecido) al morir.
                                 .graphicsLayer {
@@ -718,8 +736,8 @@ fun ZombieGameScreen(
                             Box(
                                 modifier = Modifier
                                     .absoluteOffset(
-                                        x = with(density) { toScreenX(npc.x).toDp() } - hbW / 2,
-                                        y = with(density) { toScreenY(npc.y).toDp() } -
+                                        x = with(density) { toScreenX(npc.x, npc.y).toDp() } - hbW / 2,
+                                        y = with(density) { toScreenY(npc.x, npc.y).toDp() } -
                                             with(density) { (rpSize / 2).toDp() } - 8.dp
                                     )
                                     .width(hbW)
@@ -746,8 +764,8 @@ fun ZombieGameScreen(
                                 lineHeight = 13.sp,
                                 modifier = Modifier
                                     .absoluteOffset(
-                                        x = with(density) { toScreenX(npc.x).toDp() } - 70.dp,
-                                        y = with(density) { toScreenY(npc.y).toDp() } -
+                                        x = with(density) { toScreenX(npc.x, npc.y).toDp() } - 70.dp,
+                                        y = with(density) { toScreenY(npc.x, npc.y).toDp() } -
                                             with(density) { (rpSize / 2).toDp() } - 34.dp
                                     )
                                     .width(140.dp)
@@ -770,8 +788,8 @@ fun ZombieGameScreen(
                             sizePx = canSize,
                             fallbackEmoji = "🥫",
                             modifier = Modifier.absoluteOffset(
-                                x = with(density) { toScreenX(stX).toDp() } - with(density) { (canSize / 2).toDp() },
-                                y = with(density) { toScreenY(stY).toDp() } - with(density) { (canSize / 2).toDp() }
+                                x = with(density) { toScreenX(stX, stY).toDp() } - with(density) { (canSize / 2).toDp() },
+                                y = with(density) { toScreenY(stX, stY).toDp() } - with(density) { (canSize / 2).toDp() }
                             )
                         )
                     }
@@ -781,8 +799,8 @@ fun ZombieGameScreen(
                 // Se dibuja DENTRO de la capa del mundo (debajo del HUD y los
                 // controles) para que SOLO afecte al mapa, nunca a la GUI.
                 if (!state.designerMode) {
-                    val fogCx = toScreenX(state.playerX)
-                    val fogCy = toScreenY(state.playerY)
+                    val fogCx = toScreenX(state.playerX, state.playerY)
+                    val fogCy = toScreenY(state.playerX, state.playerY)
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val reveal = size.minDimension * 0.50f
                         val outer = reveal * 1.9f
@@ -813,8 +831,8 @@ fun ZombieGameScreen(
                     skin = state.selectedSkin,                         // ← NUEVO
                     modifier = Modifier
                         .absoluteOffset(
-                            x = with(density) { toScreenX(state.playerX).toDp() } - with(density) { (pSize / 2).toDp() },
-                            y = with(density) { toScreenY(state.playerY).toDp() } - with(density) { (pSize / 2).toDp() }
+                            x = with(density) { toScreenX(state.playerX, state.playerY).toDp() } - with(density) { (pSize / 2).toDp() },
+                            y = with(density) { toScreenY(state.playerX, state.playerY).toDp() } - with(density) { (pSize / 2).toDp() }
                         )
                         .alpha(ghostAlpha)
                 )
@@ -824,7 +842,7 @@ fun ZombieGameScreen(
                 // esas celdas ENCIMA del jugador cuando el objeto esta DELANTE (su base al sur de los
                 // pies del jugador). Asi el jugador pasa POR DETRAS al norte y POR DELANTE al sur.
                 // Decision por OBJETO (celdas '^' contiguas comparten la Y-base), memoizada por matriz.
-                val occRows = room.collisionMatrix?.rows
+                val occRows = if (isoLayout != null) null else room.collisionMatrix?.rows
                 val occBg = background
                 if (occRows != null && occBg != null) {
                     val occluders = remember(occRows, room.worldWidth, room.worldHeight) {

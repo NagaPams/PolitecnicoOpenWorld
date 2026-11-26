@@ -912,6 +912,12 @@ class ZombieInteriorViewModel @dagger.assisted.AssistedInject constructor(
         if (_state.value.designerMode) return
         val s = _state.value
         val step = if (s.isRunning) PLAYER_RUN_STEP else PLAYER_WALK_STEP
+        if (currentRoom().generatedLayout != null) {
+            // t82: el interior generado se ve en isométrico; el joystick apunta en la pantalla y se pasa a la dirección del mundo.
+            val (wx, wy) = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.worldDirection(cos(angleRad).toFloat(), -sin(angleRad).toFloat())
+            applyMovement(s.playerX + wx * step, s.playerY + wy * step, cos(angleRad).toFloat())
+            return
+        }
         applyMovement(
             s.playerX + cos(angleRad).toFloat() * step,
             s.playerY - sin(angleRad).toFloat() * step,

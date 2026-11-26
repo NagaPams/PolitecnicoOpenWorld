@@ -264,6 +264,26 @@ internal fun computeOccluders(rows: List<String>, worldW: Float, worldH: Float):
     return out
 }
 
+/**
+ * Cámara de un interior isométrico (t82): centra al jugador (posición del mundo en píxeles) sobre la imagen proyectada y no
+ * deja ver fuera de ella. [cellPx] es el tamaño de una celda del mundo.
+ */
+internal fun computeIsoCamera(
+    playerX: Float, playerY: Float, cellPx: Float, cols: Int, rows: Int, viewW: Float, viewH: Float, zoom: Float,
+): CameraTransform {
+    if (viewW <= 0f || viewH <= 0f) return CameraTransform(0f, 0f, 1f)
+    val scale = viewH / ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.VISIBLE_HEIGHT * zoom
+    val bx = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(playerX / cellPx, playerY / cellPx, rows)
+    val by = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(playerX / cellPx, playerY / cellPx)
+    val w = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.bitmapWidth(cols, rows) * scale
+    val h = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.bitmapHeight(cols, rows) * scale
+    var offsetX = viewW / 2f - bx * scale
+    var offsetY = viewH * 0.55f - by * scale
+    offsetX = if (w <= viewW) (viewW - w) / 2f else offsetX.coerceIn(viewW - w, 0f)
+    offsetY = if (h <= viewH) (viewH - h) / 2f else offsetY.coerceIn(viewH - h, 0f)
+    return CameraTransform(offsetX, offsetY, scale)
+}
+
 internal fun computeCamera(
     playerX: Float, playerY: Float, worldW: Float, worldH: Float,
     viewW: Float, viewH: Float, zoom: Float

@@ -3,8 +3,10 @@ package ovh.gabrielhuav.pow.features.interiores.zombies.ui
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import ovh.gabrielhuav.pow.domain.models.interior.FurnitureKind
+import ovh.gabrielhuav.pow.domain.models.interior.InteriorIso
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout
 import ovh.gabrielhuav.pow.domain.models.interior.RoomType
 import ovh.gabrielhuav.pow.domain.models.interior.WallSide
@@ -161,5 +163,167 @@ internal object GeneratedInteriorRenderer {
             canvas.drawRect(rect.left + 3f, rect.top + 3f, rect.right - 3f, rect.bottom - CELL * 0.3f, paint)
             canvas.drawText(glyph(f.kind), rect.centerX(), rect.centerY() + CELL * 0.1f, text)
         }
+    }
+
+    // ─── VISTA ISOMÉTRICA (t82) ─────────────────────────────────────────────────────────────────────────────────────────
+    // Misma planta, proyectada 2:1 como el mundo exterior (InteriorIso): suelo en rombos, muros con altura (los de atrás
+    // altos y los de adelante bajos para no tapar el cuarto), ventanas pegadas a la cara visible del muro y muebles como
+    // cajas. Se ordena por columna + fila (de atrás hacia adelante).
+
+    private const val WALL_BACK = 54f
+    private const val WALL_PARTITION = 46f
+    private const val WALL_FRONT = 9f
+
+    fun renderIso(layout: InteriorLayout, dark: Boolean = false, survivorVisible: Boolean = true, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
+        val w = InteriorIso.bitmapWidth(layout.cols, layout.rows).toInt()
+        val h = InteriorIso.bitmapHeight(layout.cols, layout.rows).toInt()
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 26f; textAlign = Paint.Align.CENTER }
+        canvas.drawColor(0xFF121010.toInt())
+        for (room in layout.rooms) {
+            for (r in room.top..room.bottom) for (c in room.left..room.right) {
+                val tone = if ((c + r) % 2 == 0) 0x22000000 else 0
+                fillQuad(canvas, paint, layout.rows, floorColor(room.type), c, r, 1, 1, 0f)
+                if (tone != 0) fillQuad(canvas, paint, layout.rows, tone, c, r, 1, 1, 0f)
+            }
+        }
+        // Felpudo de la entrada.
+        fillQuad(canvas, paint, layout.rows, 0x88C9A24B.toInt(), layout.doorCol, layout.rows - 2, 1, 1, 0f)
+        val byCell = layout.furniture.associateBy { it.col to it.row }
+        for (s in 0..(layout.cols + layout.rows - 2)) {
+            for (c in 0 until layout.cols) {
+                val r = s - c
+                if (r < 0 || r >= layout.rows) continue
+                if (layout.isWall(c, r)) drawWallBlock(canvas, paint, layout, c, r, windowState)
+                byCell[c to r]?.let { f -> drawFurnitureBlock(canvas, paint, text, layout.rows, f) }
+                if (r == layout.rows - 1 && c == layout.doorCol) drawDoorFrame(canvas, paint, layout.rows, c, r)
+                if (layout.survivorCell == c to r && survivorVisible) {
+                    paint.style = Paint.Style.FILL
+                    paint.color = 0x55FFD54F
+                    canvas.drawCircle(InteriorIso.x(c + 0.5f, r + 0.5f, layout.rows), InteriorIso.y(c + 0.5f, r + 0.5f), 22f, paint)
+                    canvas.drawText("🧍", InteriorIso.x(c + 0.5f, r + 0.5f, layout.rows), InteriorIso.y(c + 0.5f, r + 0.5f, 6f), text)
+                }
+            }
+        }
+        if (dark) {
+            paint.style = Paint.Style.FILL
+            paint.color = 0xA0050A18.toInt()
+            canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+        }
+        return bitmap
+    }
+
+    private fun shade(color: Int, factor: Float): Int {
+        val r = ((color shr 16 and 0xFF) * factor).toInt().coerceIn(0, 255)
+        val g = ((color shr 8 and 0xFF) * factor).toInt().coerceIn(0, 255)
+        val b = ((color and 0xFF) * factor).toInt().coerceIn(0, 255)
+        return (color and 0xFF000000.toInt()) or (r shl 16) or (g shl 8) or b
+    }
+
+    private fun path(canvas: Canvas, paint: Paint, color: Int, vararg points: Pair<Float, Float>) {
+        val p = Path()
+        points.forEachIndexed { i, pt -> if (i == 0) p.moveTo(pt.first, pt.second) else p.lineTo(pt.first, pt.second) }
+        p.close()
+        paint.style = Paint.Style.FILL
+        paint.color = color
+        canvas.drawPath(p, paint)
+    }
+
+    /** Rombo de [wCells] x [hCells] celdas con su esquina de atrás en (col, row), a la altura [z]. */
+    private fun fillQuad(canvas: Canvas, paint: Paint, rows: Int, color: Int, col: Int, row: Int, wCells: Int, hCells: Int, z: Float) {
+        val c0 = col.toFloat(); val r0 = row.toFloat(); val c1 = (col + wCells).toFloat(); val r1 = (row + hCells).toFloat()
+        path(canvas, paint, color,
+            InteriorIso.x(c0, r0, rows) to InteriorIso.y(c0, r0, z), InteriorIso.x(c1, r0, rows) to InteriorIso.y(c1, r0, z),
+            InteriorIso.x(c1, r1, rows) to InteriorIso.y(c1, r1, z), InteriorIso.x(c0, r1, rows) to InteriorIso.y(c0, r1, z))
+    }
+
+    /** Caja con tapa y las dos caras que ve la cámara (la de adelante a la izquierda y la de adelante a la derecha). */
+    private fun drawBox(canvas: Canvas, paint: Paint, rows: Int, col: Int, row: Int, wCells: Int, hCells: Int, height: Float, top: Int, side: Int) {
+        val c0 = col.toFloat(); val r0 = row.toFloat(); val c1 = (col + wCells).toFloat(); val r1 = (row + hCells).toFloat()
+        // Cara frontal izquierda (hacia +fila): del vértice izquierdo al de abajo.
+        path(canvas, paint, shade(side, 0.92f),
+            InteriorIso.x(c0, r1, rows) to InteriorIso.y(c0, r1, 0f), InteriorIso.x(c1, r1, rows) to InteriorIso.y(c1, r1, 0f),
+            InteriorIso.x(c1, r1, rows) to InteriorIso.y(c1, r1, height), InteriorIso.x(c0, r1, rows) to InteriorIso.y(c0, r1, height))
+        // Cara frontal derecha (hacia +columna): del vértice de abajo al derecho.
+        path(canvas, paint, shade(side, 0.7f),
+            InteriorIso.x(c1, r1, rows) to InteriorIso.y(c1, r1, 0f), InteriorIso.x(c1, r0, rows) to InteriorIso.y(c1, r0, 0f),
+            InteriorIso.x(c1, r0, rows) to InteriorIso.y(c1, r0, height), InteriorIso.x(c1, r1, rows) to InteriorIso.y(c1, r1, height))
+        fillQuad(canvas, paint, rows, top, col, row, wCells, hCells, height)
+    }
+
+    private fun drawWallBlock(canvas: Canvas, paint: Paint, layout: InteriorLayout, col: Int, row: Int, windowState: (Int) -> WindowState) {
+        val height = when {
+            row == layout.rows - 1 || col == layout.cols - 1 -> WALL_FRONT
+            row == 0 || col == 0 -> WALL_BACK
+            else -> WALL_PARTITION
+        }
+        drawBox(canvas, paint, layout.rows, col, row, 1, 1, height, 0xFF6A615A.toInt(), 0xFF433D39.toInt())
+        // Ventanas: solo se ven las de los muros del fondo (norte y oeste), en su cara que mira al cuarto.
+        layout.windows.forEachIndexed { index, win ->
+            val onThis = when (win.side) {
+                WallSide.NORTE -> col == win.index && row == 0
+                WallSide.OESTE -> col == 0 && row == win.index
+                WallSide.ESTE -> false
+            }
+            if (onThis) drawWindowFace(canvas, paint, layout.rows, col, row, win.side, height, windowState(index))
+        }
+    }
+
+    private fun drawWindowFace(canvas: Canvas, paint: Paint, rows: Int, col: Int, row: Int, side: WallSide, height: Float, state: WindowState) {
+        val color = when (state) {
+            WindowState.REFORZADA -> 0xFF5C6670.toInt()
+            WindowState.TAPIADA -> 0xFF6B4A2B.toInt()
+            WindowState.ROTA -> 0xFF2B2F33.toInt()
+            WindowState.CERRADA -> 0xFF9CC8E6.toInt()
+        }
+        val bar = when (state) {
+            WindowState.REFORZADA -> 0xFFB8C2CC.toInt()
+            WindowState.TAPIADA -> 0xFF9A7345.toInt()
+            else -> 0
+        }
+        // La cara visible del muro norte es la de +fila; la del muro oeste, la de +columna.
+        val edge = if (side == WallSide.NORTE) {
+            listOf(col + 0.18f, row + 1f, col + 0.82f, row + 1f)
+        } else {
+            listOf(col + 1f, row + 0.82f, col + 1f, row + 0.18f)
+        }
+        val ax = edge[0]; val ay = edge[1]; val bx = edge[2]; val by = edge[3]
+        val z0 = height * 0.3f
+        val z1 = height * 0.82f
+        fun quad(t0: Float, t1: Float, za: Float, zb: Float, colr: Int) {
+            val x0 = ax + (bx - ax) * t0; val y0 = ay + (by - ay) * t0
+            val x1 = ax + (bx - ax) * t1; val y1 = ay + (by - ay) * t1
+            path(canvas, paint, colr,
+                InteriorIso.x(x0, y0, rows) to InteriorIso.y(x0, y0, za), InteriorIso.x(x1, y1, rows) to InteriorIso.y(x1, y1, za),
+                InteriorIso.x(x1, y1, rows) to InteriorIso.y(x1, y1, zb), InteriorIso.x(x0, y0, rows) to InteriorIso.y(x0, y0, zb))
+        }
+        quad(0f, 1f, z0, z1, color)
+        if (bar != 0) {
+            quad(0f, 1f, z0 + (z1 - z0) * 0.2f, z0 + (z1 - z0) * 0.42f, bar)
+            quad(0f, 1f, z0 + (z1 - z0) * 0.58f, z0 + (z1 - z0) * 0.8f, bar)
+        } else {
+            quad(0.47f, 0.53f, z0, z1, 0xFFE9E4DA.toInt())
+        }
+    }
+
+    private fun drawDoorFrame(canvas: Canvas, paint: Paint, rows: Int, col: Int, row: Int) {
+        fillQuad(canvas, paint, rows, 0xFF6B4A2B.toInt(), col, row, 1, 1, 0f)
+        fillQuad(canvas, paint, rows, 0xFFB98B4F.toInt(), col, row, 1, 1, 1f)
+    }
+
+    private fun drawFurnitureBlock(canvas: Canvas, paint: Paint, text: Paint, rows: Int, f: ovh.gabrielhuav.pow.domain.models.interior.InteriorFurniture) {
+        val (top, front) = furnitureColors(f.kind)
+        val height = when (f.kind) {
+            FurnitureKind.CAMA, FurnitureKind.CAMILLA, FurnitureKind.BANCO -> 14f
+            FurnitureKind.MESA, FurnitureKind.MOSTRADOR, FurnitureKind.COCINA -> 20f
+            FurnitureKind.INODORO, FurnitureKind.GRIFO -> 18f
+            FurnitureKind.ESTANTE, FurnitureKind.ARMARIO -> 34f
+            FurnitureKind.GENERADOR -> 24f
+        }
+        drawBox(canvas, paint, rows, f.col, f.row, f.widthCells, 1, height, top, front)
+        val cx = f.col + f.widthCells / 2f
+        canvas.drawText(glyph(f.kind), InteriorIso.x(cx, f.row + 0.5f, rows), InteriorIso.y(cx, f.row + 0.5f, height) + 9f, text)
     }
 }
