@@ -6,6 +6,7 @@ import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
 import ovh.gabrielhuav.pow.domain.models.interior.PowerRules
 import ovh.gabrielhuav.pow.domain.models.interior.WallSide
 import ovh.gabrielhuav.pow.domain.models.interior.WindowAction
+import ovh.gabrielhuav.pow.domain.models.interior.InteriorInteractRules
 import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.interior.WindowState
 import androidx.lifecycle.viewModelScope
@@ -153,6 +154,21 @@ private fun ZombieInteriorViewModel.interactNearbySurvivor(layout: ovh.gabrielhu
     return true
 }
 
+/** Distancia (en celdas) a la ventana más cercana al alcance, o null si no hay ninguna. */
+private fun windowDistance(layout: ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout, cx: Float, cy: Float): Float? {
+    var best: Float? = null
+    layout.windows.forEach { w ->
+        val (col, row) = when (w.side) {
+            WallSide.NORTE -> w.index to 0
+            WallSide.ESTE -> layout.cols - 1 to w.index
+            WallSide.OESTE -> 0 to w.index
+        }
+        val d = hypot(cx - cx.coerceIn(col.toFloat(), col + 1f), cy - cy.coerceIn(row.toFloat(), row + 1f))
+        if (d <= WINDOW_REACH_CELLS && (best == null || d < best!!)) best = d
+    }
+    return best
+}
+
 /** X junto a una ventana: romperla (ruido, quizá un corte) o tapiarla con un tablón. true si había una al alcance. */
 private fun ZombieInteriorViewModel.interactNearbyWindow(layout: ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout, buildingId: Long, cx: Float, cy: Float): Boolean {
     var best = -1
@@ -203,7 +219,6 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     val cx = s.playerX / GeneratedInteriors.CELL_PX
     val cy = s.playerY / GeneratedInteriors.CELL_PX
     if (interactNearbySurvivor(layout, spec.buildingId, cx, cy)) return true
-    if (interactNearbyWindow(layout, spec.buildingId, cx, cy)) return true
     var bestIndex = -1
     var bestDistance = FURNITURE_REACH_CELLS
     layout.furniture.forEachIndexed { index, f ->
@@ -215,6 +230,10 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
             bestIndex = index
         }
     }
+    // X actúa sobre lo MÁS CERCANO: una ventana a 1,2 celdas ya no le gana a un mueble pegado al jugador.
+    if (InteriorInteractRules.preferWindow(windowDistance(layout, cx, cy), if (bestIndex >= 0) bestDistance else null) &&
+        interactNearbyWindow(layout, spec.buildingId, cx, cy)
+    ) return true
     if (bestIndex < 0) return false
     val furniture = layout.furniture[bestIndex]
     if (furniture.kind == FurnitureKind.GENERADOR) {
