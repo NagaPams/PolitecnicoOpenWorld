@@ -21,7 +21,11 @@ import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_needs_fuel
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_not_needed
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_on
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_started
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_boiled
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked_raw
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_not_thirsty
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_dirty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_no_food
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_not_hungry
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_drank
@@ -157,6 +161,9 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     if (furniture.kind == FurnitureKind.COCINA) {
         showKeyRes(when (InteriorLootBridge.cookMeal?.invoke()) {
             CookResult.COOKED -> Res.string.zinterior_stove_cooked
+            CookResult.COOKED_RAW -> Res.string.zinterior_stove_cooked_raw
+            CookResult.BOILED -> Res.string.zinterior_stove_boiled
+            CookResult.NOT_THIRSTY -> Res.string.zinterior_stove_not_thirsty
             CookResult.NOT_HUNGRY -> Res.string.zinterior_stove_not_hungry
             else -> Res.string.zinterior_stove_no_food
         })
@@ -166,6 +173,7 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
         showKeyRes(when (InteriorLootBridge.drinkFromTap?.invoke()) {
             TapResult.DRANK -> Res.string.zinterior_tap_drank
             TapResult.NOT_THIRSTY -> Res.string.zinterior_tap_not_thirsty
+            TapResult.DIRTY -> Res.string.zinterior_tap_dirty
             else -> Res.string.zinterior_tap_dry
         })
         return true

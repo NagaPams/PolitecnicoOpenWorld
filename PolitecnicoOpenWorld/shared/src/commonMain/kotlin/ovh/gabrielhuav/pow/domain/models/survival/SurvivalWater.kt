@@ -4,7 +4,8 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // del apagón (como en Project Zomboid, donde el agua y la luz se cortan tras un tiempo). Reglas puras.
 // Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
-enum class TapResult { DRANK, NO_WATER, NOT_THIRSTY }
+/** Al final de la lista de valores: [DIRTY] = el grifo ya no tiene red, pero se juntó agua sucia en un recipiente. */
+enum class TapResult { DRANK, NO_WATER, NOT_THIRSTY, DIRTY }
 
 object WaterRules {
     /** El agua se corta desde este día de supervivencia (la luz lo hace el día [BlackoutRules.FROM_DAY]). */

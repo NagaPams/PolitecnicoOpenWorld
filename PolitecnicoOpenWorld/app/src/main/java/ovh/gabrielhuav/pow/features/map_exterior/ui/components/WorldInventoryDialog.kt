@@ -148,6 +148,9 @@ fun WorldInventoryDialog(
                         stringResource(R.string.pack_counts, survivalPack.pizza, survivalPack.refresco, survivalPack.botiquin),
                         color = Color.White, fontSize = 14.sp,
                     )
+                    if (survivalPack.cruda > 0 || survivalPack.sucia > 0) {
+                        Text(stringResource(R.string.pack_raw_counts, survivalPack.cruda, survivalPack.sucia), color = Color.White, fontSize = 14.sp)
+                    }
                     Text(
                         stringResource(R.string.pack_weight, SurvivalCrafting.weightOf(survivalPack).toFloat(), SurvivalCrafting.MAX_WEIGHT.toFloat()),
                         color = if (SurvivalCrafting.weightOf(survivalPack) >= SurvivalCrafting.MAX_WEIGHT) Color(0xFFE57373) else Color(0xFFB0BEC5), fontSize = 12.sp,

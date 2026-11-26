@@ -4,7 +4,16 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // momento (hambre llena, p. ej.) se guarda en vez de perderse; 2 refrescos + 1 pizza = 1 botiquín (+40 HP).
 // Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
-data class SurvivalPack(val pizza: Int = 0, val refresco: Int = 0, val botiquin: Int = 0, val bidones: Int = 0, val vendas: Int = 0)
+data class SurvivalPack(
+    val pizza: Int = 0,
+    val refresco: Int = 0,
+    val botiquin: Int = 0,
+    val bidones: Int = 0,
+    val vendas: Int = 0,
+    /** Comida cruda y agua sucia (t16): hay que cocinarlas o hervirlas en una estufa antes de que sirvan. */
+    val cruda: Int = 0,
+    val sucia: Int = 0,
+)
 
 object SurvivalCrafting {
     const val MAX_PER_ITEM = 5
@@ -19,10 +28,12 @@ object SurvivalCrafting {
     const val WEIGHT_BOTIQUIN = 1.5
     const val WEIGHT_BIDON = 3.0
     const val WEIGHT_VENDA = 0.5
+    const val WEIGHT_CRUDA = 1.0
+    const val WEIGHT_SUCIA = 1.0
 
     fun weightOf(pack: SurvivalPack): Double =
         pack.pizza * WEIGHT_PIZZA + pack.refresco * WEIGHT_REFRESCO + pack.botiquin * WEIGHT_BOTIQUIN +
-            pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA
+            pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA + pack.cruda * WEIGHT_CRUDA + pack.sucia * WEIGHT_SUCIA
 
     /** t67: hasta este peso (60 % del máximo) se camina normal; de ahí al máximo se frena hasta [MIN_SPEED_FACTOR]. */
     const val SLOW_FROM_WEIGHT = 9.6
@@ -47,6 +58,10 @@ object SurvivalCrafting {
     fun canAddVenda(pack: SurvivalPack): Boolean = pack.vendas < MAX_PER_ITEM && fits(pack, WEIGHT_VENDA)
 
     fun canAddBidon(pack: SurvivalPack): Boolean = pack.bidones < FuelRules.MAX_CANS && fits(pack, WEIGHT_BIDON)
+
+    fun canAddCruda(pack: SurvivalPack): Boolean = pack.cruda < MAX_PER_ITEM && fits(pack, WEIGHT_CRUDA)
+
+    fun canAddSucia(pack: SurvivalPack): Boolean = pack.sucia < MAX_PER_ITEM && fits(pack, WEIGHT_SUCIA)
 
     /** Hambre o sed en este valor o menos: el botín se consume al recogerlo; si no, va a la mochila. */
     const val USE_NOW_THRESHOLD = 60.0
@@ -92,6 +107,8 @@ object SurvivalCrafting {
             if (p.refresco > 0) options.add(WEIGHT_REFRESCO to p.copy(refresco = p.refresco - 1))
             if (p.botiquin > 0) options.add(WEIGHT_BOTIQUIN to p.copy(botiquin = p.botiquin - 1))
             if (p.bidones > 0) options.add(WEIGHT_BIDON to p.copy(bidones = p.bidones - 1))
+            if (p.cruda > 0) options.add(WEIGHT_CRUDA to p.copy(cruda = p.cruda - 1))
+            if (p.sucia > 0) options.add(WEIGHT_SUCIA to p.copy(sucia = p.sucia - 1))
             if (options.isEmpty()) return p
             val enough = options.filter { it.first >= excess }.minByOrNull { it.first }
             p = (enough ?: options.maxByOrNull { it.first }!!).second
@@ -102,5 +119,6 @@ object SurvivalCrafting {
     fun sanitized(pack: SurvivalPack): SurvivalPack = fitToWeight(SurvivalPack(
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
         pack.bidones.coerceIn(0, FuelRules.MAX_CANS), pack.vendas.coerceIn(0, MAX_PER_ITEM),
+        pack.cruda.coerceIn(0, MAX_PER_ITEM), pack.sucia.coerceIn(0, MAX_PER_ITEM),
     ))
 }

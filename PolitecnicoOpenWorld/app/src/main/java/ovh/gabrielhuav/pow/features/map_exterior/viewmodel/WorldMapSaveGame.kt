@@ -119,6 +119,8 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalCarStates = CarStateRules.encode(carStates),
         survivalFractureHealsAtMs = survivalManager.state.value.fractureHealsAtMs,
         survivalBandages = survivalManager.state.value.pack.vendas,
+        survivalRaw = survivalManager.state.value.pack.cruda,
+        survivalDirty = survivalManager.state.value.pack.sucia,
         survivalVehicleHealth = vehicleHealth,
         survivalActiveMs = survivalManager.state.value.activeMs,
         survivalSkills = ovh.gabrielhuav.pow.domain.models.survival.SkillRules.encode(survivalManager.state.value.skills),
@@ -168,7 +170,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     val restoredCompleted: List<String> = data.completedMissions ?: emptyList()
     // wantedLevel (WantedManager) y completedMissions (CampaignManager) los POSEEN sus managers
     // (fachada combine): se restauran vía el manager, NO en el copy de _uiState.
-    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages)
+    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages, data.survivalRaw, data.survivalDirty)
     // t74: si el guardado traía más de lo que cabe, `restore` lo recorta; se avisa para que no parezca una pérdida sin motivo.
     val packTrimmed = ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting.sanitized(savedPack) != savedPack
     survivalManager.restore(

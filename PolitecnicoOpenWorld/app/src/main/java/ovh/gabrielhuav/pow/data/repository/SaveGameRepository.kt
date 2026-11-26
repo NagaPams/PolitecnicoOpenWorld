@@ -83,6 +83,9 @@ data class GameSaveData(
     val survivalCoat: Boolean = false,
     // Gasolina y salud de los coches estacionados (`CarStateRules.encode`).
     val survivalCarStates: String = "",
+    // Comida cruda y agua sucia de la mochila.
+    val survivalRaw: Int = 0,
+    val survivalDirty: Int = 0,
     // Humedad de la ropa (0-100).
     val survivalWetness: Double = 0.0,
     // Fractura: instante (ms de supervivencia activa) en que sana; 0 = sin fractura.

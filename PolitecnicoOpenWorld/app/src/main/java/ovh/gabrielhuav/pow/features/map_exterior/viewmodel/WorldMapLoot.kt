@@ -327,8 +327,8 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
 private fun WorldMapViewModel.cookMeal(): CookResult {
     val sv = survivalManager.state.value
     val result = CookRules.check(sv.pack, sv.needs)
-    if (result == CookResult.COOKED) {
-        val (pack, needs) = CookRules.cook(sv.pack, sv.needs)
+    if (result == CookResult.COOKED || result == CookResult.COOKED_RAW || result == CookResult.BOILED) {
+        val (pack, needs) = CookRules.cook(sv.pack, sv.needs, result)
         survivalManager.setPack(pack)
         survivalManager.setNeeds(needs)
     }
@@ -340,6 +340,11 @@ private fun WorldMapViewModel.drinkFromTap(): TapResult {
     val sv = survivalManager.state.value
     val result = WaterRules.check(DayRules.daysSurvived(sv.activeMs), sv.needs.thirst)
     if (result == TapResult.DRANK) survivalManager.setNeeds(WaterRules.drink(sv.needs))
+    // Sin red, el grifo todavía suelta un poco de agua turbia: se junta en la mochila y se hierve en la estufa.
+    if (result == TapResult.NO_WATER && SurvivalCrafting.canAddSucia(sv.pack)) {
+        survivalManager.setPack(sv.pack.copy(sucia = sv.pack.sucia + 1))
+        return TapResult.DIRTY
+    }
     return result
 }
 
@@ -389,6 +394,10 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
                 gave = true
             } else if (SurvivalCrafting.bidonBlockedByWeight(current.pack)) {
                 weightBlocked = true
+            }
+            SearchGain.CRUDA -> if (SurvivalCrafting.canAddCruda(current.pack)) {
+                survivalManager.setPack(current.pack.copy(cruda = current.pack.cruda + 1))
+                gave = true
             }
             SearchGain.ABRIGO -> if (!current.coat) {
                 survivalManager.setCoat(true)

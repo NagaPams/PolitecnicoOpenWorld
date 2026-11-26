@@ -683,6 +683,7 @@
     <string name="vendor_serum_name">Suero</string>
     <string name="vendor_serum_desc">Cura la infección por mordida.</string>
     <string name="pack_title">Mochila de supervivencia</string>
+    <string name="pack_raw_counts">🍖 Comida cruda %1$d   💧 Agua sucia %2$d</string>
     <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
     <string name="pack_weight">⚖️ Peso: %1$.1f / %2$.1f</string>
     <string name="pack_craft_kit">Craftear botiquín (2 🥤 + 1 🍕)</string>

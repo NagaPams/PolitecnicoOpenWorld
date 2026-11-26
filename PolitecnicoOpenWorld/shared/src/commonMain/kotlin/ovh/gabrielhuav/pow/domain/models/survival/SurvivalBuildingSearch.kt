@@ -16,7 +16,7 @@ import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
 enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERICO, CASA, TALLER }
 
 /** Qué puede dar un registro. */
-enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO }
+enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO, CRUDA }
 
 /** Un edificio registrable con el punto (afuera de su pared) donde se registra. */
 data class SearchableBuilding(
