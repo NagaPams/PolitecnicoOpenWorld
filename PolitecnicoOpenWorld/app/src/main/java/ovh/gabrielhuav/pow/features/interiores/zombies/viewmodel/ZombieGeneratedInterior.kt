@@ -40,6 +40,7 @@ import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_not_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_boarded
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_broken
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_covered
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_reinforced
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_zombie
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_need_board
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_empty
@@ -63,6 +64,9 @@ object InteriorLootBridge {
     /** Gasta [WindowRules.BOARDS_TO_COVER] tablones; false si no alcanzan. */
     @Volatile var spendBoards: ((Int) -> Boolean)? = null
     @Volatile var boardsCarried: (() -> Int)? = null
+    /** Chapas de metal de la mochila y gastar una (refuerzo de ventanas). */
+    @Volatile var platesCarried: (() -> Int)? = null
+    @Volatile var spendPlate: (() -> Boolean)? = null
     /** Bebe de un grifo: el mapa sabe el día y la sed. */
     @Volatile var drinkFromTap: (() -> TapResult)? = null
     /** Cocina una comida de la mochila en la estufa. */
@@ -108,7 +112,15 @@ internal fun ZombieInteriorViewModel.startWindowPressure(room: ovh.gabrielhuav.p
     while (isActive) {
         delay(WindowRules.PRESSURE_MS)
         var entered = false
+        var breached = false
         layout.windows.forEachIndexed { index, window ->
+            // Una ventana solo tapiada puede ceder con el tiempo; la reforzada con metal aguanta.
+            val before = windowStateOf(buildingId, index)
+            val after = WindowRules.afterPressure(before, kotlin.random.Random.nextDouble())
+            if (after != before) {
+                InteriorLootBridge.windowStates[WindowRules.key(buildingId, index)] = after
+                breached = true
+            }
             val inside = _state.value.zombies.count { !it.isDying }
             if (!WindowRules.letsZombieIn(windowStateOf(buildingId, index), inside)) return@forEachIndexed
             val (col, row) = WindowRules.entryCell(window, layout.cols)
@@ -120,6 +132,7 @@ internal fun ZombieInteriorViewModel.startWindowPressure(room: ovh.gabrielhuav.p
             _state.update { it.copy(zombies = it.zombies + zombie) }
             entered = true
         }
+        if (breached) _state.update { it.copy(generatedRevision = it.generatedRevision + 1) }
         if (entered) showKeyRes(Res.string.zinterior_window_zombie)
     }
 }
@@ -159,7 +172,7 @@ private fun ZombieInteriorViewModel.interactNearbyWindow(layout: ovh.gabrielhuav
     if (best < 0) return false
     val key = WindowRules.key(buildingId, best)
     val state = windowStateOf(buildingId, best)
-    when (val action = WindowRules.actionFor(state, InteriorLootBridge.boardsCarried?.invoke() ?: 0)) {
+    when (val action = WindowRules.actionFor(state, InteriorLootBridge.boardsCarried?.invoke() ?: 0, InteriorLootBridge.platesCarried?.invoke() ?: 0)) {
         WindowAction.ROMPER -> {
             InteriorLootBridge.windowStates[key] = WindowRules.after(state, action)
             InteriorLootBridge.onWindowBroken?.invoke()
@@ -169,6 +182,11 @@ private fun ZombieInteriorViewModel.interactNearbyWindow(layout: ovh.gabrielhuav
             if (InteriorLootBridge.spendBoards?.invoke(WindowRules.BOARDS_TO_COVER) != true) return true
             InteriorLootBridge.windowStates[key] = WindowRules.after(state, action)
             showKeyRes(Res.string.zinterior_window_boarded)
+        }
+        WindowAction.REFORZAR -> {
+            if (InteriorLootBridge.spendPlate?.invoke() != true) return true
+            InteriorLootBridge.windowStates[key] = WindowRules.after(state, action)
+            showKeyRes(Res.string.zinterior_window_reinforced)
         }
         WindowAction.NINGUNA -> showKeyRes(if (state == WindowState.ROTA) Res.string.zinterior_window_need_board else Res.string.zinterior_window_covered)
     }

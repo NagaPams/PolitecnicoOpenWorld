@@ -85,10 +85,10 @@ internal object GeneratedInteriorRenderer {
             }
             val state = windowState(index)
             paint.style = Paint.Style.FILL
-            paint.color = if (state == WindowState.TAPIADA) 0xFF6B4A2B.toInt() else if (state == WindowState.ROTA) 0xFF2B2F33.toInt() else 0xFF9CC8E6.toInt()
+            paint.color = if (state == WindowState.REFORZADA) 0xFF5C6670.toInt() else if (state == WindowState.TAPIADA) 0xFF6B4A2B.toInt() else if (state == WindowState.ROTA) 0xFF2B2F33.toInt() else 0xFF9CC8E6.toInt()
             canvas.drawRect(rect.left + CELL * 0.12f, rect.top + CELL * 0.12f, rect.right - CELL * 0.12f, rect.bottom - CELL * 0.12f, paint)
-            if (state == WindowState.TAPIADA) {
-                paint.color = 0xFF9A7345.toInt()
+            if (state == WindowState.TAPIADA || state == WindowState.REFORZADA) {
+                paint.color = if (state == WindowState.REFORZADA) 0xFFB8C2CC.toInt() else 0xFF9A7345.toInt()
                 canvas.drawRect(rect.left + CELL * 0.12f, rect.top + CELL * 0.3f, rect.right - CELL * 0.12f, rect.top + CELL * 0.45f, paint)
                 canvas.drawRect(rect.left + CELL * 0.12f, rect.top + CELL * 0.58f, rect.right - CELL * 0.12f, rect.top + CELL * 0.73f, paint)
             }

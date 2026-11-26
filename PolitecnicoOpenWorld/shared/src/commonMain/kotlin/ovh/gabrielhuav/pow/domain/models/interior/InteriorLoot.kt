@@ -19,6 +19,7 @@ object InteriorLoot {
             FurnitureKind.ESTANTE -> when (room) {
                 RoomType.TIENDA -> listOf(SearchGain.PIZZA, SearchGain.REFRESCO)
                 RoomType.COCINA -> listOf(if (pick % 2 == 0) SearchGain.CRUDA else SearchGain.PIZZA)
+                RoomType.BODEGA -> listOf(when (pick % 5) { 0 -> SearchGain.BIDON; 1 -> SearchGain.CHAPA; else -> SearchGain.TABLON })
                 else -> listOf(if (pick % 3 == 0) SearchGain.BIDON else SearchGain.TABLON)
             }
             FurnitureKind.ARMARIO -> when (room) {

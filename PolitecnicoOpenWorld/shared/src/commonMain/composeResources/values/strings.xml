@@ -482,6 +482,7 @@
     <string name="zinterior_window_broken">🪟 Rompiste la ventana: el ruido se oye lejos</string>
     <string name="zinterior_window_boarded">🪵 Tapiaste la ventana con un tablón</string>
     <string name="zinterior_window_need_board">🪟 Está rota: necesitas un tablón para tapiarla</string>
+    <string name="zinterior_window_reinforced">🔩 Reforzaste la ventana con una chapa de metal</string>
     <string name="zinterior_window_covered">🪵 La ventana ya está tapiada</string>
     <string name="survival_water_cut_started">🚰 Se cortó el agua: los grifos ya no dan</string>
     <string name="zinterior_tap_drank">🚰 Bebiste agua del grifo</string>

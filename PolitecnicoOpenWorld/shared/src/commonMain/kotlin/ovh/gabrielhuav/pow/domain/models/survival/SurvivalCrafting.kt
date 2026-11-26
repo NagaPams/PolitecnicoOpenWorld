@@ -13,6 +13,8 @@ data class SurvivalPack(
     /** Comida cruda y agua sucia (t16): hay que cocinarlas o hervirlas en una estufa antes de que sirvan. */
     val cruda: Int = 0,
     val sucia: Int = 0,
+    /** Chapas de metal (t09): refuerzan una ventana ya tapiada con tablones. */
+    val chapas: Int = 0,
 )
 
 object SurvivalCrafting {
@@ -30,10 +32,12 @@ object SurvivalCrafting {
     const val WEIGHT_VENDA = 0.5
     const val WEIGHT_CRUDA = 1.0
     const val WEIGHT_SUCIA = 1.0
+    const val WEIGHT_CHAPA = 1.5
 
     fun weightOf(pack: SurvivalPack): Double =
         pack.pizza * WEIGHT_PIZZA + pack.refresco * WEIGHT_REFRESCO + pack.botiquin * WEIGHT_BOTIQUIN +
-            pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA + pack.cruda * WEIGHT_CRUDA + pack.sucia * WEIGHT_SUCIA
+            pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA + pack.cruda * WEIGHT_CRUDA + pack.sucia * WEIGHT_SUCIA +
+            pack.chapas * WEIGHT_CHAPA
 
     /** t67: hasta este peso (60 % del máximo) se camina normal; de ahí al máximo se frena hasta [MIN_SPEED_FACTOR]. */
     const val SLOW_FROM_WEIGHT = 9.6
@@ -62,6 +66,8 @@ object SurvivalCrafting {
     fun canAddCruda(pack: SurvivalPack): Boolean = pack.cruda < MAX_PER_ITEM && fits(pack, WEIGHT_CRUDA)
 
     fun canAddSucia(pack: SurvivalPack): Boolean = pack.sucia < MAX_PER_ITEM && fits(pack, WEIGHT_SUCIA)
+
+    fun canAddChapa(pack: SurvivalPack): Boolean = pack.chapas < MAX_PER_ITEM && fits(pack, WEIGHT_CHAPA)
 
     /** Hambre o sed en este valor o menos: el botín se consume al recogerlo; si no, va a la mochila. */
     const val USE_NOW_THRESHOLD = 60.0
@@ -119,6 +125,6 @@ object SurvivalCrafting {
     fun sanitized(pack: SurvivalPack): SurvivalPack = fitToWeight(SurvivalPack(
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
         pack.bidones.coerceIn(0, FuelRules.MAX_CANS), pack.vendas.coerceIn(0, MAX_PER_ITEM),
-        pack.cruda.coerceIn(0, MAX_PER_ITEM), pack.sucia.coerceIn(0, MAX_PER_ITEM),
+        pack.cruda.coerceIn(0, MAX_PER_ITEM), pack.sucia.coerceIn(0, MAX_PER_ITEM), pack.chapas.coerceIn(0, MAX_PER_ITEM),
     ))
 }

@@ -91,6 +91,8 @@ data class GameSaveData(
     // Interiores procedurales: ventanas rotas/tapiadas, supervivientes rescatados y generadores encendidos (InteriorStateRules).
     val survivalWindows: String = "",
     val survivalRescued: String = "",
+    // Chapas de metal de la mochila.
+    val survivalChapas: Int = 0,
     val survivalPowered: String = "",
     // Humedad de la ropa (0-100).
     val survivalWetness: Double = 0.0,

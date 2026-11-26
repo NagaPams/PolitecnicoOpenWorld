@@ -352,6 +352,8 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.spendCan = { val pack = survivalManager.state.value.pack; if (pack.bidones > 0) { survivalManager.setPack(pack.copy(bidones = pack.bidones - 1)); true } else false }
     InteriorLootBridge.boardsCarried = { survivalManager.state.value.boards }
     InteriorLootBridge.spendBoards = { n -> if (survivalManager.state.value.boards >= n) { survivalManager.addBoards(-n); true } else false }
+    InteriorLootBridge.platesCarried = { survivalManager.state.value.pack.chapas }
+    InteriorLootBridge.spendPlate = { val pack = survivalManager.state.value.pack; if (pack.chapas > 0) { survivalManager.setPack(pack.copy(chapas = pack.chapas - 1)); true } else false }
     InteriorLootBridge.onWindowBroken = { breakWindowByHand() }
     InteriorLootBridge.markTaken = { key -> lootTaken[key] = SystemClock.elapsedRealtime() + InteriorLoot.COOLDOWN_MS }
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
@@ -443,6 +445,10 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
             }
             SearchGain.CRUDA -> if (SurvivalCrafting.canAddCruda(current.pack)) {
                 survivalManager.setPack(current.pack.copy(cruda = current.pack.cruda + 1))
+                gave = true
+            }
+            SearchGain.CHAPA -> if (SurvivalCrafting.canAddChapa(current.pack)) {
+                survivalManager.setPack(current.pack.copy(chapas = current.pack.chapas + 1))
                 gave = true
             }
             SearchGain.ABRIGO -> if (!current.coat) {

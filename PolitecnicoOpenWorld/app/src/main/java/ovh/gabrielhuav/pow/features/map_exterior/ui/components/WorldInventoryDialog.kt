@@ -214,6 +214,7 @@ fun WorldInventoryDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E1B1B), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_use_bandage), fontSize = 12.sp) }
                     Text(stringResource(R.string.fuel_counts, survivalPack.bidones, fuel.toInt()), color = Color.White, fontSize = 14.sp)
+                    Text(stringResource(R.string.plates_count, survivalPack.chapas), color = Color.White, fontSize = 14.sp)
                     Button(
                         onClick = onUseFuelCan,
                         enabled = survivalPack.bidones > 0 && fuel < 100.0,

@@ -702,6 +702,7 @@
     <string name="weapon_cuchillo">Cuchillo</string>
     <string name="weapon_pistola">Pistola</string>
     <string name="weapon_escopeta">Escopeta</string>
+    <string name="plates_count">🔩 Chapas de metal %1$d (refuerzan ventanas tapiadas)</string>
     <string name="fuel_counts">⛽ Bidones %1$d · Tanque %2$d%%</string>
     <string name="pack_use_fuel">Cargar gasolina (+40 %)</string>
     <string name="skills_title">Habilidades</string>
