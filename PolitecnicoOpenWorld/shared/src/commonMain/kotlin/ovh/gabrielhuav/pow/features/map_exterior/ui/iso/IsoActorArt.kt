@@ -23,6 +23,7 @@ import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 private const val SKIN_REDUCTION = 2
 private const val VEHICLE_REDUCTION = 2
 private const val MAX_RESIDENT_SKINS = 16
+private const val MAX_RESIDENT_RUN_SKINS = 6
 private const val TRACK_CAPACITY = 600
 private const val MOVE_EPSILON_METERS = 0.04
 private const val METERS_PER_DEGREE = 111_320.0
@@ -110,12 +111,19 @@ internal class IsoTrack {
     var lon = 0.0
     var sector = 4
     var movingUntilMs = 0L
+    var anchorMs = 0L
+    var lastSeenMs = 0L
+    var speedMps = 0f
+    /** Cuadro del ciclo (0..): avanza según la velocidad, sin saltos al cambiar de ritmo. */
+    var phase = 0f
 }
 
 internal class IsoActorArt(private val scope: CoroutineScope) {
     private val skins = LinkedHashMap<String, Array<ImageBitmap?>>()
     private val loading = HashSet<String>()
     private val tracks = HashMap<String, IsoTrack>()
+    private val runSkins = LinkedHashMap<String, Array<ImageBitmap?>>()
+    private val runLoading = HashSet<String>()
     private val vehicles = HashMap<IsoVehicle, IsoVehicleViews>()
     private var vehiclesRequested = false
 
@@ -131,6 +139,30 @@ internal class IsoActorArt(private val scope: CoroutineScope) {
             }
         }
         return null
+    }
+
+    /** Cuadros de correr (mismo índice que [skinFrames], sin idle), cargados solo cuando alguien de esa skin corre. */
+    private fun runFrames(skin: String): Array<ImageBitmap?>? {
+        runSkins[skin]?.let { return it }
+        if (runLoading.add(skin)) {
+            scope.launch {
+                val frames = withContext(Dispatchers.Default) { loadRun(skin) }
+                if (runSkins.size >= MAX_RESIDENT_RUN_SKINS) runSkins.remove(runSkins.keys.first())
+                runSkins[skin] = frames
+                runLoading.remove(skin)
+            }
+        }
+        return null
+    }
+
+    /** Cuadro a dibujar de [skin] para el actor [t]: idle, caminar o correr según su velocidad real. */
+    fun frame(skin: String, t: IsoTrack, nowMs: Long): ImageBitmap? {
+        val walk = skinFrames(skin) ?: return null
+        val moving = nowMs < t.movingUntilMs
+        val step = STEP_ORDER[t.phase.toInt() and 3]
+        val index = SECTOR_ROW[t.sector] * SKIN_SLOTS + if (moving) step else 0
+        if (moving && IsoGait.isRunning(t.speedMps)) runFrames(skin)?.get(index)?.let { return it }
+        return walk[index]
     }
 
     fun vehicleViews(vehicle: IsoVehicle): IsoVehicleViews? {
@@ -151,19 +183,32 @@ internal class IsoActorArt(private val scope: CoroutineScope) {
         var t = tracks[id]
         if (t == null) {
             if (tracks.size >= TRACK_CAPACITY) tracks.clear()
-            t = IsoTrack().also { it.lat = lat; it.lon = lon }
+            t = IsoTrack().also { it.lat = lat; it.lon = lon; it.anchorMs = nowMs; it.lastSeenMs = nowMs }
             tracks[id] = t
             return t
         }
+        val dt = (nowMs - t.lastSeenMs).coerceIn(0L, 100L)
+        t.lastSeenMs = nowMs
         val north = (lat - t.lat) * METERS_PER_DEGREE
         val east = (lon - t.lon) * METERS_PER_DEGREE * cos(lat * PI / 180.0)
-        if (hypot(north, east) >= MOVE_EPSILON_METERS) {
-            val headingDeg = (atan2(east, north) * 180.0 / PI + 360.0) % 360.0
-            t.sector = isoScreenSector(isoSpriteHeading(headingDeg))
+        val moved = hypot(north, east)
+        if (moved >= MOVE_EPSILON_METERS) {
             t.movingUntilMs = nowMs + TRACK_IDLE_MS
-            t.lat = lat
-            t.lon = lon
+            // Los empujones chicos (separación entre cuerpos) mueven el cuerpo, pero no giran al actor ni cuentan como velocidad.
+            if (moved >= IsoGait.HEADING_MIN_METERS) {
+                val headingDeg = (atan2(east, north) * 180.0 / PI + 360.0) % 360.0
+                t.sector = isoScreenSector(isoSpriteHeading(headingDeg))
+                val seconds = (nowMs - t.anchorMs) / 1000f
+                if (seconds > 0f) t.speedMps = IsoGait.smooth(t.speedMps, (moved / seconds).toFloat())
+                t.anchorMs = nowMs
+                t.lat = lat
+                t.lon = lon
+            }
+        } else if (nowMs >= t.movingUntilMs) {
+            t.speedMps = 0f
+            t.anchorMs = nowMs
         }
+        if (nowMs < t.movingUntilMs) t.phase += dt / IsoGait.stepMs(t.speedMps.coerceAtLeast(1.0f))
         return t
     }
 
@@ -183,6 +228,16 @@ private fun loadSkin(skin: String): Array<ImageBitmap?> {
             val path = if (slot == 0) "SPRITES/$skin/Idle/iso_${DIRS[d]}_i_1.webp"
             else "SPRITES/$skin/Walk/iso_${DIRS[d]}_w_$slot.webp"
             out[d * SKIN_SLOTS + slot] = runCatching { decodificarReducido(PowAssets.bytes(path), SKIN_REDUCTION) }.getOrNull()
+        }
+    }
+    return out
+}
+
+private fun loadRun(skin: String): Array<ImageBitmap?> {
+    val out = arrayOfNulls<ImageBitmap>(DIRS.size * SKIN_SLOTS)
+    for (d in DIRS.indices) {
+        for (slot in 1 until SKIN_SLOTS) {
+            out[d * SKIN_SLOTS + slot] = runCatching { decodificarReducido(PowAssets.bytes("SPRITES/$skin/Run/iso_${DIRS[d]}_r_$slot.webp"), SKIN_REDUCTION) }.getOrNull()
         }
     }
     return out

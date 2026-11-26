@@ -475,7 +475,7 @@ fun IsoWorldView(
                 val skin = isoSkinFor(npc.type, npc.id)
                 if (skin != null) {
                     val track = art.track(npc.id, npc.location.latitude, npc.location.longitude, elapsed)
-                    sprite = art.skinFrames(skin)?.get(IsoActorArt.frameIndex(track.sector, elapsed < track.movingUntilMs, elapsed))
+                    sprite = art.frame(skin, track, elapsed)
                     mirror = IsoActorArt.mirrored(track.sector)
                 } else if (npc.type == NpcType.CAR || npc.type == NpcType.POLICE_CAR) {
                     val vehicle = isoVehicleFor(npc.type, npc.carModel, npc.id)
