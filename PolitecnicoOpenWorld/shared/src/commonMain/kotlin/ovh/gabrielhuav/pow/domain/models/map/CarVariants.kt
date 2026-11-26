@@ -5,9 +5,9 @@ package ovh.gabrielhuav.pow.domain.models.map
 // o al autobús. Ahora el cuerpo sólido sigue a lo que se ve. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 enum class WagonVariant(val dimensions: VehicleDimensions?) {
-    BOX_TRUCK(VehicleDimensions(6.9, 2.4)),
-    SEMI_TRACTOR(VehicleDimensions(6.0, 2.5)),
-    BUS(VehicleDimensions(10.1, 2.6)),
+    BOX_TRUCK(VehicleDimensions(7.2, 2.4)),
+    SEMI_TRACTOR(VehicleDimensions(6.3, 2.5)),
+    BUS(VehicleDimensions(10.7, 2.6)),
     /** Dibuja el sedán de siempre: conserva la colisión del WAGON. */
     SEDAN(null),
 }
