@@ -20,6 +20,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
 import ovh.gabrielhuav.pow.domain.models.survival.BailoutRules
+import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
@@ -300,9 +301,19 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     val building = searchBuildings?.firstOrNull { it.id == buildingId } ?: return false
     InteriorLootBridge.applyGains = { gains -> giveSearchGains(gains) == SearchOutcome.GAVE }
     InteriorLootBridge.onCooldown = { key -> (lootTaken[key] ?: 0L) > SystemClock.elapsedRealtime() }
+    InteriorLootBridge.sleepInBed = { sleepInBed() }
     InteriorLootBridge.markTaken = { key -> lootTaken[key] = SystemClock.elapsedRealtime() + InteriorLoot.COOLDOWN_MS }
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
     transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
+    return true
+}
+
+/** Dormir en una cama (t80): recupera energía a cambio de hambre y sed, y la ropa se seca; false si no hay sueño. */
+private fun WorldMapViewModel.sleepInBed(): Boolean {
+    val sv = survivalManager.state.value
+    if (sv.needs.energy >= SleepRules.TOO_RESTED_AT) return false
+    survivalManager.setNeeds(SleepRules.restedInBed(sv.needs, _uiState.value.nightAlpha > 0.05f))
+    survivalManager.setWetness(0.0)
     return true
 }
 

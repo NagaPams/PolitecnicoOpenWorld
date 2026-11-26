@@ -472,6 +472,8 @@
     <string name="survival_door_dismantled">🪵 Barricade dismantled</string>
     <string name="survival_door_broken">🧟 Zombies broke a barricade!</string>
     <string name="zinterior_salon_empty">🎒 The classroom is empty! There is Prankedy's backpack.</string>
+    <string name="zinterior_bed_slept">😴 You slept in the bed: better rest, and you dried off</string>
+    <string name="zinterior_bed_not_tired">😴 You are not sleepy</string>
     <string name="zinterior_furniture_found">🔎 You found something useful</string>
     <string name="zinterior_furniture_empty">🔎 Nothing here</string>
     <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>

@@ -1,9 +1,12 @@
 package ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel
 
+import ovh.gabrielhuav.pow.domain.models.interior.FurnitureKind
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.shared.recursos.Res
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_not_tired
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_slept
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_cooldown
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_empty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_found
@@ -19,6 +22,8 @@ object InteriorLootBridge {
     @Volatile var applyGains: ((List<SearchGain>) -> Boolean)? = null
     @Volatile var onCooldown: ((String) -> Boolean)? = null
     @Volatile var markTaken: ((String) -> Unit)? = null
+    /** Duerme en una cama: true si descansó, false si no tenía sueño. */
+    @Volatile var sleepInBed: (() -> Boolean)? = null
 }
 
 private const val FURNITURE_REACH_CELLS = 1.5f
@@ -44,6 +49,11 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     }
     if (bestIndex < 0) return false
     val furniture = layout.furniture[bestIndex]
+    if (furniture.kind == FurnitureKind.CAMA) {
+        val slept = InteriorLootBridge.sleepInBed?.invoke() == true
+        showKeyRes(if (slept) Res.string.zinterior_bed_slept else Res.string.zinterior_bed_not_tired)
+        return true
+    }
     val key = InteriorLoot.furnitureKey(spec.buildingId, bestIndex)
     val bridge = InteriorLootBridge
     if (bridge.onCooldown?.invoke(key) == true) {

@@ -46,6 +46,14 @@ object SleepRules {
         energy = (needs.energy + (if (night) ENERGY_GAIN_NIGHT else ENERGY_GAIN_DAY) * (1.0 - COLD_PENALTY_PER_LEVEL * coldLevel.coerceIn(0, TemperatureRules.MAX_COLD))).coerceAtMost(100.0),
     )
 
+    /** Dormir en una cama de un interior: descansa más que en la calle (sin frío) y por eso deja [BED_ENERGY_BONUS] extra. */
+    fun restedInBed(needs: SurvivalNeeds, night: Boolean): SurvivalNeeds {
+        val base = rested(needs, night)
+        return base.copy(energy = (base.energy + BED_ENERGY_BONUS).coerceAtMost(100.0))
+    }
+
+    const val BED_ENERGY_BONUS = 15.0
+
     private fun lowered(value: Double, cost: Double): Double =
         maxOf(value - cost, minOf(value, FLOOR)).coerceIn(0.0, 100.0)
 }
