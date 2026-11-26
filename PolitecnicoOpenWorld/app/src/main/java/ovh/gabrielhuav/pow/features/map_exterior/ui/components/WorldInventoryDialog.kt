@@ -185,6 +185,11 @@ fun WorldInventoryDialog(
                     ) { Text(stringResource(R.string.pack_craft_splint), fontSize = 12.sp) }
                     if (coat) Text(stringResource(R.string.pack_coat_on), color = Color(0xFF80CBC4), fontSize = 12.sp)
                 }
+                // Libro de recetas (t16): qué se puede hacer y con qué; las que piden estufa o fogata se hacen con X.
+                if (survivalPack != null) {
+                    Text(stringResource(R.string.recipes_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.recipes_body), color = Color(0xFFCFD8DC), fontSize = 12.sp)
+                }
                 if (survivalPack != null) {
                     Text(stringResource(R.string.car_health_counts, carHealth.toInt(), boards), color = Color.White, fontSize = 14.sp)
                     Button(

@@ -686,6 +686,12 @@
     <string name="pack_title">Mochila de supervivencia</string>
     <string name="pack_raw_counts">🍖 Comida cruda %1$d   💧 Agua sucia %2$d</string>
     <string name="pack_counts">🍕 %1$d   🥤 %2$d   🩹 %3$d</string>
+    <string name="recipes_title">📖 Recetas</string>
+    <string name="recipes_body">• Botiquín: 2 refrescos + 1 pizza (3 s)
+• Palo con clavos: 2 tablones (4 s)
+• Férula: 1 tablón + 1 venda, si estás fracturado (3 s)
+• Fogata: 2 tablones (3 s)
+• Cocinar: X en una estufa o fogata con comida cruda o lista; agua sucia se hierve ahí</string>
     <string name="pack_weight">⚖️ Peso: %1$.1f / %2$.1f</string>
     <string name="pack_craft_kit">Craftear botiquín (2 🥤 + 1 🍕)</string>
     <string name="pack_use_kit">Usar botiquín (+40 HP)</string>
