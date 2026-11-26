@@ -42,6 +42,8 @@ import ovh.gabrielhuav.pow.features.map_exterior.ui.components.PlayerAction
 import ovh.gabrielhuav.pow.platform.assets.PowAssets
 import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
+import ovh.gabrielhuav.pow.domain.models.map.VehicleDepthRules
+import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
 import ovh.gabrielhuav.pow.domain.models.survival.LootKind
 import ovh.gabrielhuav.pow.domain.models.survival.LootPoint
@@ -102,6 +104,9 @@ private const val ISO_WINDOW_BASE_M = 1.0
 private const val ISO_WINDOW_HEIGHT_M = 1.3
 private const val ISO_DOOR_HEIGHT_M = 2.2
 private const val ISO_MIN_PERSON_PX = 44f
+private const val ISO_METERS_PER_DEGREE_LAT = 111_320.0
+private const val ISO_METERS_PER_DEGREE_LON = 104_800.0
+
 /** El gato usa la misma hoja de personaje: se dibuja a ~1/4 del alto de una persona. */
 private const val ISO_CAT_SIZE = 0.3f
 private const val ISO_MAX_SPRITE_BOOST = 2.5f
@@ -458,7 +463,8 @@ fun IsoWorldView(
                 playerCar = sedan?.frames?.get(carDirection.first)
                 playerCarMirror = carDirection.second
             }
-            actors.insert(playerX, playerY, projection.depth(player), null, "", vehicleHeadingState, vehicleColorState ?: -1,
+            val playerDepth = projection.depth(player)
+            actors.insert(playerX, playerY, playerDepth, null, "", vehicleHeadingState, vehicleColorState ?: -1,
                 playerCar, playerCarMirror, IsoVehicle.SEDAN.drawMeters, IsoVehicle.SEDAN.tintable)
             var threatCount = 0
             val currentNpcs = npcState
@@ -494,7 +500,19 @@ fun IsoWorldView(
                         threatCount++
                     }
                 }
-                actors.insert(x, y, projection.depth(npc.location), npc.type, npc.id, heading, npc.carColor, sprite, mirror, meters, tintable)
+                var depthKey = projection.depth(npc.location)
+                if (meters > 0f) {
+                    // Vehículo largo: se ordena con el punto de su eje más cercano en profundidad al jugador (ver VehicleDepthRules).
+                    val eastToPlayer = (player.longitude - npc.location.longitude) * ISO_METERS_PER_DEGREE_LON
+                    val northToPlayer = (player.latitude - npc.location.latitude) * ISO_METERS_PER_DEGREE_LAT
+                    if (eastToPlayer * eastToPlayer + northToPlayer * northToPlayer < VehicleDepthRules.NEAR_METERS * VehicleDepthRules.NEAR_METERS) {
+                        depthKey = VehicleDepthRules.sortKey(
+                            depthKey, VehicleDepthRules.halfSpan(npc.bodyDimensions.lengthMeters, heading.toDouble()), playerDepth,
+                            VehicleDepthRules.lateralDepth(eastToPlayer, northToPlayer, heading.toDouble()),
+                        )
+                    }
+                }
+                actors.insert(x, y, depthKey, npc.type, npc.id, heading, npc.carColor, sprite, mirror, meters, tintable)
             }
             val ppm = projection.pixelsPerMeter.toFloat()
             val personBoost = (ISO_MIN_PERSON_PX * density.toFloat() / (ppm * scale * 2.05f)).coerceIn(1f, ISO_MAX_SPRITE_BOOST)
