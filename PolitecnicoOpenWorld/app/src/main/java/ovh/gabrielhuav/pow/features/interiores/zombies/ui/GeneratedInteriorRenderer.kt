@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import ovh.gabrielhuav.pow.domain.models.interior.FurnitureKind
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorIso
@@ -174,7 +176,13 @@ internal object GeneratedInteriorRenderer {
     private const val WALL_PARTITION = 46f
     private const val WALL_FRONT = 9f
 
-    fun renderIso(layout: InteriorLayout, dark: Boolean = false, survivorVisible: Boolean = true, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
+    /** Un muro, mueble o la puerta horneado aparte (con transparencia) para volver a dibujarlo ENCIMA de los actores. */
+    class IsoBlock(val key: Int, val image: Bitmap, val x: Int, val y: Int)
+
+    /** Imagen completa del interior más sus bloques por separado (t82: oclusión por profundidad). */
+    class IsoScene(val bitmap: Bitmap, val blocks: List<IsoBlock>)
+
+    fun renderIso(layout: InteriorLayout, dark: Boolean = false, survivorVisible: Boolean = true, windowState: (Int) -> WindowState = { WindowState.CERRADA }): IsoScene {
         val w = InteriorIso.bitmapWidth(layout.cols, layout.rows).toInt()
         val h = InteriorIso.bitmapHeight(layout.cols, layout.rows).toInt()
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -191,28 +199,65 @@ internal object GeneratedInteriorRenderer {
         }
         // Felpudo de la entrada.
         fillQuad(canvas, paint, layout.rows, 0x88C9A24B.toInt(), layout.doorCol, layout.rows - 2, 1, 1, 0f)
+        if (dark) {
+            // Apagón sin generador: el interior queda a oscuras (el suelo aquí; cada bloque se oscurece al hornearse).
+            paint.style = Paint.Style.FILL
+            paint.color = 0xA0050A18.toInt()
+            canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+        }
+        val blocks = ArrayList<IsoBlock>()
+        fun block(key: Int, left: Float, top: Float, right: Float, bottom: Float, draw: (Canvas) -> Unit) {
+            val x0 = (left - 8f).toInt().coerceAtLeast(0)
+            val y0 = (top - 8f).toInt().coerceAtLeast(0)
+            val x1 = (right + 8f).toInt().coerceAtMost(w)
+            val y1 = (bottom + 8f).toInt().coerceAtMost(h)
+            if (x1 <= x0 || y1 <= y0) return
+            val image = Bitmap.createBitmap(x1 - x0, y1 - y0, Bitmap.Config.ARGB_8888)
+            val bc = Canvas(image)
+            bc.translate(-x0.toFloat(), -y0.toFloat())
+            draw(bc)
+            if (dark) {
+                val dim = Paint().apply { color = 0xA0050A18.toInt(); xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP) }
+                bc.drawRect(x0.toFloat(), y0.toFloat(), x1.toFloat(), y1.toFloat(), dim)
+            }
+            canvas.drawBitmap(image, x0.toFloat(), y0.toFloat(), null)
+            blocks.add(IsoBlock(key, image, x0, y0))
+        }
+        val rows = layout.rows
         val byCell = layout.furniture.associateBy { it.col to it.row }
         for (s in 0..(layout.cols + layout.rows - 2)) {
             for (c in 0 until layout.cols) {
                 val r = s - c
                 if (r < 0 || r >= layout.rows) continue
-                if (layout.isWall(c, r)) drawWallBlock(canvas, paint, layout, c, r, windowState)
-                byCell[c to r]?.let { f -> drawFurnitureBlock(canvas, paint, text, layout.rows, f) }
-                if (r == layout.rows - 1 && c == layout.doorCol) drawDoorFrame(canvas, paint, layout.rows, c, r)
+                if (layout.isWall(c, r)) {
+                    block(c + r, InteriorIso.x(c.toFloat(), r + 1f, rows), InteriorIso.y(c.toFloat(), r.toFloat(), 64f), InteriorIso.x(c + 1f, r.toFloat(), rows), InteriorIso.y(c + 1f, r + 1f)) {
+                        drawWallBlock(it, paint, layout, c, r, windowState)
+                    }
+                }
+                byCell[c to r]?.let { f ->
+                    val key = (f.col + f.widthCells - 1) + f.row
+                    block(key, InteriorIso.x(f.col.toFloat(), f.row + 1f, rows), InteriorIso.y(f.col.toFloat(), f.row.toFloat(), 46f), InteriorIso.x((f.col + f.widthCells).toFloat(), f.row.toFloat(), rows), InteriorIso.y((f.col + f.widthCells).toFloat(), f.row + 1f)) {
+                        drawFurnitureBlock(it, paint, text, rows, f)
+                    }
+                }
+                if (r == layout.rows - 1 && c == layout.doorCol) {
+                    block(c + r, InteriorIso.x(c.toFloat(), r + 1f, rows), InteriorIso.y(c.toFloat(), r.toFloat(), 2f), InteriorIso.x(c + 1f, r.toFloat(), rows), InteriorIso.y(c + 1f, r + 1f)) {
+                        drawDoorFrame(it, paint, rows, c, r)
+                    }
+                }
                 if (layout.survivorCell == c to r && survivorVisible) {
-                    paint.style = Paint.Style.FILL
-                    paint.color = 0x55FFD54F
-                    canvas.drawCircle(InteriorIso.x(c + 0.5f, r + 0.5f, layout.rows), InteriorIso.y(c + 0.5f, r + 0.5f), 22f, paint)
-                    canvas.drawText("🧍", InteriorIso.x(c + 0.5f, r + 0.5f, layout.rows), InteriorIso.y(c + 0.5f, r + 0.5f, 6f), text)
+                    val cx = InteriorIso.x(c + 0.5f, r + 0.5f, rows)
+                    val cy = InteriorIso.y(c + 0.5f, r + 0.5f)
+                    block(c + r, cx - 30f, cy - 40f, cx + 30f, cy + 12f) {
+                        paint.style = Paint.Style.FILL
+                        paint.color = 0x55FFD54F
+                        it.drawCircle(cx, cy, 22f, paint)
+                        it.drawText("🧍", cx, InteriorIso.y(c + 0.5f, r + 0.5f, 6f), text)
+                    }
                 }
             }
         }
-        if (dark) {
-            paint.style = Paint.Style.FILL
-            paint.color = 0xA0050A18.toInt()
-            canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
-        }
-        return bitmap
+        return IsoScene(bitmap, blocks)
     }
 
     private fun shade(color: Int, factor: Float): Int {

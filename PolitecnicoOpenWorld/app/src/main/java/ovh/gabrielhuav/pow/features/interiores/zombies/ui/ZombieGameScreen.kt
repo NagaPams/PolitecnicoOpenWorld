@@ -283,13 +283,17 @@ fun ZombieGameScreen(
         else -> room.backgroundAsset
     }
     var background by remember(effectiveBgAsset) { mutableStateOf<ImageBitmap?>(null) }
+    // t82: bloques (muros, muebles, puerta) del interior isométrico, para dibujarlos encima de quien pasa por detrás.
+    var isoBlocks by remember(effectiveBgAsset) { mutableStateOf<List<IsoBlockUi>>(emptyList()) }
     LaunchedEffect(effectiveBgAsset, state.generatedRevision) {
         val generated = room.generatedLayout
         if (generated != null) {
             val buildingId = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.parse(room.id)?.buildingId ?: 0L
-            background = withContext(Dispatchers.Default) {
-                GeneratedInteriorRenderer.renderIso(generated, ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.interiorIsDark(buildingId), ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.survivorVisible(buildingId)) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }.asImageBitmap()
+            val scene = withContext(Dispatchers.Default) {
+                GeneratedInteriorRenderer.renderIso(generated, ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.interiorIsDark(buildingId), ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.survivorVisible(buildingId)) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }
             }
+            background = scene.bitmap.asImageBitmap()
+            isoBlocks = scene.blocks.map { IsoBlockUi(it.key, it.image.asImageBitmap(), it.x, it.y) }
             return@LaunchedEffect
         }
         background = withContext(Dispatchers.IO) {
@@ -842,6 +846,25 @@ fun ZombieGameScreen(
                 // esas celdas ENCIMA del jugador cuando el objeto esta DELANTE (su base al sur de los
                 // pies del jugador). Asi el jugador pasa POR DETRAS al norte y POR DELANTE al sur.
                 // Decision por OBJETO (celdas '^' contiguas comparten la Y-base), memoizada por matriz.
+                if (isoLayout != null && isoBlocks.isNotEmpty()) {
+                    // Muros y muebles DELANTE del jugador (más cerca de la cámara) se vuelven a dibujar encima de él.
+                    val cellPx = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX
+                    val playerKey = (state.playerX / cellPx).toInt() + (state.playerY / cellPx).toInt()
+                    val pbx = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(state.playerX / cellPx, state.playerY / cellPx, isoLayout.rows)
+                    val pby = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(state.playerX / cellPx, state.playerY / cellPx)
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        translate(cam.offsetX, cam.offsetY) {
+                            scale(cam.scale, cam.scale, pivot = Offset.Zero) {
+                                for (blk in isoBlocks) {
+                                    if (blk.key <= playerKey) continue
+                                    if (blk.x > pbx + 70f || blk.x + blk.image.width < pbx - 70f) continue
+                                    if (blk.y > pby + 24f || blk.y + blk.image.height < pby - 150f) continue
+                                    drawImage(blk.image, IntOffset(blk.x, blk.y))
+                                }
+                            }
+                        }
+                    }
+                }
                 val occRows = if (isoLayout != null) null else room.collisionMatrix?.rows
                 val occBg = background
                 if (occRows != null && occBg != null) {
