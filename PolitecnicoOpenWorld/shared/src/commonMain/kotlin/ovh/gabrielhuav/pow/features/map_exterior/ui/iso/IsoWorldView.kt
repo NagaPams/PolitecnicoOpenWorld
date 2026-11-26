@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -266,7 +267,7 @@ fun IsoWorldView(
     val density = LocalDensity.current.density.toDouble()
     val reference = remember(footprints) { footprints.firstOrNull()?.points?.firstOrNull() ?: center }
 
-    Box(modifier.fillMaxSize().drawWithCache {
+    Box(modifier.fillMaxSize().clipToBounds().drawWithCache {
         layerPool.releaseAll()
         val projection = IsoProjection.forZoom(reference, ISO_BAKE_ZOOM, density, 0.0, 0.0)
         val grounds = ArrayList<IsoGroundPath>()
