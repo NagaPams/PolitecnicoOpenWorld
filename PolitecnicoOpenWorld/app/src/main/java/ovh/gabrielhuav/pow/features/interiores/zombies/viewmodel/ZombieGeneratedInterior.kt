@@ -1,7 +1,9 @@
 package ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel
 
 import ovh.gabrielhuav.pow.domain.models.interior.FurnitureKind
+import ovh.gabrielhuav.pow.domain.models.interior.GeneratorResult
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
+import ovh.gabrielhuav.pow.domain.models.interior.PowerRules
 import ovh.gabrielhuav.pow.domain.models.interior.WallSide
 import ovh.gabrielhuav.pow.domain.models.interior.WindowAction
 import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
@@ -15,6 +17,10 @@ import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_not_tired
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_bed_slept
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_furniture_cooldown
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_needs_fuel
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_not_needed
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_on
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_generator_started
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_cooked
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_no_food
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_stove_not_hungry
@@ -50,6 +56,12 @@ object InteriorLootBridge {
     @Volatile var drinkFromTap: (() -> TapResult)? = null
     /** Cocina una comida de la mochila en la estufa. */
     @Volatile var cookMeal: (() -> CookResult)? = null
+    /** Día de supervivencia actual (para el apagón). */
+    @Volatile var currentDay: (() -> Int)? = null
+    @Volatile var cansCarried: (() -> Int)? = null
+    @Volatile var spendCan: (() -> Boolean)? = null
+    /** Hasta cuándo (reloj real) tiene luz cada edificio por su generador. */
+    val poweredUntil = java.util.concurrent.ConcurrentHashMap<Long, Long>()
 
     /** Estado de las ventanas por clave (`WindowRules.key`): vive mientras la app, así un edificio sigue como se dejó. */
     val windowStates = java.util.concurrent.ConcurrentHashMap<String, WindowState>()
@@ -57,6 +69,12 @@ object InteriorLootBridge {
 
 private const val FURNITURE_REACH_CELLS = 1.5f
 private const val WINDOW_REACH_CELLS = 1.3f
+
+/** ¿Está a oscuras el interior del edificio [buildingId]? Apagón y sin generador encendido. */
+internal fun interiorIsDark(buildingId: Long): Boolean {
+    val day = InteriorLootBridge.currentDay?.invoke() ?: return false
+    return PowerRules.isDark(day, android.os.SystemClock.elapsedRealtime(), InteriorLootBridge.poweredUntil[buildingId] ?: 0L)
+}
 
 /** Estado de la ventana [index] de la planta del edificio [buildingId]. */
 internal fun windowStateOf(buildingId: Long, index: Int): WindowState =
@@ -120,6 +138,22 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
     }
     if (bestIndex < 0) return false
     val furniture = layout.furniture[bestIndex]
+    if (furniture.kind == FurnitureKind.GENERADOR) {
+        val now = android.os.SystemClock.elapsedRealtime()
+        val until = InteriorLootBridge.poweredUntil[spec.buildingId] ?: 0L
+        val result = PowerRules.check(InteriorLootBridge.currentDay?.invoke() ?: 1, now, until, InteriorLootBridge.cansCarried?.invoke() ?: 0)
+        if (result == GeneratorResult.STARTED && InteriorLootBridge.spendCan?.invoke() == true) {
+            InteriorLootBridge.poweredUntil[spec.buildingId] = PowerRules.poweredUntil(now)
+            _state.update { it.copy(generatedRevision = it.generatedRevision + 1) }
+        }
+        showKeyRes(when (result) {
+            GeneratorResult.STARTED -> Res.string.zinterior_generator_started
+            GeneratorResult.ALREADY_ON -> Res.string.zinterior_generator_on
+            GeneratorResult.NEEDS_FUEL -> Res.string.zinterior_generator_needs_fuel
+            GeneratorResult.NOT_NEEDED -> Res.string.zinterior_generator_not_needed
+        })
+        return true
+    }
     if (furniture.kind == FurnitureKind.COCINA) {
         showKeyRes(when (InteriorLootBridge.cookMeal?.invoke()) {
             CookResult.COOKED -> Res.string.zinterior_stove_cooked

@@ -30,7 +30,7 @@ object InteriorLoot {
             FurnitureKind.CAMILLA -> listOf(SearchGain.SUERO)
             FurnitureKind.COCINA -> listOf(if (pick % 2 == 0) SearchGain.PIZZA else SearchGain.REFRESCO)
             FurnitureKind.MESA -> if (pick % 3 == 0) listOf(SearchGain.REFRESCO) else emptyList()
-            FurnitureKind.CAMA, FurnitureKind.GRIFO, FurnitureKind.INODORO, FurnitureKind.BANCO -> emptyList()
+            FurnitureKind.CAMA, FurnitureKind.GRIFO, FurnitureKind.INODORO, FurnitureKind.BANCO, FurnitureKind.GENERADOR -> emptyList()
         }
     }
 

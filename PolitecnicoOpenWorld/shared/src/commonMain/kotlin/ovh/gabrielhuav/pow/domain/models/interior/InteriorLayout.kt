@@ -10,7 +10,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 enum class RoomType { SALA, COCINA, DORMITORIO, BANO, BODEGA, TIENDA, CONSULTORIO }
 
 /** Al final de la lista de valores: no insertar en medio. */
-enum class FurnitureKind { CAMA, MESA, ESTANTE, COCINA, GRIFO, INODORO, ARMARIO, MOSTRADOR, CAMILLA, BANCO }
+enum class FurnitureKind { CAMA, MESA, ESTANTE, COCINA, GRIFO, INODORO, ARMARIO, MOSTRADOR, CAMILLA, BANCO, GENERADOR }
 
 /** Lado del muro exterior donde va una ventana; la puerta de entrada siempre está al SUR. */
 enum class WallSide { NORTE, ESTE, OESTE }
@@ -116,7 +116,7 @@ object InteriorGenerator {
         RoomType.COCINA -> listOf(FurnitureKind.COCINA, FurnitureKind.GRIFO, FurnitureKind.ESTANTE)
         RoomType.DORMITORIO -> listOf(FurnitureKind.CAMA, FurnitureKind.ARMARIO)
         RoomType.BANO -> listOf(FurnitureKind.INODORO, FurnitureKind.GRIFO, FurnitureKind.ARMARIO)
-        RoomType.BODEGA -> listOf(FurnitureKind.ESTANTE, FurnitureKind.ESTANTE, FurnitureKind.ESTANTE)
+        RoomType.BODEGA -> listOf(FurnitureKind.ESTANTE, FurnitureKind.GENERADOR, FurnitureKind.ESTANTE)
         RoomType.TIENDA -> listOf(FurnitureKind.MOSTRADOR, FurnitureKind.ESTANTE, FurnitureKind.ESTANTE)
         RoomType.CONSULTORIO -> listOf(FurnitureKind.CAMILLA, FurnitureKind.ARMARIO)
     }

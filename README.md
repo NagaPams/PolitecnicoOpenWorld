@@ -555,6 +555,7 @@ Install and sign the iPhone build step by step: [`14_INSTALAR_EN_IPHONE_Y_SIMULA
 - **Running water (2026-11-25)** — taps inside generated interiors let you drink (+25 thirst) until day 5 of survival; after that the water is cut and a one-time notice appears.
 - **Cooking (2026-11-25)** — at the stove of a generated interior, X heats a meal from your pack: it restores 60 hunger instead of 40.
 - **Police clear zombies (2026-11-25)** — police units near you now shoot zombies within ~25 m (one shot per unit every 3 s); those kills count for the zone, so patrolled zones get cleared.
+- **Generator (2026-11-25)** — from day 3 the generated interiors are dark; start the generator in a storeroom with a fuel can to get 10 minutes of light.
 - **Hotwiring (2026-11-25)** — in survival mode, boarding a stranger's car for the first time adds engine noise that attracts zombies. [Details](PolitecnicoOpenWorld/README%20for%20IAS/MUNDO/04_MAP_EXTERIOR.md) The hotwire can now fail (25%), making noise and needing a retry.
 - **Stranger cars (2026-11-25)** — a car you board for the first time comes with its own fuel (15-60%) and health (55-100%), fixed by its id. [Details](PolitecnicoOpenWorld/README%20for%20IAS/MUNDO/04_MAP_EXTERIOR.md)
 - **Splint and status notices (2026-11-25)** — a splint (1 board + 1 bandage) cures a fracture; the inventory shows the coat; one-time notices for cold, a healed fracture and low fuel. [Details](PolitecnicoOpenWorld/README%20for%20IAS/MUNDO/04_MAP_EXTERIOR.md)

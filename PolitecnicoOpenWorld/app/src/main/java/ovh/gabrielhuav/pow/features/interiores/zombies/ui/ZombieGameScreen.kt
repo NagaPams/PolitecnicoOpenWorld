@@ -288,7 +288,7 @@ fun ZombieGameScreen(
         if (generated != null) {
             val buildingId = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.parse(room.id)?.buildingId ?: 0L
             background = withContext(Dispatchers.Default) {
-                GeneratedInteriorRenderer.render(generated) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }.asImageBitmap()
+                GeneratedInteriorRenderer.render(generated, ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.interiorIsDark(buildingId)) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }.asImageBitmap()
             }
             return@LaunchedEffect
         }

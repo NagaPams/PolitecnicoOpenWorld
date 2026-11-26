@@ -18,7 +18,7 @@ internal object GeneratedInteriorRenderer {
     /** Píxeles de la imagen por celda (el mundo usa el doble). */
     private const val CELL = 56f
 
-    fun render(layout: InteriorLayout, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
+    fun render(layout: InteriorLayout, dark: Boolean = false, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
         val bitmap = Bitmap.createBitmap((layout.cols * CELL).toInt(), (layout.rows * CELL).toInt(), Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -27,6 +27,12 @@ internal object GeneratedInteriorRenderer {
         drawWindows(canvas, paint, layout, windowState)
         drawDoor(canvas, paint, layout)
         drawFurniture(canvas, paint, layout)
+        if (dark) {
+            // Apagón sin generador: el interior queda a oscuras (se sigue viendo lo suficiente para moverse).
+            paint.style = Paint.Style.FILL
+            paint.color = 0xA0050A18.toInt()
+            canvas.drawRect(0f, 0f, layout.cols * CELL, layout.rows * CELL, paint)
+        }
         return bitmap
     }
 
@@ -116,6 +122,7 @@ internal object GeneratedInteriorRenderer {
         FurnitureKind.MOSTRADOR -> 0xFFC2A36B.toInt() to 0xFF7C6537.toInt()
         FurnitureKind.CAMILLA -> 0xFFDDE6E8.toInt() to 0xFF8CA0A6.toInt()
         FurnitureKind.BANCO -> 0xFF9A7B52.toInt() to 0xFF664C2D.toInt()
+        FurnitureKind.GENERADOR -> 0xFFD0A52B.toInt() to 0xFF6E5A19.toInt()
     }
 
     private fun glyph(kind: FurnitureKind): String = when (kind) {
@@ -129,6 +136,7 @@ internal object GeneratedInteriorRenderer {
         FurnitureKind.MOSTRADOR -> "🛒"
         FurnitureKind.CAMILLA -> "🩺"
         FurnitureKind.BANCO -> "🪑"
+        FurnitureKind.GENERADOR -> "⚡"
     }
 
     private fun drawFurniture(canvas: Canvas, paint: Paint, layout: InteriorLayout) {

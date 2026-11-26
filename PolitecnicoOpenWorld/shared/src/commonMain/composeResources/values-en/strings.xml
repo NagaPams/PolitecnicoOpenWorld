@@ -485,6 +485,10 @@
     <string name="zinterior_stove_cooked">🍳 You heated the meal: it feeds you a lot more</string>
     <string name="zinterior_stove_no_food">🍳 You are not carrying food to cook</string>
     <string name="zinterior_stove_not_hungry">🍳 You are not hungry</string>
+    <string name="zinterior_generator_started">⚡ You started the generator: the lights are on for a while</string>
+    <string name="zinterior_generator_on">⚡ The generator is already running</string>
+    <string name="zinterior_generator_needs_fuel">⚡ The generator needs a fuel can</string>
+    <string name="zinterior_generator_not_needed">⚡ The power is still on: no need</string>
     <string name="zinterior_furniture_found">🔎 You found something useful</string>
     <string name="zinterior_furniture_empty">🔎 Nothing here</string>
     <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>

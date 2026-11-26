@@ -311,6 +311,9 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.sleepInBed = { sleepInBed() }
     InteriorLootBridge.drinkFromTap = { drinkFromTap() }
     InteriorLootBridge.cookMeal = { cookMeal() }
+    InteriorLootBridge.currentDay = { DayRules.daysSurvived(survivalManager.state.value.activeMs) }
+    InteriorLootBridge.cansCarried = { survivalManager.state.value.pack.bidones }
+    InteriorLootBridge.spendCan = { val pack = survivalManager.state.value.pack; if (pack.bidones > 0) { survivalManager.setPack(pack.copy(bidones = pack.bidones - 1)); true } else false }
     InteriorLootBridge.boardsCarried = { survivalManager.state.value.boards }
     InteriorLootBridge.spendBoards = { n -> if (survivalManager.state.value.boards >= n) { survivalManager.addBoards(-n); true } else false }
     InteriorLootBridge.onWindowBroken = { breakWindowByHand() }
