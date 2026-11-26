@@ -2,6 +2,7 @@ package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.shared.recursos.Res
 import ovh.gabrielhuav.pow.domain.models.survival.CarStateRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_pack_trimmed
@@ -121,6 +122,9 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalBandages = survivalManager.state.value.pack.vendas,
         survivalRaw = survivalManager.state.value.pack.cruda,
         survivalGroup = groupSize,
+        survivalWindows = ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.encodeWindows(InteriorLootBridge.windowStates),
+        survivalRescued = ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.encodeIds(InteriorLootBridge.rescued),
+        survivalPowered = ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.encodePower(InteriorLootBridge.poweredUntil, android.os.SystemClock.elapsedRealtime()),
         survivalDirty = survivalManager.state.value.pack.sucia,
         survivalVehicleHealth = vehicleHealth,
         survivalActiveMs = survivalManager.state.value.activeMs,
@@ -210,6 +214,13 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     lastRegrowDay = ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs)
     // Si la partida cargada ya estaba en apagón no se vuelve a avisar.
     groupSize = data.survivalGroup.coerceIn(0, ovh.gabrielhuav.pow.domain.models.survival.GroupRules.MAX_MEMBERS)
+    // Gson deja en null el texto que un guardado viejo no trae.
+    InteriorLootBridge.windowStates.clear()
+    InteriorLootBridge.windowStates.putAll(@Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.decodeWindows(data.survivalWindows ?: ""))
+    InteriorLootBridge.rescued.clear()
+    InteriorLootBridge.rescued.addAll(@Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.decodeIds(data.survivalRescued ?: ""))
+    InteriorLootBridge.poweredUntil.clear()
+    InteriorLootBridge.poweredUntil.putAll(@Suppress("USELESS_ELVIS") ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.decodePower(data.survivalPowered ?: "", android.os.SystemClock.elapsedRealtime()))
     waterCutAnnounced = !ovh.gabrielhuav.pow.domain.models.survival.WaterRules.running(ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs))
     blackoutAnnounced = ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.active(
         ovh.gabrielhuav.pow.domain.models.survival.DayRules.daysSurvived(data.survivalActiveMs),
