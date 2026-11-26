@@ -65,6 +65,8 @@ data class ZombieGameState(
     val nearbyKeyId: String? = null,
     val lab1KeyFound: Boolean = false,
     val keyMessage: String? = null,
+    /** Sube cada vez que cambia algo del interior procedural (una ventana rota o tapiada) para volver a dibujarlo. */
+    val generatedRevision: Int = 0,
 
     // ─── MISIÓN 2 · FASE 1 "ESCONDERSE" (lobby de la ESCOM) ─────────────────
     // Policías (skin POLICIA_CDMX) patrullan el lobby como NPCs ambientales (ids "m2cop_*" DENTRO

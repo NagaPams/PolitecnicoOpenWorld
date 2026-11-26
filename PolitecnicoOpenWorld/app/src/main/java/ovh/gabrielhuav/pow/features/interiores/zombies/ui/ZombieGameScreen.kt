@@ -283,10 +283,13 @@ fun ZombieGameScreen(
         else -> room.backgroundAsset
     }
     var background by remember(effectiveBgAsset) { mutableStateOf<ImageBitmap?>(null) }
-    LaunchedEffect(effectiveBgAsset) {
+    LaunchedEffect(effectiveBgAsset, state.generatedRevision) {
         val generated = room.generatedLayout
         if (generated != null) {
-            background = withContext(Dispatchers.Default) { GeneratedInteriorRenderer.render(generated).asImageBitmap() }
+            val buildingId = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.parse(room.id)?.buildingId ?: 0L
+            background = withContext(Dispatchers.Default) {
+                GeneratedInteriorRenderer.render(generated) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }.asImageBitmap()
+            }
             return@LaunchedEffect
         }
         background = withContext(Dispatchers.IO) {

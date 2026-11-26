@@ -474,6 +474,10 @@
     <string name="zinterior_salon_empty">🎒 ¡El salón quedó vacío! Ahí está la mochila de Prankedy.</string>
     <string name="zinterior_bed_slept">😴 Dormiste en la cama: descansaste mejor y te secaste</string>
     <string name="zinterior_bed_not_tired">😴 No tienes sueño</string>
+    <string name="zinterior_window_broken">🪟 Rompiste la ventana: el ruido se oye lejos</string>
+    <string name="zinterior_window_boarded">🪵 Tapiaste la ventana con un tablón</string>
+    <string name="zinterior_window_need_board">🪟 Está rota: necesitas un tablón para tapiarla</string>
+    <string name="zinterior_window_covered">🪵 La ventana ya está tapiada</string>
     <string name="zinterior_furniture_found">🔎 Encontraste algo útil</string>
     <string name="zinterior_furniture_empty">🔎 No hay nada aquí</string>
     <string name="zinterior_furniture_cooldown">🔎 Ya lo registraste hace poco</string>

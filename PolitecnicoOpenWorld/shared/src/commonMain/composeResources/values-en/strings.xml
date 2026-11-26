@@ -474,6 +474,10 @@
     <string name="zinterior_salon_empty">🎒 The classroom is empty! There is Prankedy's backpack.</string>
     <string name="zinterior_bed_slept">😴 You slept in the bed: better rest, and you dried off</string>
     <string name="zinterior_bed_not_tired">😴 You are not sleepy</string>
+    <string name="zinterior_window_broken">🪟 You broke the window: the noise carries far</string>
+    <string name="zinterior_window_boarded">🪵 You boarded the window up</string>
+    <string name="zinterior_window_need_board">🪟 It is broken: you need a board to cover it</string>
+    <string name="zinterior_window_covered">🪵 The window is already boarded</string>
     <string name="zinterior_furniture_found">🔎 You found something useful</string>
     <string name="zinterior_furniture_empty">🔎 Nothing here</string>
     <string name="zinterior_furniture_cooldown">🔎 You searched this recently</string>

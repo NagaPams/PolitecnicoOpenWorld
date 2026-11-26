@@ -8,6 +8,7 @@ import ovh.gabrielhuav.pow.domain.models.interior.FurnitureKind
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLayout
 import ovh.gabrielhuav.pow.domain.models.interior.RoomType
 import ovh.gabrielhuav.pow.domain.models.interior.WallSide
+import ovh.gabrielhuav.pow.domain.models.interior.WindowState
 
 // Dibuja la planta de un interior procedural con primitivas (sin assets): suelo por tipo de habitación, muros con
 // borde, ventanas, puerta y muebles como cajas con tapa y frente. Se hornea una sola vez por sala a media resolución
@@ -17,13 +18,13 @@ internal object GeneratedInteriorRenderer {
     /** Píxeles de la imagen por celda (el mundo usa el doble). */
     private const val CELL = 56f
 
-    fun render(layout: InteriorLayout): Bitmap {
+    fun render(layout: InteriorLayout, windowState: (Int) -> WindowState = { WindowState.CERRADA }): Bitmap {
         val bitmap = Bitmap.createBitmap((layout.cols * CELL).toInt(), (layout.rows * CELL).toInt(), Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         drawFloor(canvas, paint, layout)
         drawWalls(canvas, paint, layout)
-        drawWindows(canvas, paint, layout)
+        drawWindows(canvas, paint, layout, windowState)
         drawDoor(canvas, paint, layout)
         drawFurniture(canvas, paint, layout)
         return bitmap
@@ -68,16 +69,22 @@ internal object GeneratedInteriorRenderer {
         }
     }
 
-    private fun drawWindows(canvas: Canvas, paint: Paint, layout: InteriorLayout) {
-        for (w in layout.windows) {
+    private fun drawWindows(canvas: Canvas, paint: Paint, layout: InteriorLayout, windowState: (Int) -> WindowState) {
+        layout.windows.forEachIndexed { index, w ->
             val rect = when (w.side) {
                 WallSide.NORTE -> cell(w.index, 0)
                 WallSide.ESTE -> cell(layout.cols - 1, w.index)
                 WallSide.OESTE -> cell(0, w.index)
             }
+            val state = windowState(index)
             paint.style = Paint.Style.FILL
-            paint.color = 0xFF9CC8E6.toInt()
+            paint.color = if (state == WindowState.TAPIADA) 0xFF6B4A2B.toInt() else if (state == WindowState.ROTA) 0xFF2B2F33.toInt() else 0xFF9CC8E6.toInt()
             canvas.drawRect(rect.left + CELL * 0.12f, rect.top + CELL * 0.12f, rect.right - CELL * 0.12f, rect.bottom - CELL * 0.12f, paint)
+            if (state == WindowState.TAPIADA) {
+                paint.color = 0xFF9A7345.toInt()
+                canvas.drawRect(rect.left + CELL * 0.12f, rect.top + CELL * 0.3f, rect.right - CELL * 0.12f, rect.top + CELL * 0.45f, paint)
+                canvas.drawRect(rect.left + CELL * 0.12f, rect.top + CELL * 0.58f, rect.right - CELL * 0.12f, rect.top + CELL * 0.73f, paint)
+            }
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 3f
             paint.color = 0xFFE9E4DA.toInt()

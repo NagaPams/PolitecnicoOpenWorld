@@ -1,0 +1,35 @@
+package ovh.gabrielhuav.pow.domain.models.interior
+
+// Ventanas de un interior procedural (t07): cerrada, rota o tapiada. Romperla hace ruido y puede cortar; una rota se
+// tapia con un tablón. Reglas puras. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
+
+/** Al final de la lista de valores: no insertar en medio. */
+enum class WindowState { CERRADA, ROTA, TAPIADA }
+
+enum class WindowAction { ROMPER, TAPIAR, NINGUNA }
+
+object WindowRules {
+    const val BOARDS_TO_COVER = 1
+    /** Vida que quita un corte con los cristales (se aplica con el piso de vida del modo). */
+    const val CUT_DAMAGE = 6.0
+    /** Probabilidad de que romper la ventana a mano corte al jugador (y lo haga sangrar). */
+    const val CUT_CHANCE = 0.5
+
+    /** Qué hace X sobre una ventana en [state] con [boards] tablones en la mochila. */
+    fun actionFor(state: WindowState, boards: Int): WindowAction = when (state) {
+        WindowState.CERRADA -> WindowAction.ROMPER
+        WindowState.ROTA -> if (boards >= BOARDS_TO_COVER) WindowAction.TAPIAR else WindowAction.NINGUNA
+        WindowState.TAPIADA -> WindowAction.NINGUNA
+    }
+
+    fun after(state: WindowState, action: WindowAction): WindowState = when (action) {
+        WindowAction.ROMPER -> if (state == WindowState.CERRADA) WindowState.ROTA else state
+        WindowAction.TAPIAR -> if (state == WindowState.ROTA) WindowState.TAPIADA else state
+        WindowAction.NINGUNA -> state
+    }
+
+    fun cutsOnBreak(roll: Double): Boolean = roll < CUT_CHANCE
+
+    /** Clave estable de la ventana [index] del edificio [buildingId] (índice en `InteriorLayout.windows`). */
+    fun key(buildingId: Long, index: Int): String = "ventana_${buildingId}_$index"
+}

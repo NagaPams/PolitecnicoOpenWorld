@@ -19,11 +19,13 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalLoot
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.interior.InteriorLoot
+import ovh.gabrielhuav.pow.domain.models.interior.WindowRules
 import ovh.gabrielhuav.pow.domain.models.survival.BailoutRules
 import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
 import ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors
 import ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.InteriorLootBridge
 import ovh.gabrielhuav.pow.domain.models.survival.CrashInjuryRules
+import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
 import ovh.gabrielhuav.pow.domain.models.survival.FractureRules
 import ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules
 import ovh.gabrielhuav.pow.domain.models.survival.WeaponKind
@@ -302,10 +304,22 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.applyGains = { gains -> giveSearchGains(gains) == SearchOutcome.GAVE }
     InteriorLootBridge.onCooldown = { key -> (lootTaken[key] ?: 0L) > SystemClock.elapsedRealtime() }
     InteriorLootBridge.sleepInBed = { sleepInBed() }
+    InteriorLootBridge.boardsCarried = { survivalManager.state.value.boards }
+    InteriorLootBridge.spendBoards = { n -> if (survivalManager.state.value.boards >= n) { survivalManager.addBoards(-n); true } else false }
+    InteriorLootBridge.onWindowBroken = { breakWindowByHand() }
     InteriorLootBridge.markTaken = { key -> lootTaken[key] = SystemClock.elapsedRealtime() + InteriorLoot.COOLDOWN_MS }
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
     transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
     return true
+}
+
+/** Romper una ventana a mano (t07): hace ruido de cristales y puede cortar (algo de vida y sangrado). */
+private fun WorldMapViewModel.breakWindowByHand() {
+    emitSurvivalNoise(NoiseSource.CRISTAL)
+    if (!WindowRules.cutsOnBreak(kotlin.random.Random.nextDouble())) return
+    combatManager.updateHealth { h -> CrashInjuryRules.healthAfter(h.toDouble(), WindowRules.CUT_DAMAGE).toFloat() }
+    survivalManager.setBleeding(true)
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
 }
 
 /** Dormir en una cama (t80): recupera energía a cambio de hambre y sed, y la ropa se seca; false si no hay sueño. */
