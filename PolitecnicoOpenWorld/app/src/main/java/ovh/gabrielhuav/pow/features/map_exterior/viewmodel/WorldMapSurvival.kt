@@ -182,7 +182,8 @@ internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean =
         vehicleHealth = StrangerCarRules.healthFor(carId.hashCode())
         vehicleWreckAnnounced = false
     }
-    if (boarding && firstTime) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire)) }
+    // Con llave no se le hizo el puente: ese aviso solo sale cuando de verdad se hizo (el de la llave ya salió al abrir).
+    if (boarding && firstTime && method != BoardingMethod.KEY) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire)) }
 }
 
 /** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */
