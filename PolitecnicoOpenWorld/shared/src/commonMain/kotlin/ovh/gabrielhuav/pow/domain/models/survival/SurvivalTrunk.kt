@@ -16,7 +16,14 @@ object TrunkRules {
     fun isTrunkKey(id: String): Boolean = id.startsWith(ID_PREFIX)
 
     /** Lo que guarda la cajuela del coche [carId]; vacío 1 de cada 6 veces. */
-    fun gainsFor(carId: String): List<SearchGain> = when (stableHash(carId) % 6) {
+    fun gainsFor(carId: String): List<SearchGain> = baseGains(carId) + keyGains(carId)
+
+    /** t80: 1 de cada [KEY_EVERY] cajuelas guarda además las llaves de otro coche (hash aparte: no cambia cuáles están vacías). */
+    private fun keyGains(carId: String): List<SearchGain> = if (stableHash(carId + "#llave") % KEY_EVERY == 0) listOf(SearchGain.LLAVE) else emptyList()
+
+    private const val KEY_EVERY = 8
+
+    private fun baseGains(carId: String): List<SearchGain> = when (stableHash(carId) % 6) {
         0 -> listOf(SearchGain.BIDON)
         1 -> listOf(SearchGain.VENDA)
         2 -> listOf(SearchGain.REFRESCO, SearchGain.PIZZA)

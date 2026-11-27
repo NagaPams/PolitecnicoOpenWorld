@@ -159,8 +159,8 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
 /** Calcula una vez los edificios registrables de las huellas (las pide al cargador si aún no están). */
 private fun WorldMapViewModel.ensureSearchBuildings() {
     if (searchBuildings != null) return
-    // Solo las huellas del campus: los edificios exteriores descargados (t27) no son registrables.
-    val footprints = campusBaseFootprints.ifEmpty { _uiState.value.campusFootprints }
+    // t80: las huellas del campus y también los edificios exteriores descargados (`campusFootprints` ya los trae fusionados).
+    val footprints = _uiState.value.campusFootprints.ifEmpty { campusBaseFootprints }
     if (footprints.isEmpty()) {
         if (!buildingFootprintsAsked) {
             buildingFootprintsAsked = true
@@ -478,6 +478,10 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
             }
             SearchGain.CHAPA -> if (SurvivalCrafting.canAddChapa(current.pack)) {
                 survivalManager.setPack(current.pack.copy(chapas = current.pack.chapas + 1))
+                gave = true
+            }
+            SearchGain.LLAVE -> if (SurvivalCrafting.canAddLlave(current.pack)) {
+                survivalManager.setPack(current.pack.copy(llaves = current.pack.llaves + 1))
                 gave = true
             }
             SearchGain.ABRIGO -> if (!current.coat) {

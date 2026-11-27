@@ -1,5 +1,8 @@
 package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
+import ovh.gabrielhuav.pow.domain.models.survival.BoardingMethod
+import ovh.gabrielhuav.pow.domain.models.survival.SeatRules
+import ovh.gabrielhuav.pow.domain.models.survival.KeyRules
 import android.os.SystemClock
 import androidx.lifecycle.viewModelScope
 import kotlin.random.Random
@@ -28,6 +31,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.WetnessRules
 import ovh.gabrielhuav.pow.domain.models.survival.StrangerCarRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire
 import ovh.gabrielhuav.pow.shared.recursos.survival_hotwire_failed
+import ovh.gabrielhuav.pow.shared.recursos.survival_key_used
+import ovh.gabrielhuav.pow.shared.recursos.survival_group_no_room
 import ovh.gabrielhuav.pow.domain.models.survival.CarDoorRules
 import ovh.gabrielhuav.pow.domain.models.survival.GrabRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
@@ -130,18 +135,39 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
 }
 
 /** Puerta del coche (t05): con supervivencia, subir o bajar hace ruido de puerta y subir deja el coche parado un momento. */
-/** t03: ¿falla el puente de este coche? Si sí, suena el motor y el jugador no sube (debe intentarlo otra vez). */
-internal fun WorldMapViewModel.hotwireFails(firstTime: Boolean): Boolean {
-    if (!survivalManager.state.value.enabled || !HotwireRules.fails(firstTime, Random.nextDouble())) return false
-    emitSurvivalNoise(NoiseSource.ENGINE)
-    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire_failed)) }
-    return true
+/**
+ * t80/t03: cómo se sube al coche ajeno. Con una llave en la mochila se gasta y abre sin ruido de motor; sin llave hay que hacerle
+ * el puente, que puede fallar (suena el motor y hay que repetirlo). Sin supervivencia todo queda como siempre.
+ */
+internal fun WorldMapViewModel.resolveBoarding(firstTime: Boolean): BoardingMethod {
+    if (!survivalManager.state.value.enabled) return BoardingMethod.OWNED
+    val pack = survivalManager.state.value.pack
+    val method = KeyRules.resolve(firstTime, pack.llaves, Random.nextDouble())
+    when (method) {
+        BoardingMethod.KEY -> {
+            survivalManager.setPack(pack.copy(llaves = pack.llaves - 1))
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_key_used)) }
+        }
+        BoardingMethod.HOTWIRE_FAILED -> {
+            emitSurvivalNoise(NoiseSource.ENGINE)
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_hotwire_failed)) }
+        }
+        else -> Unit
+    }
+    return method
 }
 
-internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean = false, carId: String? = null) {
+/** t80/t05: los asientos del coche limitan al grupo; los que no caben esperan y vuelven contigo al bajar. */
+internal fun WorldMapViewModel.announceSeats(model: ovh.gabrielhuav.pow.domain.models.map.CarModel, vehicleId: String) {
+    if (!survivalManager.state.value.enabled || groupSize <= 0) return
+    val out = SeatRules.leftOut(groupSize, SeatRules.passengerSeats(model, vehicleId))
+    if (out > 0) viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_group_no_room, out)) }
+}
+
+internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean = false, carId: String? = null, method: BoardingMethod? = null) {
     if (!survivalManager.state.value.enabled) return
     if (boarding) carDoorLockedUntilMs = CarDoorRules.lockedUntil(System.currentTimeMillis())
-    if (boarding) HotwireRules.noisesOnBoard(firstTime).forEach { emitSurvivalNoise(it) } else emitSurvivalNoise(NoiseSource.DOOR)
+    if (boarding) (if (method != null) KeyRules.noisesOnBoard(method) else HotwireRules.noisesOnBoard(firstTime)).forEach { emitSurvivalNoise(it) } else emitSurvivalNoise(NoiseSource.DOOR)
     val remembered = if (boarding && carId != null) carStates[carId] else null
     if (remembered != null) {
         // t03: un coche que ya conducías conserva su gasolina y su salud, no las del último que usaste.
@@ -305,7 +331,8 @@ private fun WorldMapViewModel.placeCampfire() {
  */
 private fun WorldMapViewModel.updateGroup(s: WorldMapState) {
     if (s.survivalGroup != groupSize) _uiState.update { it.copy(survivalGroup = groupSize) }
-    if (groupSize <= 0) return
+    val riding = if (s.isDriving) SeatRules.riding(groupSize, SeatRules.passengerSeats(s.currentVehicleModel ?: ovh.gabrielhuav.pow.domain.models.map.CarModel.SEDAN, s.currentVehicleId.orEmpty())) else groupSize
+    if (riding <= 0) return
     val here = s.currentLocation ?: return
     val now = SystemClock.elapsedRealtime()
     if (GroupRules.shouldWarn(nearestZombieMeters(), now, groupLastWarnMs)) {
@@ -316,7 +343,7 @@ private fun WorldMapViewModel.updateGroup(s: WorldMapState) {
     val target = remoteEntities.values.firstOrNull {
         it.type == NpcType.ZOMBIE && !it.isDying && GroupRules.inShotRange(here.latitude, here.longitude, it.location.latitude, it.location.longitude)
     } ?: return
-    groupLastShotMs = now - (GroupRules.SHOT_INTERVAL_MS - GroupRules.SHOT_INTERVAL_MS / groupSize)
+    groupLastShotMs = now - (GroupRules.SHOT_INTERVAL_MS - GroupRules.SHOT_INTERVAL_MS / riding)
     remoteEntities[target.id] = target.copy(health = 0f, isDying = true)
     onZombieKilled(target.location)
 }

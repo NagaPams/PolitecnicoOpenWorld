@@ -700,6 +700,7 @@
     <string name="weapon_cuchillo">Knife</string>
     <string name="weapon_pistola">Pistol</string>
     <string name="weapon_escopeta">Shotgun</string>
+    <string name="keys_count">🔑 Car keys %1$d (open another car without hotwiring)</string>
     <string name="plates_count">🔩 Metal plates %1$d (reinforce boarded windows)</string>
     <string name="fuel_counts">⛽ Jerrycans %1$d · Tank %2$d%%</string>
     <string name="pack_use_fuel">Refuel (+40 %)</string>

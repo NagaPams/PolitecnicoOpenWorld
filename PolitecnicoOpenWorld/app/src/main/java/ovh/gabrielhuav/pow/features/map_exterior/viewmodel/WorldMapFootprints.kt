@@ -116,6 +116,9 @@ internal fun WorldMapViewModel.updateOuterBuildingsTick(location: ovh.gabrielhua
                     npcAiManager.setExteriorCollisions(config)
                     withContext(Dispatchers.Main) { _uiState.update { it.copy(exteriorCollisions = config) } }
                 }
+                // t80: los edificios descargados también se pueden registrar y entrar (perfil por sus etiquetas de OSM).
+                searchBuildings = ovh.gabrielhuav.pow.domain.models.survival.BuildingSearchRules.searchable(merged)
+                lootCellKey = Long.MIN_VALUE
                 withContext(Dispatchers.Main) { _uiState.update { it.copy(campusFootprints = merged) } }
                 Log.i("Footprints", "Edificios exteriores: ${merged.size - campusBaseFootprints.size} de ${fetched.size} descargados")
             }

@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
+import ovh.gabrielhuav.pow.domain.models.survival.BoardingMethod
 import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.data.json.jsonOf
 
@@ -55,7 +56,8 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
 
             if (nearbyCarEntry != null) {
                 lastVehicleToggleMs = nowMs
-                if (hotwireFails(nearbyCarEntry.value.isFirstTimeBoarded)) return
+                val boardingMethod = resolveBoarding(nearbyCarEntry.value.isFirstTimeBoarded)
+                if (boardingMethod == BoardingMethod.HOTWIRE_FAILED) return
                 val carId = nearbyCarEntry.key
                 val carNpc = nearbyCarEntry.value
                 remoteEntities.remove(carId)
@@ -74,7 +76,8 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
                 // re-subirte vuelves a conducirla con el skin de policía.
                 _uiState.update { it.copy(isDriving = true, currentVehicleModel = carNpc.carModel, currentVehicleColor = carNpc.carColor, currentVehicleId = carId, vehicleRotation = exteriorCollisions.safeBoardingHeading(loc, (carNpc.rotationAngle + 90f) % 360f, carNpc.bodyDimensions), vehicleSpeed = 0.0, vehicleIsFirstTimeBoarded = false, isDrivingPoliceCar = carNpc.isPoliceSkin) }
                 logVehicleVisualTransition("board-civil")
-                onCarDoor(boarding = true, firstTime = carNpc.isFirstTimeBoarded, carId = carId)
+                onCarDoor(boarding = true, firstTime = carNpc.isFirstTimeBoarded, carId = carId, method = boardingMethod)
+                announceSeats(carNpc.carModel, carId)
                 // H (Modo Historia): si Prankedy es tu ACOMPAÑANTE (escolta), debe SUBIR contigo: corre
                 // hasta tu posición y el coche NO avanza hasta que se sube (lo completa runPrankedyTick).
                 if (prankedyManager.phase == ovh.gabrielhuav.pow.domain.models.ai.PrankedyPhase.HIRED &&

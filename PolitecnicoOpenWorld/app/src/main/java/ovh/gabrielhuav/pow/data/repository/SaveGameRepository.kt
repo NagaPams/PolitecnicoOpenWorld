@@ -94,6 +94,8 @@ data class GameSaveData(
     val survivalRescued: String = "",
     // Chapas de metal de la mochila.
     val survivalChapas: Int = 0,
+    // Llaves de coche de la mochila.
+    val survivalLlaves: Int = 0,
     val survivalPowered: String = "",
     // Humedad de la ropa (0-100).
     val survivalWetness: Double = 0.0,

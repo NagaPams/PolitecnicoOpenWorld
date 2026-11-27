@@ -468,6 +468,8 @@
     <string name="survival_very_hungry">🍗 You are very hungry: your hits lose strength</string>
     <string name="survival_very_thirsty">💧 You are very thirsty: your breath comes back slowly</string>
     <string name="survival_very_tired">😴 You are exhausted: you walk slower, get some sleep</string>
+    <string name="survival_key_used">🔑 You opened the car with a key</string>
+    <string name="survival_group_no_room">👥 Not enough seats: %1$d wait and rejoin you when you get out</string>
     <string name="survival_hotwire_failed">🔧 The hotwire failed: the engine made noise, try again</string>
     <string name="survival_bandaged">🩹 Bandage applied</string>
     <string name="survival_bandage_stored">🩹 Bandage stored</string>
