@@ -692,29 +692,6 @@ fun ZombieGameScreen(
                     }
                 }
 
-                if (isoLayout != null && isoBlocks.isNotEmpty() && state.zombies.isNotEmpty()) {
-                    // t82: lo mismo que con el jugador, pero para cada zombi (antes de dibujar al jugador, para no tapar a quien va delante).
-                    val cellPx = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        translate(cam.offsetX, cam.offsetY) {
-                            scale(cam.scale, cam.scale, pivot = Offset.Zero) {
-                                for (z in state.zombies) {
-                                    val zKey = (z.x / cellPx).toInt() + (z.y / cellPx).toInt()
-                                    val zbx = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(z.x / cellPx, z.y / cellPx, isoLayout.rows)
-                                    val zby = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(z.x / cellPx, z.y / cellPx)
-                                    for (blk in isoBlocks) {
-                                        if (!InteriorCutaway.isInFront(blk.key, zKey)) continue
-                                        if (blk.x > zbx + 70f || blk.x + blk.image.width < zbx - 70f) continue
-                                        if (blk.y > zby + 24f || blk.y + blk.image.height < zby - 150f) continue
-                                        // El offset va como esquina superior izquierda de DESTINO (Offset): con IntOffset iría como origen de la imagen y no se vería nada.
-                                        drawImage(blk.image, Offset(blk.x.toFloat(), blk.y.toFloat()), alpha = InteriorCutaway.alphaFor(blk.wall))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 // Jugadores remotos y NPCs. `room.playerScaleMul` aplica IGUAL que al jugador:
                 // en salas con fondo que achica los sprites (salones ENCB / salón M2, ×3) los
                 // NPCs ambientales se veían diminutos junto al jugador (QA 2026-07-13).
@@ -722,7 +699,16 @@ fun ZombieGameScreen(
                 state.remotePlayers.forEach { rp ->
                     if (!onScreen(rp.x, rp.y)) return@forEach
                     key(rp.id) {
-                        RemotePlayerView(
+                        if (isoArt != null) {
+                            val rh = rpSize * ISO_ACTOR_HEIGHT_FACTOR
+                            ovh.gabrielhuav.pow.features.map_exterior.ui.iso.IsoInteriorPlayer(
+                                art = isoArt, action = rp.action, aimDx = 0f, aimDy = if (rp.facingRight) -1f else 1f, heightPx = rh, alpha = 1f,
+                                modifier = Modifier.absoluteOffset(
+                                    x = with(density) { toScreenX(rp.x, rp.y).toDp() } - with(density) { (rh * 0.39f).toDp() },
+                                    y = with(density) { toScreenY(rp.x, rp.y).toDp() } - with(density) { rh.toDp() },
+                                ),
+                            )
+                        } else RemotePlayerView(
                             name = rp.displayName,
                             action = rp.action,
                             facingRight = rp.facingRight,
@@ -740,7 +726,16 @@ fun ZombieGameScreen(
                 state.interiorNpcs.forEach { npc ->
                     if (!onScreen(npc.x, npc.y)) return@forEach
                     key("civ_${npc.id}") {
-                        RemotePlayerView(
+                        if (isoArt != null) {
+                            val ch = rpSize * ISO_ACTOR_HEIGHT_FACTOR
+                            ovh.gabrielhuav.pow.features.map_exterior.ui.iso.IsoInteriorPlayer(
+                                art = isoArt, action = npc.action, aimDx = 0f, aimDy = if (npc.facingRight) -1f else 1f, heightPx = ch, alpha = 1f,
+                                modifier = Modifier.absoluteOffset(
+                                    x = with(density) { toScreenX(npc.x, npc.y).toDp() } - with(density) { (ch * 0.39f).toDp() },
+                                    y = with(density) { toScreenY(npc.x, npc.y).toDp() } - with(density) { ch.toDp() },
+                                ),
+                            )
+                        } else RemotePlayerView(
                             name = "",
                             action = npc.action,
                             facingRight = npc.facingRight,
@@ -750,6 +745,32 @@ fun ZombieGameScreen(
                                 y = with(density) { toScreenY(npc.x, npc.y).toDp() } - with(density) { (rpSize / 2).toDp() }
                             )
                         )
+                    }
+                }
+
+                if (isoLayout != null && isoBlocks.isNotEmpty() && (state.zombies.isNotEmpty() || state.remotePlayers.isNotEmpty() || state.interiorNpcs.isNotEmpty())) {
+                    // t82: lo mismo que con el jugador, pero para cada zombi, jugador remoto y civil (antes de dibujar al jugador, para no tapar a quien va delante).
+                    val cellPx = ovh.gabrielhuav.pow.domain.models.zombie.GeneratedInteriors.CELL_PX
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        translate(cam.offsetX, cam.offsetY) {
+                            scale(cam.scale, cam.scale, pivot = Offset.Zero) {
+                                fun cutawayAt(wx: Float, wy: Float) {
+                                    val key = (wx / cellPx).toInt() + (wy / cellPx).toInt()
+                                    val bx = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(wx / cellPx, wy / cellPx, isoLayout.rows)
+                                    val by = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(wx / cellPx, wy / cellPx)
+                                    for (blk in isoBlocks) {
+                                        if (!InteriorCutaway.isInFront(blk.key, key)) continue
+                                        if (blk.x > bx + 70f || blk.x + blk.image.width < bx - 70f) continue
+                                        if (blk.y > by + 24f || blk.y + blk.image.height < by - 150f) continue
+                                        // El offset va como esquina superior izquierda de DESTINO (Offset): con IntOffset iría como origen de la imagen y no se vería nada.
+                                        drawImage(blk.image, Offset(blk.x.toFloat(), blk.y.toFloat()), alpha = InteriorCutaway.alphaFor(blk.wall))
+                                    }
+                                }
+                                for (z in state.zombies) cutawayAt(z.x, z.y)
+                                for (rp in state.remotePlayers) cutawayAt(rp.x, rp.y)
+                                for (npc in state.interiorNpcs) cutawayAt(npc.x, npc.y)
+                            }
+                        }
                     }
                 }
 
