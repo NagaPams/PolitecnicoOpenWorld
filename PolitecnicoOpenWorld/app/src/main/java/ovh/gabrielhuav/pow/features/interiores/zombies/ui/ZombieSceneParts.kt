@@ -269,7 +269,7 @@ internal fun computeOccluders(rows: List<String>, worldW: Float, worldH: Float):
  * deja ver fuera de ella. [cellPx] es el tamaño de una celda del mundo.
  */
 /** Bloque del interior isométrico ya como imagen de Compose (clave de profundidad = columna + fila de su celda de adelante). */
-internal class IsoBlockUi(val key: Int, val image: androidx.compose.ui.graphics.ImageBitmap, val x: Int, val y: Int)
+internal class IsoBlockUi(val key: Int, val image: androidx.compose.ui.graphics.ImageBitmap, val x: Int, val y: Int, val wall: Boolean = false)
 
 internal fun computeIsoCamera(
     playerX: Float, playerY: Float, cellPx: Float, cols: Int, rows: Int, viewW: Float, viewH: Float, zoom: Float,

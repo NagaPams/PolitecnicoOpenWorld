@@ -177,7 +177,7 @@ internal object GeneratedInteriorRenderer {
     private const val WALL_FRONT = 9f
 
     /** Un muro, mueble o la puerta horneado aparte (con transparencia) para volver a dibujarlo ENCIMA de los actores. */
-    class IsoBlock(val key: Int, val image: Bitmap, val x: Int, val y: Int)
+    class IsoBlock(val key: Int, val image: Bitmap, val x: Int, val y: Int, val wall: Boolean = false)
 
     /** Imagen completa del interior más sus bloques por separado (t82: oclusión por profundidad). */
     class IsoScene(val bitmap: Bitmap, val blocks: List<IsoBlock>)
@@ -206,7 +206,7 @@ internal object GeneratedInteriorRenderer {
             canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
         }
         val blocks = ArrayList<IsoBlock>()
-        fun block(key: Int, left: Float, top: Float, right: Float, bottom: Float, draw: (Canvas) -> Unit) {
+        fun block(key: Int, left: Float, top: Float, right: Float, bottom: Float, wall: Boolean = false, draw: (Canvas) -> Unit) {
             val x0 = (left - 8f).toInt().coerceAtLeast(0)
             val y0 = (top - 8f).toInt().coerceAtLeast(0)
             val x1 = (right + 8f).toInt().coerceAtMost(w)
@@ -221,7 +221,7 @@ internal object GeneratedInteriorRenderer {
                 bc.drawRect(x0.toFloat(), y0.toFloat(), x1.toFloat(), y1.toFloat(), dim)
             }
             canvas.drawBitmap(image, x0.toFloat(), y0.toFloat(), null)
-            blocks.add(IsoBlock(key, image, x0, y0))
+            blocks.add(IsoBlock(key, image, x0, y0, wall))
         }
         val rows = layout.rows
         val byCell = layout.furniture.associateBy { it.col to it.row }
@@ -230,7 +230,7 @@ internal object GeneratedInteriorRenderer {
                 val r = s - c
                 if (r < 0 || r >= layout.rows) continue
                 if (layout.isWall(c, r)) {
-                    block(c + r, InteriorIso.x(c.toFloat(), r + 1f, rows), InteriorIso.y(c.toFloat(), r.toFloat(), 64f), InteriorIso.x(c + 1f, r.toFloat(), rows), InteriorIso.y(c + 1f, r + 1f)) {
+                    block(c + r, InteriorIso.x(c.toFloat(), r + 1f, rows), InteriorIso.y(c.toFloat(), r.toFloat(), 64f), InteriorIso.x(c + 1f, r.toFloat(), rows), InteriorIso.y(c + 1f, r + 1f), wall = true) {
                         drawWallBlock(it, paint, layout, c, r, windowState)
                     }
                 }
@@ -241,7 +241,7 @@ internal object GeneratedInteriorRenderer {
                     }
                 }
                 if (r == layout.rows - 1 && c == layout.doorCol) {
-                    block(c + r, InteriorIso.x(c.toFloat(), r + 1f, rows), InteriorIso.y(c.toFloat(), r.toFloat(), 2f), InteriorIso.x(c + 1f, r.toFloat(), rows), InteriorIso.y(c + 1f, r + 1f)) {
+                    block(c + r, InteriorIso.x(c.toFloat(), r + 1f, rows), InteriorIso.y(c.toFloat(), r.toFloat(), 2f), InteriorIso.x(c + 1f, r.toFloat(), rows), InteriorIso.y(c + 1f, r + 1f), wall = true) {
                         drawDoorFrame(it, paint, rows, c, r)
                     }
                 }

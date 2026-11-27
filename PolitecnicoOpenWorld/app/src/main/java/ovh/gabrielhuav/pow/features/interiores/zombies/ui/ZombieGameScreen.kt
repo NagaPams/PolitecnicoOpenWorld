@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import ovh.gabrielhuav.pow.domain.models.interior.InteriorCutaway
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -295,7 +296,7 @@ fun ZombieGameScreen(
                 GeneratedInteriorRenderer.renderIso(generated, ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.interiorIsDark(buildingId), ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.survivorVisible(buildingId)) { index -> ovh.gabrielhuav.pow.features.interiores.zombies.viewmodel.windowStateOf(buildingId, index) }
             }
             background = scene.bitmap.asImageBitmap()
-            isoBlocks = scene.blocks.map { IsoBlockUi(it.key, it.image.asImageBitmap(), it.x, it.y) }
+            isoBlocks = scene.blocks.map { IsoBlockUi(it.key, it.image.asImageBitmap(), it.x, it.y, it.wall) }
             return@LaunchedEffect
         }
         background = withContext(Dispatchers.IO) {
@@ -702,10 +703,11 @@ fun ZombieGameScreen(
                                     val zbx = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.x(z.x / cellPx, z.y / cellPx, isoLayout.rows)
                                     val zby = ovh.gabrielhuav.pow.domain.models.interior.InteriorIso.y(z.x / cellPx, z.y / cellPx)
                                     for (blk in isoBlocks) {
-                                        if (blk.key <= zKey) continue
+                                        if (!InteriorCutaway.isInFront(blk.key, zKey)) continue
                                         if (blk.x > zbx + 70f || blk.x + blk.image.width < zbx - 70f) continue
                                         if (blk.y > zby + 24f || blk.y + blk.image.height < zby - 150f) continue
-                                        drawImage(blk.image, IntOffset(blk.x, blk.y))
+                                        // El offset va como esquina superior izquierda de DESTINO (Offset): con IntOffset iría como origen de la imagen y no se vería nada.
+                                        drawImage(blk.image, Offset(blk.x.toFloat(), blk.y.toFloat()), alpha = InteriorCutaway.alphaFor(blk.wall))
                                     }
                                 }
                             }
@@ -903,10 +905,10 @@ fun ZombieGameScreen(
                         translate(cam.offsetX, cam.offsetY) {
                             scale(cam.scale, cam.scale, pivot = Offset.Zero) {
                                 for (blk in isoBlocks) {
-                                    if (blk.key <= playerKey) continue
+                                    if (!InteriorCutaway.isInFront(blk.key, playerKey)) continue
                                     if (blk.x > pbx + 70f || blk.x + blk.image.width < pbx - 70f) continue
                                     if (blk.y > pby + 24f || blk.y + blk.image.height < pby - 150f) continue
-                                    drawImage(blk.image, IntOffset(blk.x, blk.y))
+                                    drawImage(blk.image, Offset(blk.x.toFloat(), blk.y.toFloat()), alpha = InteriorCutaway.alphaFor(blk.wall))
                                 }
                             }
                         }
