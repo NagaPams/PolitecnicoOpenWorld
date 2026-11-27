@@ -28,6 +28,7 @@ data class GameSaveData(
     val isDrivingPoliceCar: Boolean = false,
     val vehicleModel: String? = null,   // CarModel.name o null si va a pie
     val vehicleColor: Int? = null,
+    val vehicleId: String? = null,      // id del coche (variante camión/autobús); null en guardados antiguos
     val skin: String = "",              // PlayerSkin.name
     val nearbyNpcs: List<SavedNpc> = emptyList(),
     val objectiveId: String? = null,   // id del objetivo activo (MissionCatalog)

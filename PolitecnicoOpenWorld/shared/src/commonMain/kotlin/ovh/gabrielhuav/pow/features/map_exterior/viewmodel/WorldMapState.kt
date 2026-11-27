@@ -143,6 +143,8 @@ data class WorldMapState(
     val isDriving: Boolean = false,
     val currentVehicleModel: CarModel? = null,
     val currentVehicleColor: Int? = null,
+    /** Id del coche que conduces: de él sale la variante (camión, tractocamión, autobús) y se conserva al bajarte. */
+    val currentVehicleId: String? = null,
     val vehicleSpeed: Double = 0.0,
     val vehicleRotation: Float = 0f,
     val vehicleIsFirstTimeBoarded: Boolean = true,

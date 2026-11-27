@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
+import ovh.gabrielhuav.pow.domain.models.map.CarVariantRules
 import ovh.gabrielhuav.pow.data.json.jsonOf
 
 // ───────────────────────────────────────────────────────────────────────────────────
@@ -293,7 +294,7 @@ internal fun WorldMapViewModel.runOverNpcs(
     val playerFootprint = VehicleFootprint(
         center = playerLoc,
         headingDegrees = _uiState.value.vehicleRotation,
-        dimensions = (_uiState.value.currentVehicleModel ?: CarModel.SEDAN).collisionDimensions,
+        dimensions = CarVariantRules.dimensionsFor(_uiState.value.currentVehicleModel ?: CarModel.SEDAN, _uiState.value.currentVehicleId.orEmpty()),
     )
 
     fun killOrHurt(id: String, npc: Npc, giveStar: Boolean = false) {

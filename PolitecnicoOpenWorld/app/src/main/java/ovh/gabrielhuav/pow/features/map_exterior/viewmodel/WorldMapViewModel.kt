@@ -891,6 +891,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             }
 
                             val vehicleModel = _uiState.value.currentVehicleModel ?: CarModel.SEDAN
+                            val vehicleDims = ovh.gabrielhuav.pow.domain.models.map.CarVariantRules.dimensionsFor(vehicleModel, _uiState.value.currentVehicleId.orEmpty())
                             // Ajuste a la calzada (deslizar / jalar / frenar): paso puro en :shared (VehicleRoadClamp, t37).
                             // Radio expandido al rebasar REDUCIDO (0.00006 → 0.000045 ≈ 5 m): se veía fuera de la carretera.
                             val roadClamp = ovh.gabrielhuav.pow.domain.models.map.VehicleRoadClamp.apply(
@@ -912,7 +913,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                 headingTarget = tempLoc,
                                 roadAdjustedTarget = finalLoc,
                                 headingDegrees = currentRotation,
-                                dimensions = vehicleModel.collisionDimensions,
+                                dimensions = vehicleDims,
                             )
                             if (!staticResolution.reachedTarget) {
                                 if (fuelOn) damageVehicle(currentSpeed, againstWall = true)
@@ -944,7 +945,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                                 val resolvedLocation = if (
                                     trafficImpact != null && pushedLocation != location &&
                                     !resolveVehicleStaticMovement(
-                                        exteriorCollisions, location, pushedLocation, currentRotation, vehicleModel.collisionDimensions,
+                                        exteriorCollisions, location, pushedLocation, currentRotation, vehicleDims,
                                     ).reachedTarget
                                 ) location else pushedLocation
                                 if (trafficImpact != null) {

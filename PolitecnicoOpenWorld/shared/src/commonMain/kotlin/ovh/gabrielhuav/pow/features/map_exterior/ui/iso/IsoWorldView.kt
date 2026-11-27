@@ -55,6 +55,7 @@ import ovh.gabrielhuav.pow.domain.models.map.FootprintKind
 import ovh.gabrielhuav.pow.domain.models.map.IsoProjection
 import ovh.gabrielhuav.pow.domain.models.map.MapWay
 import ovh.gabrielhuav.pow.domain.models.map.Npc
+import ovh.gabrielhuav.pow.domain.models.map.CarModel
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.isoPointInPolygon
 import ovh.gabrielhuav.pow.domain.models.map.isoScreenSector
@@ -252,6 +253,10 @@ fun IsoWorldView(
     lootPoints: List<LootPoint> = emptyList(),
     /** Salud del coche del jugador (0-100): con poca sale humo del motor (t04). */
     vehicleHealth: Double = 100.0,
+    /** Modelo, id y piel de patrulla del coche del jugador: el camión, el autobús y la patrulla se dibujan como son. */
+    vehicleModel: CarModel? = null,
+    vehicleId: String? = null,
+    vehiclePolice: Boolean = false,
 ) {
     if (center == null) return
     val graphicsContext = LocalGraphicsContext.current
@@ -274,6 +279,7 @@ fun IsoWorldView(
     val actionState by rememberUpdatedState(playerAction)
     val vehicleColorState by rememberUpdatedState(vehicleColor)
     val vehicleHealthState by rememberUpdatedState(vehicleHealth)
+    val playerVehicle = isoVehicleFor(if (vehiclePolice) NpcType.POLICE_CAR else NpcType.CAR, vehicleModel ?: CarModel.SEDAN, vehicleId.orEmpty())
     val layerPool = remember { IsoLayerPool(graphicsContext) }
     val density = LocalDensity.current.density.toDouble()
     val reference = remember(footprints) { footprints.firstOrNull()?.points?.firstOrNull() ?: center }
@@ -462,14 +468,14 @@ fun IsoWorldView(
             var playerCar: ImageBitmap? = null
             var playerCarMirror = false
             if (drivingState) {
-                val sedan = art.vehicleViews(IsoVehicle.SEDAN)
+                val sedan = art.vehicleViews(playerVehicle)
                 val carDirection = isoVehicleDirection(vehicleHeadingState)
                 playerCar = sedan?.frames?.get(carDirection.first)
                 playerCarMirror = carDirection.second
             }
             val playerDepth = projection.depth(player)
             actors.insert(playerX, playerY, playerDepth, null, "", vehicleHeadingState, vehicleColorState ?: -1,
-                playerCar, playerCarMirror, IsoVehicle.SEDAN.drawMeters, IsoVehicle.SEDAN.tintable)
+                playerCar, playerCarMirror, playerVehicle.drawMeters, playerVehicle.tintable)
             var threatCount = 0
             val currentNpcs = npcState
             for (i in currentNpcs.indices) {

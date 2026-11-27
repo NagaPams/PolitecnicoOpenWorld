@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
+import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.data.json.jsonOf
 
 import android.util.Log
@@ -71,7 +72,7 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
                 }
                 // Si el coche traía skin de patrulla (una patrulla que abandonaste), al
                 // re-subirte vuelves a conducirla con el skin de policía.
-                _uiState.update { it.copy(isDriving = true, currentVehicleModel = carNpc.carModel, currentVehicleColor = carNpc.carColor, vehicleRotation = exteriorCollisions.safeBoardingHeading(loc, (carNpc.rotationAngle + 90f) % 360f, carNpc.carModel.collisionDimensions), vehicleSpeed = 0.0, vehicleIsFirstTimeBoarded = false, isDrivingPoliceCar = carNpc.isPoliceSkin) }
+                _uiState.update { it.copy(isDriving = true, currentVehicleModel = carNpc.carModel, currentVehicleColor = carNpc.carColor, currentVehicleId = carId, vehicleRotation = exteriorCollisions.safeBoardingHeading(loc, (carNpc.rotationAngle + 90f) % 360f, carNpc.bodyDimensions), vehicleSpeed = 0.0, vehicleIsFirstTimeBoarded = false, isDrivingPoliceCar = carNpc.isPoliceSkin) }
                 logVehicleVisualTransition("board-civil")
                 onCarDoor(boarding = true, firstTime = carNpc.isFirstTimeBoarded, carId = carId)
                 // H (Modo Historia): si Prankedy es tu ACOMPAÑANTE (escolta), debe SUBIR contigo: corre
@@ -109,7 +110,8 @@ internal fun WorldMapViewModel.onInteractButtonPressed() {
                         isDriving = true,
                         currentVehicleModel = boarded.carModel,
                         currentVehicleColor = boarded.carColor,
-                        vehicleRotation = exteriorCollisions.safeBoardingHeading(loc, (boarded.rotationAngle + 90f) % 360f, boarded.carModel.collisionDimensions),
+                        currentVehicleId = boarded.id,
+                        vehicleRotation = exteriorCollisions.safeBoardingHeading(loc, (boarded.rotationAngle + 90f) % 360f, boarded.bodyDimensions),
                         vehicleSpeed = 0.0,
                         vehicleIsFirstTimeBoarded = false,
                         isDrivingPoliceCar = true

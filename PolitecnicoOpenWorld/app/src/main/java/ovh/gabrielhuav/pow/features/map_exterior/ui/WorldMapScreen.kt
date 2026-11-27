@@ -607,6 +607,9 @@ fun WorldMapScreen(
                     playerAction = uiState.playerAction,
                     vehicleColor = uiState.currentVehicleColor,
                     vehicleHealth = uiState.survivalVehicleHealth,
+                    vehicleModel = uiState.currentVehicleModel,
+                    vehicleId = uiState.currentVehicleId,
+                    vehiclePolice = uiState.isDrivingPoliceCar,
                     lootPoints = uiState.survivalLoot,
                 )
             }

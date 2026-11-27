@@ -1,5 +1,6 @@
 package ovh.gabrielhuav.pow.features.map_exterior.viewmodel
 
+import ovh.gabrielhuav.pow.domain.models.map.CarVariantRules
 import android.util.Log
 import kotlinx.coroutines.flow.update
 import ovh.gabrielhuav.pow.BuildConfig
@@ -22,11 +23,12 @@ internal fun WorldMapViewModel.exitVehicle(forced: Boolean): Boolean {
     if (!state.isDriving) return false
     val vehicleCenter = state.currentLocation ?: return false
     val vehicleModel = state.currentVehicleModel ?: CarModel.SEDAN
-    val vehicle = VehicleFootprint(vehicleCenter, state.vehicleRotation, vehicleModel.collisionDimensions)
+    val vehicleDims = CarVariantRules.dimensionsFor(vehicleModel, state.currentVehicleId.orEmpty())
+    val vehicle = VehicleFootprint(vehicleCenter, state.vehicleRotation, vehicleDims)
     val candidates = if (forced) {
-        forcedVehicleExitCandidates(vehicleCenter, state.vehicleRotation, vehicleModel.collisionDimensions)
+        forcedVehicleExitCandidates(vehicleCenter, state.vehicleRotation, vehicleDims)
     } else {
-        vehicleExitCandidates(vehicleCenter, state.vehicleRotation, vehicleModel.collisionDimensions)
+        vehicleExitCandidates(vehicleCenter, state.vehicleRotation, vehicleDims)
     }
     val exitPoint = if (forced) {
         // El carjack no puede fallar: si todo está bloqueado, baja en el mejor punto disponible.
@@ -50,7 +52,7 @@ internal fun WorldMapViewModel.exitVehicle(forced: Boolean): Boolean {
     }
 
     val abandonedCar = Npc(
-        id = UUID.randomUUID().toString(),
+        id = state.currentVehicleId ?: UUID.randomUUID().toString(),
         type = NpcType.CAR,
         location = vehicleCenter,
         rotationAngle = vehicleSpriteHeading(state.vehicleRotation),
@@ -74,6 +76,7 @@ internal fun WorldMapViewModel.exitVehicle(forced: Boolean): Boolean {
             isDriving = false,
             currentVehicleModel = null,
             currentVehicleColor = null,
+            currentVehicleId = null,
             vehicleSpeed = 0.0,
             vehicleIsFirstTimeBoarded = true,
             isDrivingPoliceCar = false,

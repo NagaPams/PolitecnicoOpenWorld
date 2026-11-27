@@ -56,6 +56,7 @@ internal fun WorldMapViewModel.triggerWastedSequence() {
                     isDriving = false,
                     currentVehicleModel = null,
                     currentVehicleColor = null,
+                    currentVehicleId = null,
                     vehicleSpeed = 0.0
                 )
             }
