@@ -69,7 +69,7 @@ internal enum class IsoVehicle(val folder: String, val drawMeters: Float, val ti
 }
 
 /** Cinco vistas de un vehículo: N, NE, E, SE, S (las del oeste salen espejando). */
-internal class IsoVehicleViews(val frames: Array<ImageBitmap?>)
+internal class IsoVehicleViews(val frames: Array<ImageBitmap?>, val bottoms: FloatArray = FloatArray(frames.size) { 1f })
 
 /** Elige el sprite según el modelo del coche del juego; los camiones y el autobús se reparten por id. */
 internal fun isoVehicleFor(type: NpcType?, model: CarModel, id: String): IsoVehicle = when {
@@ -173,7 +173,7 @@ internal class IsoActorArt(private val scope: CoroutineScope) {
             scope.launch {
                 for (v in IsoVehicle.entries) {
                     val frames = withContext(Dispatchers.Default) { loadVehicle(v) }
-                    vehicles[v] = IsoVehicleViews(frames)
+                    vehicles[v] = IsoVehicleViews(frames, FloatArray(frames.size) { opaqueBottomFraction(frames[it]) })
                 }
             }
         }
@@ -243,6 +243,20 @@ private fun loadRun(skin: String): Array<ImageBitmap?> {
         }
     }
     return out
+}
+
+/** Fracción (0..1) de la altura del sprite donde está su última fila con píxeles visibles; 1 si no se puede leer. */
+private fun opaqueBottomFraction(image: ImageBitmap?): Float {
+    if (image == null || image.width <= 0 || image.height <= 0) return 1f
+    val width = image.width
+    val height = image.height
+    val pixels = IntArray(width * height)
+    runCatching { image.readPixels(pixels) }.getOrElse { return 1f }
+    for (row in height - 1 downTo 0) {
+        val base = row * width
+        for (col in 0 until width) if ((pixels[base + col] ushr 24) > 40) return (row + 1f) / height
+    }
+    return 1f
 }
 
 private val VEHICLE_VIEW_NAMES = arrayOf("n", "ne", "e", "se", "s")

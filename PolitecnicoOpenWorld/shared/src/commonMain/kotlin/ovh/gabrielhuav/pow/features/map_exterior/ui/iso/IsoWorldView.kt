@@ -44,6 +44,7 @@ import ovh.gabrielhuav.pow.platform.imagen.decodificarReducido
 import ovh.gabrielhuav.pow.domain.models.geo.GeoPoint
 import ovh.gabrielhuav.pow.domain.models.map.SmokeRules
 import ovh.gabrielhuav.pow.domain.models.map.VehicleDepthRules
+import ovh.gabrielhuav.pow.domain.models.map.VehicleSpriteAnchor
 import ovh.gabrielhuav.pow.domain.models.map.bodyDimensions
 import ovh.gabrielhuav.pow.domain.models.map.ActiveCollectible
 import ovh.gabrielhuav.pow.domain.models.survival.LootKind
@@ -56,6 +57,7 @@ import ovh.gabrielhuav.pow.domain.models.map.IsoProjection
 import ovh.gabrielhuav.pow.domain.models.map.MapWay
 import ovh.gabrielhuav.pow.domain.models.map.Npc
 import ovh.gabrielhuav.pow.domain.models.map.CarModel
+import ovh.gabrielhuav.pow.domain.models.map.CarVariantRules
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.map.isoPointInPolygon
 import ovh.gabrielhuav.pow.domain.models.map.isoScreenSector
@@ -474,7 +476,17 @@ fun IsoWorldView(
                 playerCarMirror = carDirection.second
             }
             val playerDepth = projection.depth(player)
-            actors.insert(playerX, playerY, playerDepth, null, "", vehicleHeadingState, vehicleColorState ?: -1,
+            var playerCarY = playerY
+            if (playerCar != null) {
+                val body = CarVariantRules.dimensionsFor(vehicleModel ?: CarModel.SEDAN, vehicleId.orEmpty())
+                val widthPx = projection.pixelsPerMeter.toFloat() * playerVehicle.drawMeters
+                playerCarY += VehicleSpriteAnchor.groundDropPx(
+                    body.lengthMeters, body.widthMeters, vehicleHeadingState.toDouble(),
+                    art.vehicleViews(playerVehicle)?.bottoms?.get(isoVehicleDirection(vehicleHeadingState).first) ?: 1f,
+                    widthPx * playerCar.height / playerCar.width, projection.pixelsPerMeter,
+                )
+            }
+            actors.insert(playerX, playerCarY, playerDepth, null, "", vehicleHeadingState, vehicleColorState ?: -1,
                 playerCar, playerCarMirror, playerVehicle.drawMeters, playerVehicle.tintable)
             var threatCount = 0
             val currentNpcs = npcState
@@ -488,6 +500,7 @@ fun IsoWorldView(
                 var mirror = false
                 var meters = 0f
                 var tintable = false
+                var drawY = y
                 val skin = isoSkinFor(npc.type, npc.id)
                 if (skin != null) {
                     val track = art.track(npc.id, npc.location.latitude, npc.location.longitude, elapsed)
@@ -500,6 +513,16 @@ fun IsoWorldView(
                     mirror = direction.second
                     meters = vehicle.drawMeters
                     tintable = vehicle.tintable
+                    if (sprite != null) {
+                        // El sprite se ancla por su fila inferior a la esquina más baja de la caja de colisión (ver VehicleSpriteAnchor).
+                        val body = npc.bodyDimensions
+                        val widthPx = projection.pixelsPerMeter.toFloat() * meters
+                        drawY += VehicleSpriteAnchor.groundDropPx(
+                            body.lengthMeters, body.widthMeters, heading.toDouble(),
+                            art.vehicleViews(vehicle)?.bottoms?.get(direction.first) ?: 1f,
+                            widthPx * sprite.height / sprite.width, projection.pixelsPerMeter,
+                        )
+                    }
                 }
                 if (npc.type == NpcType.ZOMBIE && threatCount < ISO_THREAT_MAX) {
                     val dxm = (npc.location.longitude - player.longitude) * 104800.0
@@ -522,7 +545,7 @@ fun IsoWorldView(
                         )
                     }
                 }
-                actors.insert(x, y, depthKey, npc.type, npc.id, heading, npc.carColor, sprite, mirror, meters, tintable)
+                actors.insert(x, drawY, depthKey, npc.type, npc.id, heading, npc.carColor, sprite, mirror, meters, tintable)
             }
             val ppm = projection.pixelsPerMeter.toFloat()
             val personBoost = (ISO_MIN_PERSON_PX * density.toFloat() / (ppm * scale * 2.05f)).coerceIn(1f, ISO_MAX_SPRITE_BOOST)
