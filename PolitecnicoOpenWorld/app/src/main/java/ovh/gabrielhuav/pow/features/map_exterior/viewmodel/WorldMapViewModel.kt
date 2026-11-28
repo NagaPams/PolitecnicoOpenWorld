@@ -203,6 +203,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalArsenal = survival.arsenal,
                 survivalFuel = survival.fuel,
                 survivalBleeding = survival.bleeding,
+                survivalWoundDirt = survival.woundDirt,
                 survivalCoat = survival.coat,
                 survivalWetness = survival.wetness,
                 survivalFractured = ovh.gabrielhuav.pow.domain.models.survival.FractureRules.isFractured(survival.activeMs, survival.fractureHealsAtMs),
@@ -489,6 +490,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal val hungerLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val thirstLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val tiredLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val woundDirtyLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val woundInfectedLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal var wasFractured = false
     /** Hasta cuándo el coche no arranca tras subir (puerta, t05). */
     @Volatile internal var carDoorLockedUntilMs = 0L

@@ -71,6 +71,8 @@ data class WorldMapState(
     val survivalPack: ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(),
     val survivalFuel: Double = 70.0,
     val survivalBleeding: Boolean = false,
+    /** Suciedad de la herida (0-100, t87). */
+    val survivalWoundDirt: Double = 0.0,
     val survivalFractured: Boolean = false,
     /** t20: hay un coche al alcance de Y (subir); lo calcula `updateContextActionTick` a ~4 Hz. */
     val nearCar: Boolean = false,

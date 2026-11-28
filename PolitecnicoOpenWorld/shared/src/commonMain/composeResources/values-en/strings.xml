@@ -428,6 +428,11 @@
     <string name="survival_skill_combate">Melee</string>
     <string name="survival_skill_punteria">Aim</string>
     <string name="survival_skill_carpinteria">Carpentry</string>
+    <string name="survival_wound_dirty">🧫 The wound is getting dirty: disinfect it and bandage it</string>
+    <string name="survival_wound_infected">🦠 The wound is infected: it drains your health until you disinfect it</string>
+    <string name="survival_wound_disinfected">🧴 You disinfected the wound: it is clean</string>
+    <string name="survival_wound_sutured">🪡 You sutured the wound: it stopped bleeding</string>
+    <string name="survival_bandage_dirty">🩹 The bandage got dirty: the wound keeps getting worse, disinfect it</string>
     <string name="survival_skill_fitness">Fitness</string>
     <string name="survival_rest_started">🪑 Resting…</string>
     <string name="survival_rest_done">🪑 You rested for a while: some energy is back</string>

@@ -125,6 +125,8 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalChapas = survivalManager.state.value.pack.chapas,
         survivalLlaves = survivalManager.state.value.pack.llaves,
         survivalLibros = survivalManager.state.value.pack.libros,
+        survivalAntisepticos = survivalManager.state.value.pack.antisepticos,
+        survivalWoundDirt = survivalManager.state.value.woundDirt,
         survivalGroup = groupSize,
         survivalWindows = ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.encodeWindows(InteriorLootBridge.windowStates),
         survivalRescued = ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.encodeIds(InteriorLootBridge.rescued),
@@ -179,7 +181,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     val restoredCompleted: List<String> = data.completedMissions ?: emptyList()
     // wantedLevel (WantedManager) y completedMissions (CampaignManager) los POSEEN sus managers
     // (fachada combine): se restauran vía el manager, NO en el copy de _uiState.
-    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages, data.survivalRaw, data.survivalDirty, data.survivalChapas, data.survivalLlaves, data.survivalLibros)
+    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages, data.survivalRaw, data.survivalDirty, data.survivalChapas, data.survivalLlaves, data.survivalLibros, data.survivalAntisepticos)
     // t74: si el guardado traía más de lo que cabe, `restore` lo recorta; se avisa para que no parezca una pérdida sin motivo.
     val packTrimmed = ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting.sanitized(savedPack) != savedPack
     survivalManager.restore(
@@ -208,6 +210,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
         data.survivalFractureHealsAtMs,
         data.survivalCoat,
         data.survivalWetness,
+        woundDirt = data.survivalWoundDirt,
     )
     if (packTrimmed) viewModelScope.launch { showSurvivalPrompt(org.jetbrains.compose.resources.getString(Res.string.survival_pack_trimmed)) }
     vehicleHealth = ovh.gabrielhuav.pow.domain.models.survival.VehicleHealthRules.sanitized(data.survivalVehicleHealth)

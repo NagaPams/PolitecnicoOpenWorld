@@ -98,6 +98,9 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_very_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.survival_very_tired
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_fitness
+import ovh.gabrielhuav.pow.shared.recursos.survival_wound_dirty
+import ovh.gabrielhuav.pow.shared.recursos.survival_wound_infected
+import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_rest_done
 import ovh.gabrielhuav.pow.shared.recursos.survival_rest_rested
 import ovh.gabrielhuav.pow.shared.recursos.survival_rest_started
@@ -726,6 +729,13 @@ private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
     }
     if (tiredLatch.fire(sv.needs.energy < NeedEffectRules.CRITICAL_BELOW, sv.needs.energy >= 30.0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_very_tired)) }
+    }
+    // t87: la herida se ensucia (aviso al pasar el umbral y otro al infectarse); los avisos se rearman al limpiarla.
+    if (woundDirtyLatch.fire(WoundRules.isDirty(sv.woundDirt), sv.woundDirt < WoundRules.DIRTY_FROM / 2)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_wound_dirty)) }
+    }
+    if (woundInfectedLatch.fire(WoundRules.isInfected(sv.woundDirt), sv.woundDirt < WoundRules.DIRTY_FROM)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_wound_infected)) }
     }
     val fractured = FractureRules.isFractured(sv.activeMs, sv.fractureHealsAtMs)
     // fractureHealsAtMs = 0 es una cura con botiquín o férula (que ya tienen su propio aviso): solo se avisa la que sanó sola.

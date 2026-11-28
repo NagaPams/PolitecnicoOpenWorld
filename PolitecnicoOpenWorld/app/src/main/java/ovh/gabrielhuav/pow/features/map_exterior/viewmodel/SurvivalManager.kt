@@ -13,6 +13,7 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
@@ -41,6 +42,8 @@ data class SurvivalSubState(
     /** Gasolina del coche (0-100); la fuente es `WorldMapViewModel.fuelTank` y aquí se publica cada segundo. */
     val fuel: Double = FuelRules.START,
     val bleeding: Boolean = false,
+    /** Suciedad de la herida (0-100, t87): sube sangrando o con la venda sucia; al tope se infecta. */
+    val woundDirt: Double = 0.0,
     /** Lleva un abrigo puesto (t12): resta un nivel de frío. */
     val coat: Boolean = false,
     /** Humedad de la ropa (0-100, t11): la lluvia la sube y el tiempo o el coche la bajan. */
@@ -138,7 +141,12 @@ class SurvivalManager(enabled: Boolean = false) {
 
     /** Morir y reaparecer quita la infección y el sangrado (t32): no se revive para morir otra vez de inmediato. */
     fun clearConditions() {
-        mutableState.update { it.copy(bleeding = false, fractureHealsAtMs = 0L, infection = InfectionState()) }
+        mutableState.update { it.copy(bleeding = false, woundDirt = 0.0, fractureHealsAtMs = 0L, infection = InfectionState()) }
+    }
+
+    fun setWoundDirt(dirt: Double) {
+        val value = WoundRules.sanitized(dirt)
+        if (mutableState.value.woundDirt != value) mutableState.update { it.copy(woundDirt = value) }
     }
 
     fun setBleeding(bleeding: Boolean) {
@@ -174,12 +182,13 @@ class SurvivalManager(enabled: Boolean = false) {
         arsenal: SurvivalArsenal = SurvivalArsenal(), fuel: Double = FuelRules.START,
         bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
         skills: SurvivalSkills = SurvivalSkills(), occupation: Occupation = Occupation.NINGUNO,
-        fractureHealsAtMs: Long = 0L, coat: Boolean = false, wetness: Double = 0.0,
+        fractureHealsAtMs: Long = 0L, coat: Boolean = false, wetness: Double = 0.0, woundDirt: Double = 0.0,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
             fuel = FuelRules.sanitized(fuel),
             bleeding = bleeding,
+            woundDirt = WoundRules.sanitized(woundDirt),
             coat = coat,
             wetness = WetnessRules.sanitized(wetness),
             fractureHealsAtMs = fractureHealsAtMs.coerceAtLeast(0L),
@@ -229,7 +238,7 @@ class SurvivalManager(enabled: Boolean = false) {
         val current = mutableState.value
         val infection = current.infection.advance(deltaMs)
         val needs = SurvivalRules.advance(current.needs, activity, night, deltaMs / 1000.0, infection, WeatherRules.thirstFactor(current.weather) * GroupRules.thirstFactor(group), TemperatureRules.energyScale(current.weather, night, current.coat, activity == SurvivalActivity.DRIVING || warm, WetnessRules.isSoaked(current.wetness)))
-        val next = current.copy(needs = needs, infection = infection)
+        val next = current.copy(needs = needs, infection = infection, woundDirt = WoundRules.step(current.woundDirt, current.bleeding, deltaMs / 1000.0))
         mutableState.value = next
         return next
     }
@@ -238,7 +247,7 @@ class SurvivalManager(enabled: Boolean = false) {
     fun healthAfter(health: Float, state: SurvivalSubState, deltaMs: Long): Float {
         val afterNeeds = SurvivalRules.healthAfterNeedsDamage(health.toDouble(), state.needs, deltaMs / 1000.0, state.infection)
         val afterBleeding = if (state.bleeding) BleedingRules.healthAfter(afterNeeds, deltaMs / 1000.0) else afterNeeds
-        return afterBleeding.toFloat()
+        return WoundRules.healthAfter(afterBleeding, state.woundDirt, deltaMs / 1000.0).toFloat()
     }
 
     fun tick(

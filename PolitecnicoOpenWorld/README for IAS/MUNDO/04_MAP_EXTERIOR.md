@@ -357,6 +357,14 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > **Leer libro** (4 s) gasta un libro (`SurvivalPack.libros`, guardado `survivalLibros` con default 0, botín `SearchGain.LIBRO` en casas y
 > escuelas, peso 0,8) y da 15 XP a la habilidad con menos XP. Con un zombi a 25 m o menos no empieza y, si llega durante la acción, la corta.
 
+> **Heridas sucias, desinfectar y suturar (t87, paso 2, 2026-11-27):** la herida tiene una suciedad de 0 a 100 (`WoundRules` en
+> `SurvivalWound.kt`, `SurvivalSubState.woundDirt`, guardado `survivalWoundDirt` con default 0). Sube 0,8/s mientras sangra; con la herida
+> cerrada pero ya sucia (>= 40: la venda se ensució) sigue subiendo 0,3/s, y limpia baja 0,1/s. Al llegar a 100 se infecta y quita 0,4 HP/s
+> (`SurvivalManager.healthAfter`). **Desinfectar** gasta un antiséptico (`SurvivalPack.antisepticos`, guardado `survivalAntisepticos`, botín
+> `SearchGain.ANTISEPTICO` en clínicas y casas, peso 0,4) y deja la herida en 0. **Suturar** gasta un botiquín, detiene el sangrado y deja la
+> suciedad en 20 como máximo. Avisos con `NoticeLatch` al ensuciarse e infectarse, icono 🧫 en la barra, y `useBandage` avisa si la venda
+> se ensució. Botones y contador en la mochila (`WorldInventoryDialog`).
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

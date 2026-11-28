@@ -72,6 +72,9 @@ fun WorldInventoryDialog(
     onUseFuelCan: () -> Unit = {},
     bleeding: Boolean = false,
     onUseBandage: () -> Unit = {},
+    woundDirt: Double = 0.0,
+    onDisinfect: () -> Unit = {},
+    onSuture: () -> Unit = {},
     carHealth: Double = 100.0,
     boards: Int = 0,
     onRepairCar: () -> Unit = {},
@@ -216,6 +219,21 @@ fun WorldInventoryDialog(
                         enabled = survivalPack.vendas > 0 && bleeding,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E1B1B), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_use_bandage), fontSize = 12.sp) }
+                    Text(stringResource(R.string.antiseptic_counts, survivalPack.antisepticos, woundDirt.toInt()), color = Color.White, fontSize = 14.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Button(
+                            onClick = onDisinfect,
+                            enabled = ovh.gabrielhuav.pow.domain.models.survival.WoundRules.canDisinfect(survivalPack, woundDirt, bleeding),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00695C), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_disinfect), fontSize = 12.sp) }
+                        Button(
+                            onClick = onSuture,
+                            enabled = ovh.gabrielhuav.pow.domain.models.survival.WoundRules.canSuture(survivalPack, bleeding),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_suture), fontSize = 12.sp) }
+                    }
                     Text(stringResource(R.string.fuel_counts, survivalPack.bidones, fuel.toInt()), color = Color.White, fontSize = 14.sp)
                     Text(stringResource(R.string.plates_count, survivalPack.chapas), color = Color.White, fontSize = 14.sp)
                     Text(stringResource(R.string.keys_count, survivalPack.llaves), color = Color.White, fontSize = 14.sp)

@@ -53,6 +53,9 @@ fun SurvivalStatusBar(state: WorldMapState, paused: Boolean, modifier: Modifier 
         }
         if (state.survivalGroup > 0) BarText("👥 ${state.survivalGroup}", Color(0xFF80CBC4))
         if (state.survivalBleeding) BarText("🩸", red)
+        if (state.survivalWoundDirt >= ovh.gabrielhuav.pow.domain.models.survival.WoundRules.DIRTY_FROM) {
+            BarText(if (ovh.gabrielhuav.pow.domain.models.survival.WoundRules.isInfected(state.survivalWoundDirt)) "🧫🦠" else "🧫", red)
+        }
         if (state.survivalFractured) BarText("🦴", red)
         if (state.survivalStamina < 99.0) {
             BarText("🫁 ${state.survivalStamina.toInt()}", if (state.survivalStamina < StaminaRules.RECOVER_AT) red else Color(0xFF4DD0E1))

@@ -428,6 +428,11 @@
     <string name="survival_skill_combate">Combate</string>
     <string name="survival_skill_punteria">Puntería</string>
     <string name="survival_skill_carpinteria">Carpintería</string>
+    <string name="survival_wound_dirty">🧫 La herida se está ensuciando: desinféctala y véndala</string>
+    <string name="survival_wound_infected">🦠 La herida se infectó: te quita vida hasta que la desinfectes</string>
+    <string name="survival_wound_disinfected">🧴 Desinfectaste la herida: ya está limpia</string>
+    <string name="survival_wound_sutured">🪡 Suturaste la herida: dejó de sangrar</string>
+    <string name="survival_bandage_dirty">🩹 La venda se ensució: la herida sigue empeorando, desinféctala</string>
     <string name="survival_skill_fitness">Condición física</string>
     <string name="survival_rest_started">🪑 Descansando…</string>
     <string name="survival_rest_done">🪑 Descansaste un rato: recuperaste algo de energía</string>

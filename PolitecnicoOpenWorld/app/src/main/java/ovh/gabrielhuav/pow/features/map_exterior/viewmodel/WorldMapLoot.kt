@@ -58,6 +58,10 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_bleeding
 import ovh.gabrielhuav.pow.shared.recursos.survival_fracture
 import ovh.gabrielhuav.pow.shared.recursos.survival_car_wrecked
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
+import ovh.gabrielhuav.pow.shared.recursos.survival_wound_disinfected
+import ovh.gabrielhuav.pow.shared.recursos.survival_wound_sutured
+import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_dirty
+import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_filled
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_stored
@@ -480,6 +484,10 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
                 survivalManager.setPack(current.pack.copy(chapas = current.pack.chapas + 1))
                 gave = true
             }
+            SearchGain.ANTISEPTICO -> if (SurvivalCrafting.canAddAntiseptico(current.pack)) {
+                survivalManager.setPack(current.pack.copy(antisepticos = current.pack.antisepticos + 1))
+                gave = true
+            }
             SearchGain.LIBRO -> if (SurvivalCrafting.canAddLibro(current.pack)) {
                 survivalManager.setPack(current.pack.copy(libros = current.pack.libros + 1))
                 gave = true
@@ -513,7 +521,30 @@ internal fun WorldMapViewModel.useBandage() {
     survivalManager.setPack(state.pack.copy(vendas = state.pack.vendas - 1))
     survivalManager.setBleeding(false)
     soundManager.playItem()
-    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bandaged)) }
+    // t87: una venda sobre una herida ya sucia se ensucia y la herida sigue empeorando hasta desinfectarla.
+    val dirty = WoundRules.isDirty(state.woundDirt)
+    viewModelScope.launch { showSurvivalPrompt(getString(if (dirty) Res.string.survival_bandage_dirty else Res.string.survival_bandaged)) }
+}
+
+/** Desinfecta la herida (t87): gasta un antiséptico y la deja limpia; cura una herida sucia o infectada. */
+internal fun WorldMapViewModel.disinfectWound() {
+    val state = survivalManager.state.value
+    if (!state.enabled || !WoundRules.canDisinfect(state.pack, state.woundDirt, state.bleeding)) return
+    survivalManager.setPack(WoundRules.disinfect(state.pack))
+    survivalManager.setWoundDirt(0.0)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_wound_disinfected)) }
+}
+
+/** Sutura la herida abierta (t87): gasta un botiquín, detiene el sangrado y deja poca suciedad. */
+internal fun WorldMapViewModel.sutureWound() {
+    val state = survivalManager.state.value
+    if (!state.enabled || !WoundRules.canSuture(state.pack, state.bleeding)) return
+    survivalManager.setPack(WoundRules.suture(state.pack))
+    survivalManager.setBleeding(false)
+    survivalManager.setWoundDirt(WoundRules.dirtAfterSuture(state.woundDirt))
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_wound_sutured)) }
 }
 
 /** Un choque a [speed]: baja la salud del coche (con enfriamiento) y avisa una vez al destruirse. */

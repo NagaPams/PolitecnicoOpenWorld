@@ -724,6 +724,9 @@
     <string name="pack_read_book">Read book (%1$d)</string>
     <string name="wm_survival_fuel">Fuel</string>
     <string name="wm_survival_bleeding">Bleeding</string>
+    <string name="antiseptic_counts">🧴 Antiseptic %1$d (wound %2$d %%)</string>
+    <string name="pack_disinfect">Disinfect</string>
+    <string name="pack_suture">Suture (1 first-aid kit)</string>
     <string name="bandage_counts">🩹 Bandages %1$d</string>
     <string name="pack_use_bandage">Bandage up</string>
     <string name="wm_survival_stamina">Stamina</string>
