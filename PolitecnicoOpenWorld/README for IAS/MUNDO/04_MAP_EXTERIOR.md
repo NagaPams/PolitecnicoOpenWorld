@@ -352,7 +352,8 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)
-> toca la de otro coche ya colocado.
+> toca la de otro coche ya colocado. El reloj de juego (`currentGameHour`) arranca cada sesión a las 08:00
+> (`SESSION_START_HOUR`) y avanza con el reloj real; ya no depende del epoch, así que dos dispositivos no comparten hora.
 
 ### `NativeOsmMap.kt` (osmdroid)
 - **`FogOverlay`** anclado al jugador cada frame; rect del tamaño de pantalla siempre (cámara norte-arriba:

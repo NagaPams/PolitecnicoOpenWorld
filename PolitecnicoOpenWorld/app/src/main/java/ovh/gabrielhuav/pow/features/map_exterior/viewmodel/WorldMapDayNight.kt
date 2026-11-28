@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.update
 // ─────────────────────────────────────────────────────────────────────────────
 // CICLO DÍA/NOCHE del mundo abierto (extensiones del WorldMapViewModel, SIN gemelo miembro).
 //
-// Reloj de juego DETERMINISTA derivado del epoch (2 min reales = 1 hora de juego → ciclo
-// completo de 48 min; igual para todos los jugadores, no se persiste nada). El game loop
+// Reloj de juego derivado del inicio de la sesión (2 min reales = 1 hora de juego → ciclo
+// completo de 48 min; cada sesión arranca a las 08:00 y no se persiste nada). El game loop
 // llama updateDayNightTick() cada tick; internamente se auto-limita a ~1 Hz y solo escribe
 // el estado si cambió (StateFlow dedup + sin allocs por frame — regla de gama baja, ver 09).
 // La OSCURIDAD se dibuja como una capa Compose renderer-agnóstica en WorldMapScreen (velo
@@ -39,9 +39,18 @@ internal fun nightAlphaForHour(h: Double): Float = when {
     else -> MAX_NIGHT_ALPHA                                      // noche
 }
 
-/** Hora de juego contínua actual (0.0..24.0), derivada del reloj real. */
-internal fun currentGameHour(now: Long = System.currentTimeMillis()): Double =
-    (now % DAY_NIGHT_CYCLE_MS).toDouble() / DAY_NIGHT_CYCLE_MS * 24.0
+/** Hora de juego con la que arranca cada sesión (la app empezaba a la hora que cayera del reloj real, a menudo de noche). */
+internal const val SESSION_START_HOUR = 8.0
+
+// Instante en que arrancó esta sesión (proceso); el reloj de juego cuenta desde ahí a partir de SESSION_START_HOUR.
+private val sessionOriginMs = System.currentTimeMillis()
+
+/** Hora de juego contínua actual (0.0..24.0): empieza en [SESSION_START_HOUR] y avanza con el reloj real. */
+internal fun currentGameHour(now: Long = System.currentTimeMillis()): Double {
+    val elapsed = (now - sessionOriginMs).coerceAtLeast(0L)
+    val startMs = (SESSION_START_HOUR / 24.0 * DAY_NIGHT_CYCLE_MS).toLong()
+    return ((startMs + elapsed) % DAY_NIGHT_CYCLE_MS).toDouble() / DAY_NIGHT_CYCLE_MS * 24.0
+}
 
 /** Tick del ciclo (lo llama el game loop MIEMBRO). Barato: ~1 write por segundo como mucho. */
 internal fun WorldMapViewModel.updateDayNightTick() {
