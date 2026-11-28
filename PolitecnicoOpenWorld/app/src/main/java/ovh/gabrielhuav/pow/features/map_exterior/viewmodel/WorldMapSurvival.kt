@@ -99,6 +99,7 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_very_tired
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_fitness
 import ovh.gabrielhuav.pow.shared.recursos.survival_wound_dirty
+import ovh.gabrielhuav.pow.shared.recursos.survival_dry_by_fire
 import ovh.gabrielhuav.pow.shared.recursos.survival_wound_infected
 import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_rest_done
@@ -729,6 +730,10 @@ private fun WorldMapViewModel.announceConditions(s: WorldMapState) {
     }
     if (tiredLatch.fire(sv.needs.energy < NeedEffectRules.CRITICAL_BELOW, sv.needs.energy >= 30.0)) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_very_tired)) }
+    }
+    // t87: empapado y junto a una fogata, la ropa se seca; se avisa una vez y se rearma al secarse.
+    if (dryByFireLatch.fire(s.survivalWarm && WetnessRules.isSoaked(sv.wetness), !WetnessRules.isSoaked(sv.wetness))) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_dry_by_fire)) }
     }
     // t87: la herida se ensucia (aviso al pasar el umbral y otro al infectarse); los avisos se rearman al limpiarla.
     if (woundDirtyLatch.fire(WoundRules.isDirty(sv.woundDirt), sv.woundDirt < WoundRules.DIRTY_FROM / 2)) {

@@ -491,6 +491,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     internal val thirstLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val tiredLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val woundDirtyLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
+    internal val dryByFireLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal val woundInfectedLatch = ovh.gabrielhuav.pow.domain.models.survival.NoticeLatch()
     internal var wasFractured = false
     /** Hasta cuándo el coche no arranca tras subir (puerta, t05). */

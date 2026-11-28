@@ -422,6 +422,11 @@ private fun WorldMapViewModel.drinkFromTap(): TapResult {
     val sv = survivalManager.state.value
     val result = WaterRules.check(DayRules.daysSurvived(sv.activeMs), sv.needs.thirst)
     if (result == TapResult.DRANK) survivalManager.setNeeds(WaterRules.drink(sv.needs))
+    // t87: sin sed, el agua limpia del grifo sirve para lavar una herida sucia.
+    if (result == TapResult.NOT_THIRSTY && WoundRules.canWash(sv.woundDirt)) {
+        survivalManager.setWoundDirt(WoundRules.wash(sv.woundDirt))
+        return TapResult.WASHED
+    }
     // Sin red, el grifo todavía suelta un poco de agua turbia: se junta en la mochila y se hierve en la estufa.
     if (result == TapResult.NO_WATER && SurvivalCrafting.canAddSucia(sv.pack)) {
         survivalManager.setPack(sv.pack.copy(sucia = sv.pack.sucia + 1))

@@ -41,6 +41,7 @@ import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_not_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_boarded
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_broken
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_climbed
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_washed
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_covered
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_reinforced
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_zombie
@@ -277,6 +278,7 @@ internal fun ZombieInteriorViewModel.searchNearbyFurniture(): Boolean {
             TapResult.DRANK -> Res.string.zinterior_tap_drank
             TapResult.NOT_THIRSTY -> Res.string.zinterior_tap_not_thirsty
             TapResult.DIRTY -> Res.string.zinterior_tap_dirty
+            TapResult.WASHED -> Res.string.zinterior_tap_washed
             else -> Res.string.zinterior_tap_dry
         })
         return true

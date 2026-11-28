@@ -371,6 +371,11 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > sangrado, como romperla (`InteriorLootBridge.onWindowClimbed` → `climbWindowByHand`). Con tablones, X sigue tapiando la ventana rota.
 > Saltar vallas en el exterior NO se hizo: el mundo no tiene vallas como dato (`exterior_collisions.json` solo trae 48 guías de carril).
 
+> **Lavar la herida y secarse (t87, paso 4, 2026-11-27):** con la sed llena (`NOT_THIRSTY`), X en un grifo con agua corriente ya no solo dice que no
+> tienes sed: si la herida tiene suciedad la lava (`TapResult.WASHED`, valor nuevo al final; `WoundRules.wash` baja 40 puntos, el antiséptico
+> la deja en 0). Junto a una fogata, con la ropa empapada, un aviso (`dryByFireLatch`) dice que te secas: el secado ya existía, la fogata cuenta
+> como refugio. NO se hizo lo de cuerpos que se queman o entierran: los zombis muertos se borran al segundo, no hay cadáveres en el mundo.
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

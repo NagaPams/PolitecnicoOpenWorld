@@ -22,6 +22,14 @@ object WoundRules {
     /** Vida por segundo que quita una herida infectada. */
     const val INFECTION_HP_PER_SECOND = 0.4
 
+    /** Lo que baja la suciedad al lavar la herida con agua limpia del grifo (el antiséptico la deja en 0). */
+    const val WASH_AMOUNT = 40.0
+
+    /** ¿Vale la pena lavar? Hay algo de suciedad. */
+    fun canWash(dirt: Double): Boolean = dirt > 0.0
+
+    fun wash(dirt: Double): Double = sanitized(dirt - WASH_AMOUNT)
+
     /** Hasta cuánto baja la suciedad al suturar. */
     const val SUTURE_CAP = 20.0
 

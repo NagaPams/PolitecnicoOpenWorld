@@ -5,7 +5,7 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Al final de la lista de valores: [DIRTY] = el grifo ya no tiene red, pero se juntó agua sucia en un recipiente. */
-enum class TapResult { DRANK, NO_WATER, NOT_THIRSTY, DIRTY }
+enum class TapResult { DRANK, NO_WATER, NOT_THIRSTY, DIRTY, WASHED }
 
 object WaterRules {
     /** El agua se corta desde este día de supervivencia (la luz lo hace el día [BlackoutRules.FROM_DAY]). */
