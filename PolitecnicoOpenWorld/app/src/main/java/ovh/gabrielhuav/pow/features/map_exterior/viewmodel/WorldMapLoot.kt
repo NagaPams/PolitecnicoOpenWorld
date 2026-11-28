@@ -498,6 +498,10 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
                 survivalManager.setPack(current.pack.copy(chapas = current.pack.chapas + 1))
                 gave = true
             }
+            SearchGain.CANDADO -> if (SurvivalCrafting.canAddCandado(current.pack)) {
+                survivalManager.setPack(current.pack.copy(candados = current.pack.candados + 1))
+                gave = true
+            }
             SearchGain.ANTISEPTICO -> if (SurvivalCrafting.canAddAntiseptico(current.pack)) {
                 survivalManager.setPack(current.pack.copy(antisepticos = current.pack.antisepticos + 1))
                 gave = true

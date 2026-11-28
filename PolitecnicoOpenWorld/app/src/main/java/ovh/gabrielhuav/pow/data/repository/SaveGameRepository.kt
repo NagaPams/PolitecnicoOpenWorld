@@ -100,6 +100,8 @@ data class GameSaveData(
     val survivalLibros: Int = 0,
     // Antiséptico de la mochila y suciedad de la herida (t87, paso 2).
     val survivalAntisepticos: Int = 0,
+    // Candados de la mochila (t87, paso 5).
+    val survivalCandados: Int = 0,
     val survivalWoundDirt: Double = 0.0,
     val survivalPowered: String = "",
     // Humedad de la ropa (0-100).

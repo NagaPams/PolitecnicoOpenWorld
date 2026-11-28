@@ -22,7 +22,7 @@ enum class BuildingMaterial { DEFAULT, BRICK, CONCRETE, PLASTER }
 
 /** Estado de una puerta. Los valores nuevos van AL FINAL. */
 @Serializable
-enum class DoorState { OPEN, CLOSED, BARRICADED }
+enum class DoorState { OPEN, CLOSED, BARRICADED, LOCKED }
 
 /**
  * Puerta en la arista [edge] (del vértice `edge` al siguiente), centrada en la fracción [t] de su largo.

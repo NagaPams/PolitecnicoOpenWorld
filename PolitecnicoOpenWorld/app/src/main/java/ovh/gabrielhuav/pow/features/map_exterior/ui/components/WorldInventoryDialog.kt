@@ -220,6 +220,7 @@ fun WorldInventoryDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E1B1B), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_use_bandage), fontSize = 12.sp) }
                     Text(stringResource(R.string.antiseptic_counts, survivalPack.antisepticos, woundDirt.toInt()), color = Color.White, fontSize = 14.sp)
+                    Text(stringResource(R.string.padlock_counts, survivalPack.candados), color = Color.White, fontSize = 14.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Button(
                             onClick = onDisinfect,

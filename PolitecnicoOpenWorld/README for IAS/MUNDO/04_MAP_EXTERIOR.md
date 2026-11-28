@@ -376,6 +376,12 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > la deja en 0). Junto a una fogata, con la ropa empapada, un aviso (`dryByFireLatch`) dice que te secas: el secado ya existía, la fogata cuenta
 > como refugio. NO se hizo lo de cuerpos que se queman o entierran: los zombis muertos se borran al segundo, no hay cadáveres en el mundo.
 
+> **Candados en las puertas del campus (t87, paso 5, 2026-11-27):** con supervivencia, el menú de una puerta ofrece «Poner candado» si llevas uno
+> (`SurvivalPack.candados`, guardado `survivalCandados` con default 0, botín `SearchGain.CANDADO` en talleres y tiendas, peso 0,6). Nuevo estado
+> `DoorState.LOCKED` y acciones `DoorAction.LOCK`/`UNLOCK` (al final de los enums; `DoorRules.applyLock`). La puerta con candado cuenta como cerrada
+> para la colisión, parte de 100 de aguante y los zombis la desgastan a la mitad (`LOCK_ZOMBIE_FACTOR` 0,5) que una barricada; si se rompe queda
+> abierta y el candado se pierde. Quitar el candado deja la puerta cerrada y lo devuelve a la mochila. No se puede candar una puerta barricada.
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

@@ -34,6 +34,7 @@ fun DoorMenuDialog(
     doorState: DoorRuntime,
     boards: Int,
     canEnter: Boolean,
+    padlocks: Int = 0,
     onAction: (DoorAction) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -53,6 +54,10 @@ fun DoorMenuDialog(
                     when (doorState.state) {
                         DoorState.OPEN -> stringResource(R.string.door_state_open)
                         DoorState.CLOSED -> stringResource(R.string.door_state_closed)
+                        DoorState.LOCKED -> stringResource(
+                            R.string.door_state_locked,
+                            (doorState.health / DoorRules.LOCK_HEALTH * 100).toInt().coerceIn(0, 100),
+                        )
                         DoorState.BARRICADED -> stringResource(
                             R.string.door_state_barricaded,
                             (doorState.health / DoorRules.BARRICADE_HEALTH * 100).toInt().coerceIn(0, 100),
@@ -61,7 +66,7 @@ fun DoorMenuDialog(
                     color = Color.LightGray,
                     fontSize = 14.sp,
                 )
-                for (action in DoorRules.actionsFor(doorState.state, boards, canEnter)) {
+                for (action in DoorRules.actionsFor(doorState.state, boards, canEnter, padlocks)) {
                     Button(
                         onClick = { onAction(action) },
                         modifier = Modifier.fillMaxWidth(),
@@ -75,6 +80,8 @@ fun DoorMenuDialog(
                                     DoorAction.CLOSE -> R.string.door_action_close
                                     DoorAction.BARRICADE -> R.string.door_action_barricade
                                     DoorAction.DISMANTLE -> R.string.door_action_dismantle
+                                    DoorAction.LOCK -> R.string.door_action_lock
+                                    DoorAction.UNLOCK -> R.string.door_action_unlock
                                 },
                             ),
                         )

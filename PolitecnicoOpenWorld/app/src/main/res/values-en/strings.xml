@@ -726,6 +726,10 @@
     <string name="wm_survival_bleeding">Bleeding</string>
     <string name="antiseptic_counts">🧴 Antiseptic %1$d (wound %2$d %%)</string>
     <string name="pack_disinfect">Disinfect</string>
+    <string name="padlock_counts">🔒 Padlocks %1$d (lock a campus door)</string>
+    <string name="door_state_locked">Padlocked door (%1$d %%)</string>
+    <string name="door_action_lock">Add padlock</string>
+    <string name="door_action_unlock">Remove padlock</string>
     <string name="pack_suture">Suture (1 first-aid kit)</string>
     <string name="bandage_counts">🩹 Bandages %1$d</string>
     <string name="pack_use_bandage">Bandage up</string>

@@ -428,6 +428,8 @@
     <string name="survival_skill_combate">Combate</string>
     <string name="survival_skill_punteria">Puntería</string>
     <string name="survival_skill_carpinteria">Carpintería</string>
+    <string name="survival_door_locked">🔒 Pusiste el candado: la puerta aguanta el doble que una barricada</string>
+    <string name="survival_door_unlocked">🔓 Quitaste el candado y lo guardaste</string>
     <string name="zinterior_tap_washed">🚿 Lavaste la herida con agua del grifo: está más limpia</string>
     <string name="survival_dry_by_fire">🔥 Te secas junto al fuego</string>
     <string name="survival_wound_dirty">🧫 La herida se está ensuciando: desinféctala y véndala</string>

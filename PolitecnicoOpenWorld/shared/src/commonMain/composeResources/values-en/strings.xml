@@ -428,6 +428,8 @@
     <string name="survival_skill_combate">Melee</string>
     <string name="survival_skill_punteria">Aim</string>
     <string name="survival_skill_carpinteria">Carpentry</string>
+    <string name="survival_door_locked">🔒 You padlocked the door: it holds twice as long as a barricade</string>
+    <string name="survival_door_unlocked">🔓 You removed the padlock and kept it</string>
     <string name="zinterior_tap_washed">🚿 You washed the wound with tap water: it is cleaner</string>
     <string name="survival_dry_by_fire">🔥 You are drying off by the fire</string>
     <string name="survival_wound_dirty">🧫 The wound is getting dirty: disinfect it and bandage it</string>

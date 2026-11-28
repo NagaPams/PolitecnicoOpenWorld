@@ -7,7 +7,7 @@ package ovh.gabrielhuav.pow.domain.models.map
 data class DoorRuntime(val state: DoorState, val health: Double = 0.0)
 
 /** Lo que el jugador puede hacer con una puerta desde el menú. */
-enum class DoorAction { ENTER, OPEN, CLOSE, BARRICADE, DISMANTLE }
+enum class DoorAction { ENTER, OPEN, CLOSE, BARRICADE, DISMANTLE, LOCK, UNLOCK }
 
 object DoorRules {
     const val BARRICADE_HEALTH = 100.0
@@ -15,21 +15,26 @@ object DoorRules {
     const val ZOMBIE_DAMAGE_PER_SECOND = 4.0
     const val ZOMBIE_REACH_METERS = 3.5
     const val BOARDS_PER_BARRICADE = 1
+    /** Candado (t87, paso 5): la puerta con candado aguanta [LOCK_HEALTH] y los zombis la desgastan a [LOCK_ZOMBIE_FACTOR] de lo normal. */
+    const val LOCK_HEALTH = 100.0
+    const val LOCK_ZOMBIE_FACTOR = 0.5
 
     /** Acciones disponibles según el estado; BARRICADE solo si hay tablones. */
-    fun actionsFor(state: DoorState, boards: Int, canEnter: Boolean): List<DoorAction> = buildList {
+    fun actionsFor(state: DoorState, boards: Int, canEnter: Boolean, padlocks: Int = 0): List<DoorAction> = buildList {
         if (canEnter && state == DoorState.OPEN) add(DoorAction.ENTER)
         when (state) {
             DoorState.OPEN -> add(DoorAction.CLOSE)
             DoorState.CLOSED -> add(DoorAction.OPEN)
             DoorState.BARRICADED -> add(DoorAction.DISMANTLE)
+            DoorState.LOCKED -> add(DoorAction.UNLOCK)
         }
-        if (state != DoorState.BARRICADED && boards >= BOARDS_PER_BARRICADE) add(DoorAction.BARRICADE)
+        if (state != DoorState.BARRICADED && state != DoorState.LOCKED && boards >= BOARDS_PER_BARRICADE) add(DoorAction.BARRICADE)
+        if ((state == DoorState.OPEN || state == DoorState.CLOSED) && padlocks >= 1) add(DoorAction.LOCK)
     }
 
     /** Aplica la acción; devuelve null si no corresponde (p. ej. barricadar sin tablones). */
     fun apply(action: DoorAction, current: DoorRuntime, boards: Int): Pair<DoorRuntime, Int>? = when (action) {
-        DoorAction.ENTER -> null
+        DoorAction.ENTER, DoorAction.LOCK, DoorAction.UNLOCK -> null
         DoorAction.OPEN -> if (current.state == DoorState.CLOSED) DoorRuntime(DoorState.OPEN) to boards else null
         DoorAction.CLOSE -> if (current.state == DoorState.OPEN) DoorRuntime(DoorState.CLOSED) to boards else null
         DoorAction.BARRICADE ->
@@ -43,10 +48,21 @@ object DoorRules {
             else null
     }
 
-    /** Desgasta la barricada; al llegar a 0 se rompe y la puerta queda ABIERTA. Otros estados no cambian. */
+    /**
+     * Poner o quitar el candado (t87): poner gasta uno y deja la puerta LOCKED; quitarlo lo devuelve y la deja CLOSED.
+     * Devuelve la puerta y los candados que quedan, o null si no corresponde.
+     */
+    fun applyLock(action: DoorAction, current: DoorRuntime, padlocks: Int): Pair<DoorRuntime, Int>? = when (action) {
+        DoorAction.LOCK ->
+            if ((current.state == DoorState.OPEN || current.state == DoorState.CLOSED) && padlocks >= 1) DoorRuntime(DoorState.LOCKED, LOCK_HEALTH) to (padlocks - 1) else null
+        DoorAction.UNLOCK -> if (current.state == DoorState.LOCKED) DoorRuntime(DoorState.CLOSED) to (padlocks + 1) else null
+        else -> null
+    }
+
+    /** Desgasta la barricada o el candado; al llegar a 0 se rompe (el candado se pierde) y la puerta queda ABIERTA. Otros estados no cambian. */
     fun damaged(current: DoorRuntime, zombiesAtDoor: Int, seconds: Double): DoorRuntime {
-        if (current.state != DoorState.BARRICADED || zombiesAtDoor <= 0 || !seconds.isFinite() || seconds <= 0.0) return current
-        val health = current.health - zombiesAtDoor * ZOMBIE_DAMAGE_PER_SECOND * seconds
+        if ((current.state != DoorState.BARRICADED && current.state != DoorState.LOCKED) || zombiesAtDoor <= 0 || !seconds.isFinite() || seconds <= 0.0) return current
+        val health = current.health - zombiesAtDoor * ZOMBIE_DAMAGE_PER_SECOND * (if (current.state == DoorState.LOCKED) LOCK_ZOMBIE_FACTOR else 1.0) * seconds
         return if (health <= 0.0) DoorRuntime(DoorState.OPEN) else current.copy(health = health)
     }
 

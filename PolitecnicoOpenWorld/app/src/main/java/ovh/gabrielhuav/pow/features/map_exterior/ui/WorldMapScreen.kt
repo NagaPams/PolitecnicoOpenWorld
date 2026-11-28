@@ -926,6 +926,7 @@ fun WorldMapScreen(
                 doorState = uiState.doorStates[doorId] ?: ovh.gabrielhuav.pow.domain.models.map.DoorRuntime(ovh.gabrielhuav.pow.domain.models.map.DoorState.OPEN),
                 boards = uiState.survivalBoards,
                 canEnter = uiState.campusEntryDoors.firstOrNull { it.id == doorId }?.entry?.isNotEmpty() == true,
+                padlocks = uiState.survivalPack.candados,
                 onAction = { viewModel.performDoorAction(it) },
                 onDismiss = { viewModel.closeDoorMenu() },
             )

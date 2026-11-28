@@ -20,6 +20,8 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_door_broken
 import ovh.gabrielhuav.pow.shared.recursos.survival_door_closed
 import ovh.gabrielhuav.pow.shared.recursos.survival_door_dismantled
 import ovh.gabrielhuav.pow.shared.recursos.survival_door_opened
+import ovh.gabrielhuav.pow.shared.recursos.survival_door_locked
+import ovh.gabrielhuav.pow.shared.recursos.survival_door_unlocked
 
 // Puertas de edificio en juego (t30): con el modo supervivencia, la X en una puerta abre un menú para
 // abrir, cerrar, barricar (consume tablones) o desmontar; los zombis desgastan la barricada.
@@ -56,6 +58,19 @@ internal fun WorldMapViewModel.closeDoorMenu() {
 internal fun WorldMapViewModel.doorRuntime(doorId: String): DoorRuntime =
     survivalManager.state.value.doors[doorId] ?: DoorRuntime(DoorState.OPEN)
 
+/** Poner o quitar el candado de una puerta (t87): poner gasta un candado; quitarlo lo devuelve. */
+private fun WorldMapViewModel.performLockAction(action: DoorAction, doorId: String) {
+    val current = survivalManager.state.value
+    val result = DoorRules.applyLock(action, doorRuntime(doorId), current.pack.candados) ?: return
+    survivalManager.setPack(current.pack.copy(candados = result.second))
+    survivalManager.setDoors(current.boards, current.doors + (doorId to result.first))
+    soundManager.playItem()
+    rebuildDoorCollisions()
+    viewModelScope.launch {
+        showSurvivalPrompt(getString(if (action == DoorAction.LOCK) Res.string.survival_door_locked else Res.string.survival_door_unlocked))
+    }
+}
+
 internal fun WorldMapViewModel.performDoorAction(action: DoorAction) {
     val doorId = _uiState.value.doorMenuId ?: return
     closeDoorMenu()
@@ -65,6 +80,10 @@ internal fun WorldMapViewModel.performDoorAction(action: DoorAction) {
         return
     }
     val current = survivalManager.state.value
+    if (action == DoorAction.LOCK || action == DoorAction.UNLOCK) {
+        performLockAction(action, doorId)
+        return
+    }
     val result = DoorRules.apply(action, doorRuntime(doorId), current.boards) ?: return
     // Carpintería (t15): la barricada nueva aguanta más según el nivel, y construirla da XP.
     val built = if (action == DoorAction.BARRICADE) {
@@ -95,13 +114,13 @@ internal fun WorldMapViewModel.performDoorAction(action: DoorAction) {
  */
 internal fun WorldMapViewModel.updateBarricadeWear(seconds: Double) {
     val current = survivalManager.state.value
-    if (current.doors.none { it.value.state == DoorState.BARRICADED }) return
+    if (current.doors.none { it.value.state == DoorState.BARRICADED || it.value.state == DoorState.LOCKED }) return
     val locations = _uiState.value.campusEntryDoors.associate { it.id to it.location }
     var changed = false
     var broke = false
     val updated = current.doors.toMutableMap()
     for ((id, door) in current.doors) {
-        if (door.state != DoorState.BARRICADED) continue
+        if (door.state != DoorState.BARRICADED && door.state != DoorState.LOCKED) continue
         val at = locations[id] ?: continue
         var zombies = 0
         for (npc in remoteEntities.values) {
@@ -111,7 +130,7 @@ internal fun WorldMapViewModel.updateBarricadeWear(seconds: Double) {
         val next = DoorRules.damaged(door, zombies, seconds)
         updated[id] = next
         changed = true
-        if (next.state != DoorState.BARRICADED) broke = true
+        if (next.state != door.state) broke = true
     }
     if (!changed) return
     survivalManager.setDoors(current.boards, updated)
