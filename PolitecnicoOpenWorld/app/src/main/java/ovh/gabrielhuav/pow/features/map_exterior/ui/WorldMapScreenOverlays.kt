@@ -47,6 +47,8 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startSleep
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startTraining
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.disinfectWound
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.sutureWound
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicleWithPart
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.plantSeed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
@@ -271,6 +273,8 @@ fun WorldMapOverlays(
             carHealth = uiState.survivalVehicleHealth,
             boards = uiState.survivalBoards,
             onRepairCar = { viewModel.repairVehicle() },
+            onRepairWithPart = { viewModel.repairVehicleWithPart() },
+            onPlant = { viewModel.plantSeed() },
             energy = uiState.survivalNeeds.energy,
             onSleep = { viewModel.startSleep() },
             onRest = { viewModel.startTraining(ovh.gabrielhuav.pow.domain.models.survival.TrainKind.REST) },

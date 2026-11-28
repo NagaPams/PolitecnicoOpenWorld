@@ -382,6 +382,14 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > para la colisión, parte de 100 de aguante y los zombis la desgastan a la mitad (`LOCK_ZOMBIE_FACTOR` 0,5) que una barricada; si se rompe queda
 > abierta y el candado se pierde. Quitar el candado deja la puerta cerrada y lo devuelve a la mochila. No se puede candar una puerta barricada.
 
+> **Refacciones y huerto (t87, paso 6, 2026-11-27):** dos objetos nuevos en la mochila (guardado `survivalRefacciones` y `survivalSemillas`, default 0).
+> **Refacción** (botín en talleres y gasolineras, peso 1,2): el botón «Reparar con refacción» da +50 de salud al coche (`VehicleHealthRules.REPAIR_PER_PART`),
+> el doble que un tablón, y sirve aunque esté destruido (`repairVehicleWithPart`). **Semilla** (botín en casas y tiendas, peso 0,1): el botón «Plantar
+> semilla» crea un huerto en tu posición (`plots`, solo memoria como trampas y fogatas, máx. 4, `GardenRules` en `SurvivalGarden.kt`); es un
+> `LootKind.HUERTO` (valor nuevo al final) que madura en 4 min reales; X antes de tiempo dice cuántos segundos faltan y X maduro da 2 de comida cruda y
+> devuelve una semilla. Las ids de huerto, fogata y trampa ahora empiezan por `SurvivalLoot.ID_PREFIX`: antes las de fogata y trampa caían en el aviso
+> «Nuevo coleccionable» al pulsar X. NO se hizo la pesca: el mundo no tiene agua como dato (`FootprintKind` no la trae).
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

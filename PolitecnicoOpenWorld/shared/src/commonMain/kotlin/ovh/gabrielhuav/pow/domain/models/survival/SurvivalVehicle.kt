@@ -30,6 +30,8 @@ object VehicleHealthRules {
     const val DAMAGED_SPEED_FACTOR = 0.6
     /** Lo que repara un tablón. */
     const val REPAIR_PER_BOARD = 25.0
+    /** Lo que repara una refacción (t87, paso 6): el doble que un tablón y sirve aunque el coche esté destruido. */
+    const val REPAIR_PER_PART = 50.0
 
     /** Salud tras un choque a [speed] (con signo) sobre [maxSpeed]; [againstWall] = pared o edificio, si no otro coche. */
     fun crash(health: Double, speed: Double, maxSpeed: Double, againstWall: Boolean): Double {
@@ -57,6 +59,8 @@ object VehicleHealthRules {
     }
 
     fun repair(health: Double): Double = (health + REPAIR_PER_BOARD).coerceAtMost(MAX)
+
+    fun repairWithPart(health: Double): Double = (health + REPAIR_PER_PART).coerceAtMost(MAX)
 
     fun sanitized(health: Double): Double = if (health.isNaN()) MAX else health.coerceIn(0.0, MAX)
 }

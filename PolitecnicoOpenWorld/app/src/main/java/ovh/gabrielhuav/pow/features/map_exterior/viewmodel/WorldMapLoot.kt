@@ -61,6 +61,10 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_bandaged
 import ovh.gabrielhuav.pow.shared.recursos.survival_wound_disinfected
 import ovh.gabrielhuav.pow.shared.recursos.survival_wound_sutured
 import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_dirty
+import ovh.gabrielhuav.pow.shared.recursos.survival_garden_growing
+import ovh.gabrielhuav.pow.shared.recursos.survival_garden_harvested
+import ovh.gabrielhuav.pow.shared.recursos.survival_garden_planted
+import ovh.gabrielhuav.pow.domain.models.survival.GardenRules
 import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_filled
@@ -91,15 +95,17 @@ private const val LOOT_MAX_SNAP_DEGREES = 0.0006
 private const val BUILDING_VISIBLE_DEGREES = 0.001
 
 /** Prefijo del id de las fogatas como punto de botín (la X sobre una cocina la comida). */
-internal const val LOOT_FIRE_PREFIX = "fogata_"
-internal const val LOOT_TRAP_PREFIX = "trampa_"
+// Deben empezar con SurvivalLoot.ID_PREFIX: así X los enruta al botín de supervivencia y no al aviso de coleccionable.
+internal const val LOOT_FIRE_PREFIX = SurvivalLoot.ID_PREFIX + "fogata_"
+internal const val LOOT_TRAP_PREFIX = SurvivalLoot.ID_PREFIX + "trampa_"
+internal const val LOOT_PLOT_PREFIX = SurvivalLoot.ID_PREFIX + "huerto_"
 
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -152,6 +158,10 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
     for ((id, pos) in traps) {
         if (abs(pos.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(pos.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
         anchored.add(LootPoint(id, LootKind.TRAMPA, pos.first, pos.second))
+    }
+    for ((id, plot) in plots) {
+        if (abs(plot.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(plot.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        anchored.add(LootPoint(id, LootKind.HUERTO, plot.first, plot.second))
     }
     for ((id, fire) in campfires) {
         if (abs(fire.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fire.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
@@ -265,6 +275,26 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 lootCellKey = Long.MIN_VALUE
                 Res.string.survival_trap_dismantled
             } else Res.string.survival_not_needed
+        }
+        point.kind == LootKind.HUERTO -> {
+            // X sobre un huerto: si ya maduró se cosecha (comida cruda y una semilla); si no, dice cuánto falta.
+            val plot = plots[point.id]
+            val nowMs = SystemClock.elapsedRealtime()
+            if (plot == null) Res.string.survival_not_needed
+            else if (!GardenRules.isRipe(nowMs, plot.third)) {
+                viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_garden_growing, GardenRules.secondsLeft(nowMs, plot.third).toInt())) }
+                return
+            } else {
+                val after = GardenRules.harvest(current.pack)
+                if (after == null) Res.string.survival_pack_full
+                else {
+                    survivalManager.setPack(after)
+                    plots.remove(point.id)
+                    lootCellKey = Long.MIN_VALUE
+                    taken = false
+                    Res.string.survival_garden_harvested
+                }
+            }
         }
         point.kind == LootKind.FOGATA -> {
             // X junto a la fogata cocina lo que lleves (sin gastar la fogata, que se apaga sola).
@@ -498,6 +528,14 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
                 survivalManager.setPack(current.pack.copy(chapas = current.pack.chapas + 1))
                 gave = true
             }
+            SearchGain.REFACCION -> if (SurvivalCrafting.canAddRefaccion(current.pack)) {
+                survivalManager.setPack(current.pack.copy(refacciones = current.pack.refacciones + 1))
+                gave = true
+            }
+            SearchGain.SEMILLA -> if (SurvivalCrafting.canAddSemilla(current.pack)) {
+                survivalManager.setPack(current.pack.copy(semillas = current.pack.semillas + 1))
+                gave = true
+            }
             SearchGain.CANDADO -> if (SurvivalCrafting.canAddCandado(current.pack)) {
                 survivalManager.setPack(current.pack.copy(candados = current.pack.candados + 1))
                 gave = true
@@ -633,6 +671,33 @@ internal fun WorldMapViewModel.repairVehicle() {
     survivalManager.setVehicleHealth(vehicleHealth)
     soundManager.playItem()
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_repaired)) }
+}
+
+/** Repara el coche con una refacción (t87): +[VehicleHealthRules.REPAIR_PER_PART] % y sirve aunque esté destruido. */
+internal fun WorldMapViewModel.repairVehicleWithPart() {
+    val state = survivalManager.state.value
+    if (state.pack.refacciones <= 0 || vehicleHealth >= VehicleHealthRules.MAX) return
+    survivalManager.setPack(state.pack.copy(refacciones = state.pack.refacciones - 1))
+    vehicleHealth = VehicleHealthRules.repairWithPart(vehicleHealth)
+    vehicleWreckAnnounced = false
+    survivalManager.setVehicleHealth(vehicleHealth)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_car_repaired)) }
+}
+
+/** Planta una semilla (t87) en la posición del jugador: madura en [GardenRules.GROW_MS]. */
+internal fun WorldMapViewModel.plantSeed() {
+    val state = survivalManager.state.value
+    val here = _uiState.value.currentLocation ?: return
+    if (!state.enabled || _uiState.value.isDriving || !GardenRules.canPlant(state.pack)) return
+    survivalManager.setPack(GardenRules.plant(state.pack))
+    if (plots.size >= GardenRules.MAX_PLOTS) plots.remove(plots.keys.first())
+    plotCounter++
+    plots["$LOOT_PLOT_PREFIX$plotCounter"] = Triple(here.latitude, here.longitude, SystemClock.elapsedRealtime())
+    lootCellKey = Long.MIN_VALUE
+    toggleWorldInventory(false)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_garden_planted)) }
 }
 
 /** Un paso del bucle de conducción: baja el tanque y avisa una vez al quedarse sin gasolina. */

@@ -218,6 +218,7 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
 
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
+    plots.clear()
     trainUntilMs = 0L
     grabbedUntilMs = 0L
     sleepUntilMs = 0L

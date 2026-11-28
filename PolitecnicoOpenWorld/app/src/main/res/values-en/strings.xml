@@ -737,6 +737,8 @@
     <string name="wm_survival_car">Car</string>
     <string name="car_health_counts">🚗 Car %1$d%% · Planks %2$d</string>
     <string name="pack_repair_car">Repair car (1 plank)</string>
+    <string name="pack_repair_part">Repair with spare part (%1$d)</string>
+    <string name="pack_plant">Plant seed (%1$d)</string>
     <string name="vendor_boards_name">Planks</string>
     <string name="vendor_boards_desc">Material to barricade a building door.</string>
     <string name="door_menu_title">Door (planks: %1$d)</string>

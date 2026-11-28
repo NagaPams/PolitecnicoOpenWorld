@@ -16,7 +16,7 @@ import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
 enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERICO, CASA, TALLER }
 
 /** Qué puede dar un registro. */
-enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO, CRUDA, CHAPA, LLAVE, LIBRO, ANTISEPTICO, CANDADO }
+enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO, CRUDA, CHAPA, LLAVE, LIBRO, ANTISEPTICO, CANDADO, REFACCION, SEMILLA }
 
 /** Un edificio registrable con el punto (afuera de su pared) donde se registra. */
 data class SearchableBuilding(
@@ -78,13 +78,13 @@ object BuildingSearchRules {
 
     /** Qué da cada lugar; el genérico varía por [id] para que no todos sean iguales. */
     fun gainsFor(profile: SearchProfile, id: Long): List<SearchGain> = when (profile) {
-        SearchProfile.TIENDA -> listOf(SearchGain.PIZZA, SearchGain.REFRESCO, SearchGain.REFRESCO, SearchGain.ABRIGO, SearchGain.CANDADO)
-        SearchProfile.GASOLINERA -> listOf(SearchGain.BIDON, SearchGain.REFRESCO, SearchGain.LLAVE)
+        SearchProfile.TIENDA -> listOf(SearchGain.PIZZA, SearchGain.REFRESCO, SearchGain.REFRESCO, SearchGain.ABRIGO, SearchGain.CANDADO, SearchGain.SEMILLA)
+        SearchProfile.GASOLINERA -> listOf(SearchGain.BIDON, SearchGain.REFRESCO, SearchGain.LLAVE, SearchGain.REFACCION)
         SearchProfile.CLINICA -> listOf(SearchGain.VENDA, SearchGain.VENDA, SearchGain.SUERO, SearchGain.ANTISEPTICO)
         SearchProfile.ESCUELA -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.PIZZA, SearchGain.LIBRO)
         SearchProfile.ESTABLO -> listOf(SearchGain.TABLON, SearchGain.VENDA)
-        SearchProfile.CASA -> listOf(SearchGain.PIZZA, SearchGain.ABRIGO, SearchGain.VENDA, SearchGain.LLAVE, SearchGain.LIBRO, SearchGain.ANTISEPTICO)
-        SearchProfile.TALLER -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.BIDON, SearchGain.CHAPA, SearchGain.LLAVE, SearchGain.CANDADO)
+        SearchProfile.CASA -> listOf(SearchGain.PIZZA, SearchGain.ABRIGO, SearchGain.VENDA, SearchGain.LLAVE, SearchGain.LIBRO, SearchGain.ANTISEPTICO, SearchGain.SEMILLA)
+        SearchProfile.TALLER -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.BIDON, SearchGain.CHAPA, SearchGain.LLAVE, SearchGain.CANDADO, SearchGain.REFACCION)
         SearchProfile.GENERICO -> listOf(
             SearchGain.TABLON,
             when (abs(id % 4).toInt()) { 0 -> SearchGain.PIZZA; 1 -> SearchGain.REFRESCO; 2 -> SearchGain.BALAS; else -> SearchGain.ABRIGO },

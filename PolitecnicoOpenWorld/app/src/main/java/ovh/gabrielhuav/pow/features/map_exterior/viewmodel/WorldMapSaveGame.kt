@@ -127,6 +127,8 @@ fun WorldMapViewModel.buildSaveData(schoolId: String, saveType: String = "MANUAL
         survivalLibros = survivalManager.state.value.pack.libros,
         survivalAntisepticos = survivalManager.state.value.pack.antisepticos,
         survivalCandados = survivalManager.state.value.pack.candados,
+        survivalRefacciones = survivalManager.state.value.pack.refacciones,
+        survivalSemillas = survivalManager.state.value.pack.semillas,
         survivalWoundDirt = survivalManager.state.value.woundDirt,
         survivalGroup = groupSize,
         survivalWindows = ovh.gabrielhuav.pow.domain.models.interior.InteriorStateRules.encodeWindows(InteriorLootBridge.windowStates),
@@ -182,7 +184,7 @@ fun WorldMapViewModel.restoreSaveData(data: GameSaveData) {
     val restoredCompleted: List<String> = data.completedMissions ?: emptyList()
     // wantedLevel (WantedManager) y completedMissions (CampaignManager) los POSEEN sus managers
     // (fachada combine): se restauran vía el manager, NO en el copy de _uiState.
-    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages, data.survivalRaw, data.survivalDirty, data.survivalChapas, data.survivalLlaves, data.survivalLibros, data.survivalAntisepticos, data.survivalCandados)
+    val savedPack = ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack(data.survivalPizza, data.survivalRefresco, data.survivalKits, data.survivalFuelCans, data.survivalBandages, data.survivalRaw, data.survivalDirty, data.survivalChapas, data.survivalLlaves, data.survivalLibros, data.survivalAntisepticos, data.survivalCandados, data.survivalRefacciones, data.survivalSemillas)
     // t74: si el guardado traía más de lo que cabe, `restore` lo recorta; se avisa para que no parezca una pérdida sin motivo.
     val packTrimmed = ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting.sanitized(savedPack) != savedPack
     survivalManager.restore(

@@ -78,6 +78,8 @@ fun WorldInventoryDialog(
     carHealth: Double = 100.0,
     boards: Int = 0,
     onRepairCar: () -> Unit = {},
+    onRepairWithPart: () -> Unit = {},
+    onPlant: () -> Unit = {},
     energy: Double = 100.0,
     onSleep: () -> Unit = {},
     onRest: () -> Unit = {},
@@ -213,6 +215,16 @@ fun WorldInventoryDialog(
                         enabled = boards > 0 && carHealth < 100.0,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF455A64), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_repair_car), fontSize = 12.sp) }
+                    Button(
+                        onClick = onRepairWithPart,
+                        enabled = survivalPack.refacciones > 0 && carHealth < 100.0,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF37474F), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_repair_part, survivalPack.refacciones), fontSize = 12.sp) }
+                    Button(
+                        onClick = onPlant,
+                        enabled = survivalPack.semillas > 0,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_plant, survivalPack.semillas), fontSize = 12.sp) }
                     Text(stringResource(R.string.bandage_counts, survivalPack.vendas), color = Color.White, fontSize = 14.sp)
                     Button(
                         onClick = onUseBandage,

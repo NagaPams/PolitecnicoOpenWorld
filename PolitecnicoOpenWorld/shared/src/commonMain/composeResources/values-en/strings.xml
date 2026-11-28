@@ -428,6 +428,9 @@
     <string name="survival_skill_combate">Melee</string>
     <string name="survival_skill_punteria">Aim</string>
     <string name="survival_skill_carpinteria">Carpentry</string>
+    <string name="survival_garden_planted">🌱 You planted a seed: it ripens in about 4 minutes</string>
+    <string name="survival_garden_growing">🌱 It is still growing: %1$d s left</string>
+    <string name="survival_garden_harvested">🥕 You harvested raw food and kept a seed</string>
     <string name="survival_door_locked">🔒 You padlocked the door: it holds twice as long as a barricade</string>
     <string name="survival_door_unlocked">🔓 You removed the padlock and kept it</string>
     <string name="zinterior_tap_washed">🚿 You washed the wound with tap water: it is cleaner</string>
