@@ -418,6 +418,15 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > si ya estás dentro. X cerca la trepa: caes al lado opuesto y, con `WindowRules.CLIMB_CUT_CHANCE` (35 %), te cortas (vida y sangrado). Se ve como un punto claro.
 > NO se hizo la segunda tanda (pesca y agua, desarmar objetos, mapa leíble).
 
+> **Segunda tanda del sandbox (t25, 2026-11-28):**
+> **Agua y pesca** (`SurvivalPond.kt`, `PondRules`): el mapa no trae agua, así que una parte de los puntos de comida de la cuadrícula (1 de cada 7 del tramo de pizza) es `LootKind.AGUA`
+> (charco o estanque, valor nuevo al final). X sin caña junta 1 agua sucia (`SurvivalPack.sucia`, se hierve en una fogata); con palo, bate o palo con clavos en la mano es pescar:
+> 40 % de sacar 1 de comida cruda, y el punto entra en enfriamiento aunque no pique.
+> **Desarmar** (`SurvivalDismantle.kt`, `DismantleRules`): el botón «Desarmar coche cercano» (necesita palo, bate o palo con clavos y un coche estacionado a ≤ ~7 m) quita el coche de
+> `remoteEntities`, da 2 tablones y 1 refacción si cabe, suena `NoiseSource.MELEE` y sube Carpintería.
+> **Leer mapa** (`SurvivalMapRead.kt`, `MapReadRules`): el botón resume los edificios de `searchBuildings` a ≤ ~280 m que aún no están en `lootTaken`, por tipo
+> (p. ej. «Tienda x2, Escuela x15»).
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

@@ -758,4 +758,6 @@
     <string name="pack_flashlight_off">Turn off flashlight · battery %1$d %%</string>
     <string name="pack_swap_batteries">Swap batteries (%1$d)</string>
     <string name="pack_build_fence">Build fence (2 boards)</string>
+    <string name="pack_dismantle_car">Dismantle nearby car (stick or bat)</string>
+    <string name="pack_read_map">Read map (unsearched buildings)</string>
 </resources>

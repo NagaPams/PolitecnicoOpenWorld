@@ -12,6 +12,7 @@ import ovh.gabrielhuav.pow.domain.models.map.NpcNavState
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.survival.AmmoKind
 import ovh.gabrielhuav.pow.domain.models.survival.BuildingSearchRules
+import ovh.gabrielhuav.pow.domain.models.survival.SearchProfile
 import ovh.gabrielhuav.pow.domain.models.survival.SearchGain
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
 import ovh.gabrielhuav.pow.domain.models.survival.LootKind
@@ -71,6 +72,25 @@ import ovh.gabrielhuav.pow.domain.models.survival.GardenRules
 import ovh.gabrielhuav.pow.domain.models.survival.BarrelRules
 import ovh.gabrielhuav.pow.domain.models.survival.TorchRules
 import ovh.gabrielhuav.pow.domain.models.survival.ClothingRules
+import ovh.gabrielhuav.pow.domain.models.survival.DismantleRules
+import ovh.gabrielhuav.pow.domain.models.survival.MapReadRules
+import ovh.gabrielhuav.pow.domain.models.survival.PondRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_dismantle_done
+import ovh.gabrielhuav.pow.shared.recursos.survival_dismantle_need_tool
+import ovh.gabrielhuav.pow.shared.recursos.survival_dismantle_none
+import ovh.gabrielhuav.pow.shared.recursos.survival_map_header
+import ovh.gabrielhuav.pow.shared.recursos.survival_map_none
+import ovh.gabrielhuav.pow.shared.recursos.survival_pond_fish
+import ovh.gabrielhuav.pow.shared.recursos.survival_pond_nothing
+import ovh.gabrielhuav.pow.shared.recursos.survival_pond_water
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_casa
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_clinica
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_escuela
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_establo
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_gasolinera
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_generico
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_taller
+import ovh.gabrielhuav.pow.shared.recursos.survival_profile_tienda
 import ovh.gabrielhuav.pow.domain.models.survival.FenceRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_fence_built
 import ovh.gabrielhuav.pow.shared.recursos.survival_fence_climbed
@@ -136,7 +156,7 @@ private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL, LootKind.CADAVER, LootKind.RAMAS, LootKind.VALLA -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL, LootKind.CADAVER, LootKind.RAMAS, LootKind.VALLA, LootKind.AGUA -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -405,6 +425,23 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
         point.kind == LootKind.CONTENEDOR -> {
             taken = lootContainer()
             if (taken) Res.string.survival_container_looted else emptyHandedMessage(current)
+        }
+        point.kind == LootKind.AGUA -> {
+            // X sobre un charco o estanque (t25): con un palo o bate se pesca; si no, se junta agua sucia (se hierve en una fogata).
+            if (PondRules.canFish(current.arsenal.equipped)) {
+                if (!PondRules.caught(kotlin.random.Random.nextDouble())) {
+                    taken = true
+                    Res.string.survival_pond_nothing
+                } else if (SurvivalCrafting.canAddCruda(current.pack)) {
+                    survivalManager.setPack(current.pack.copy(cruda = current.pack.cruda + 1))
+                    taken = true
+                    Res.string.survival_pond_fish
+                } else Res.string.survival_pack_full
+            } else if (SurvivalCrafting.canAddSucia(current.pack)) {
+                survivalManager.setPack(current.pack.copy(sucia = current.pack.sucia + 1))
+                taken = true
+                Res.string.survival_pond_water
+            } else Res.string.survival_pack_full
         }
         point.kind == LootKind.RAMAS -> if (current.boards >= MAX_BOARDS_CARRIED) {
             Res.string.survival_boards_full
@@ -845,6 +882,63 @@ internal fun WorldMapViewModel.updateCorpses(night: Boolean) {
     for (corpse in corpses.values) {
         if (CorpseRules.stinks(nowMs, corpse.third)) npcAiManager.queueSurvivalNoise(NoiseEvent(corpse.first, corpse.second, NoiseSource.PESTE, night, rain))
     }
+}
+
+/** Desarma el coche estacionado más cercano (t25): da tablones y una refacción, hace ruido y el coche desaparece. */
+internal fun WorldMapViewModel.dismantleNearestCar() {
+    val state = survivalManager.state.value
+    val here = _uiState.value.currentLocation ?: return
+    if (!state.enabled || _uiState.value.isDriving) return
+    if (!DismantleRules.hasTool(state.arsenal.equipped)) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_dismantle_need_tool)) }
+        return
+    }
+    val car = remoteEntities.values
+        .filter { it.type == NpcType.CAR && it.navState == NpcNavState.PARKED && it.displayName.isNullOrEmpty() }
+        .minByOrNull { distance(here, it.location) }
+    if (car == null || !DismantleRules.inReach(distance(here, car.location))) {
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_dismantle_none)) }
+        return
+    }
+    remoteEntities.remove(car.id)
+    survivalManager.addBoards(DismantleRules.BOARDS)
+    val pack = survivalManager.state.value.pack
+    if (SurvivalCrafting.canAddRefaccion(pack)) survivalManager.setPack(pack.copy(refacciones = pack.refacciones + DismantleRules.PARTS))
+    emitSurvivalNoise(NoiseSource.MELEE)
+    onSkillUse(Skill.CARPINTERIA, DismantleRules.XP)
+    lootCellKey = Long.MIN_VALUE
+    toggleWorldInventory(false)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_dismantle_done)) }
+}
+
+/** Lee el mapa (t25): resume los edificios sin registrar cerca, por tipo. */
+internal fun WorldMapViewModel.readMap() {
+    val here = _uiState.value.currentLocation ?: return
+    if (!survivalManager.state.value.enabled) return
+    val profiles = searchBuildings.orEmpty()
+        .filter { MapReadRules.within(here.latitude, here.longitude, it.latitude, it.longitude) && !lootTaken.containsKey("${BuildingSearchRules.ID_PREFIX}${it.id}") }
+        .map { it.profile }
+    toggleWorldInventory(false)
+    viewModelScope.launch {
+        if (profiles.isEmpty()) {
+            showSurvivalPrompt(getString(Res.string.survival_map_none))
+            return@launch
+        }
+        val list = MapReadRules.counts(profiles).map { (profile, n) -> "${getString(profileName(profile))} x$n" }.joinToString(", ")
+        showSurvivalPrompt(getString(Res.string.survival_map_header, profiles.size, list))
+    }
+}
+
+private fun profileName(profile: SearchProfile): org.jetbrains.compose.resources.StringResource = when (profile) {
+    SearchProfile.TIENDA -> Res.string.survival_profile_tienda
+    SearchProfile.GASOLINERA -> Res.string.survival_profile_gasolinera
+    SearchProfile.CLINICA -> Res.string.survival_profile_clinica
+    SearchProfile.ESCUELA -> Res.string.survival_profile_escuela
+    SearchProfile.ESTABLO -> Res.string.survival_profile_establo
+    SearchProfile.GENERICO -> Res.string.survival_profile_generico
+    SearchProfile.CASA -> Res.string.survival_profile_casa
+    SearchProfile.TALLER -> Res.string.survival_profile_taller
 }
 
 /** Arma una valla (t25) en la posición del jugador con [FenceRules.BOARD_COST] tablones. */

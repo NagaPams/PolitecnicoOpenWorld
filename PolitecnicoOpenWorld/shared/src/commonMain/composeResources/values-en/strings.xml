@@ -574,4 +574,20 @@
     <string name="survival_wood_chopped_two">🪓 You cut branches with your weapon: +2 boards</string>
     <string name="survival_fence_built">🚧 You built a fence: it blocks your way; X next to it climbs it</string>
     <string name="survival_fence_climbed">🚧 You climbed the fence</string>
+    <string name="survival_pond_water">💧 You collected dirty water: boil it at a campfire</string>
+    <string name="survival_pond_fish">🐟 You caught something: raw food</string>
+    <string name="survival_pond_nothing">🎣 Nothing bit; try again later</string>
+    <string name="survival_dismantle_done">🔧 You dismantled the car: boards and a spare part (it was noisy)</string>
+    <string name="survival_dismantle_need_tool">🔧 To dismantle a car you need a stick or a bat in hand</string>
+    <string name="survival_dismantle_none">🔧 No parked car within reach</string>
+    <string name="survival_map_header">🗺️ There are %1$d unsearched buildings nearby: %2$s</string>
+    <string name="survival_map_none">🗺️ No unsearched buildings left nearby</string>
+    <string name="survival_profile_tienda">Shop</string>
+    <string name="survival_profile_gasolinera">Gas station</string>
+    <string name="survival_profile_clinica">Clinic</string>
+    <string name="survival_profile_escuela">School</string>
+    <string name="survival_profile_establo">Stable</string>
+    <string name="survival_profile_generico">Building</string>
+    <string name="survival_profile_casa">House</string>
+    <string name="survival_profile_taller">Workshop</string>
 </resources>

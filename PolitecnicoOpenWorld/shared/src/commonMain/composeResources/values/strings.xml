@@ -574,4 +574,20 @@
     <string name="survival_wood_chopped_two">🪓 Cortaste ramas con tu arma: +2 tablones</string>
     <string name="survival_fence_built">🚧 Armaste una valla: te bloquea el paso; X cerca la trepa</string>
     <string name="survival_fence_climbed">🚧 Trepaste la valla</string>
+    <string name="survival_pond_water">💧 Juntaste agua sucia: hiérvela en una fogata</string>
+    <string name="survival_pond_fish">🐟 Pescaste algo: comida cruda</string>
+    <string name="survival_pond_nothing">🎣 No picó nada; prueba más tarde</string>
+    <string name="survival_dismantle_done">🔧 Desarmaste el coche: tablones y una refacción (hizo ruido)</string>
+    <string name="survival_dismantle_need_tool">🔧 Para desarmar un coche necesitas un palo o un bate en la mano</string>
+    <string name="survival_dismantle_none">🔧 No hay un coche estacionado a tu alcance</string>
+    <string name="survival_map_header">🗺️ Cerca hay %1$d edificios sin registrar: %2$s</string>
+    <string name="survival_map_none">🗺️ No quedan edificios sin registrar cerca</string>
+    <string name="survival_profile_tienda">Tienda</string>
+    <string name="survival_profile_gasolinera">Gasolinera</string>
+    <string name="survival_profile_clinica">Clínica</string>
+    <string name="survival_profile_escuela">Escuela</string>
+    <string name="survival_profile_establo">Establo</string>
+    <string name="survival_profile_generico">Edificio</string>
+    <string name="survival_profile_casa">Casa</string>
+    <string name="survival_profile_taller">Taller</string>
 </resources>

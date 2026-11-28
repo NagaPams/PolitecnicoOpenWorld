@@ -760,4 +760,6 @@
     <string name="pack_flashlight_off">Apagar linterna · batería %1$d %%</string>
     <string name="pack_swap_batteries">Cambiar pilas (%1$d)</string>
     <string name="pack_build_fence">Armar valla (2 tablones)</string>
+    <string name="pack_dismantle_car">Desarmar coche cercano (palo o bate)</string>
+    <string name="pack_read_map">Leer mapa (edificios sin registrar)</string>
 </resources>

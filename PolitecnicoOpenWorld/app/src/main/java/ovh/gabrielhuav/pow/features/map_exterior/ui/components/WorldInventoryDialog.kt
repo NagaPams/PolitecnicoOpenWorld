@@ -82,6 +82,8 @@ fun WorldInventoryDialog(
     onPlant: () -> Unit = {},
     onBuildBarrel: () -> Unit = {},
     onBuildFence: () -> Unit = {},
+    onDismantleCar: () -> Unit = {},
+    onReadMap: () -> Unit = {},
     coatWear: Double = 0.0,
     flashlightOn: Boolean = false,
     flashlightCharge: Double = 0.0,
@@ -240,6 +242,14 @@ fun WorldInventoryDialog(
                         enabled = boards >= 2,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0277BD), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_build_barrel), fontSize = 12.sp) }
+                    Button(
+                        onClick = onDismantleCar,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D4037), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_dismantle_car), fontSize = 12.sp) }
+                    Button(
+                        onClick = onReadMap,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF455A64), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_read_map), fontSize = 12.sp) }
                     Button(
                         onClick = onBuildFence,
                         enabled = boards >= ovh.gabrielhuav.pow.domain.models.survival.FenceRules.BOARD_COST,

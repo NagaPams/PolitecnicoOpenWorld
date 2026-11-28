@@ -51,6 +51,8 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicleWithPart
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.plantSeed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.buildBarrel
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.buildFence
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.dismantleNearestCar
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.readMap
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.lightTorch
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.mendCoat
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.swapBatteries
@@ -283,6 +285,8 @@ fun WorldMapOverlays(
             onPlant = { viewModel.plantSeed() },
             onBuildBarrel = { viewModel.buildBarrel() },
             onBuildFence = { viewModel.buildFence() },
+            onDismantleCar = { viewModel.dismantleNearestCar() },
+            onReadMap = { viewModel.readMap() },
             torchLit = uiState.survivalTorch,
             onLightTorch = { viewModel.lightTorch() },
             coatWear = uiState.survivalCoatWear,
