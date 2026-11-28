@@ -166,6 +166,8 @@ class NpcAiManager {
 
     val pendingDespawns = PowListaConcurrente<String>()
     val pendingPoliceShots = PowListaConcurrente<Pair<GeoPoint, GeoPoint>>()
+    /** Zombis que la policía caza-zombis acaba de matar (t18): el ViewModel los vacía y los cuenta como bajas de su zona. */
+    val pendingPoliceKills = PowListaConcurrente<GeoPoint>()
 
     @Volatile var globalZombieMode: Boolean = false
     /** Bajas de zombis por zona (t18): una zona despejada no genera zombis nuevos con supervivencia encendida. */

@@ -189,6 +189,7 @@ internal fun NpcAiManager.movePoliceHunter(npc: Npc, network: List<MapWay>, now:
                     val nh = serverNpcs[zi].health - POLICE_SHOOT_DAMAGE
                     serverNpcs[zi] = if (nh <= 0f) serverNpcs[zi].copy(health = 0f, isDying = true)
                     else serverNpcs[zi].copy(health = nh)
+                    if (nh <= 0f) pendingPoliceKills.add(z.location)
                 }
                 pendingPoliceShots.add(npc.location to z.location)
                 val a0 = atan2(z.location.latitude - npc.location.latitude, z.location.longitude - npc.location.longitude)

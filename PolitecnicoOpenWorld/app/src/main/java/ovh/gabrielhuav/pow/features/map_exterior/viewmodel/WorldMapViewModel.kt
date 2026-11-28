@@ -1005,6 +1005,11 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                             }
                         }
 
+                        // t18: los zombis que mata la policía caza-zombis también cuentan como bajas de su zona.
+                        if (npcAiManager.pendingPoliceKills.isNotEmpty()) {
+                            npcAiManager.pendingPoliceKills.drenar().forEach { onZombieKilled(it) }
+                        }
+
                         // POLICÍA. Durante la MISIÓN 1 (escolta) corre la policía de la CAMPAÑA
                         // (clase aparte: 2 a pie, siguen a distancia, 1★) y NO el sistema de
                         // búsqueda del mundo libre, para que no choquen. Fuera de la escolta corre
