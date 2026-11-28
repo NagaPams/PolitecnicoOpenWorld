@@ -112,7 +112,7 @@ private const val ISO_METERS_PER_DEGREE_LAT = 111_320.0
 private const val ISO_METERS_PER_DEGREE_LON = 104_800.0
 
 /** El gato usa la misma hoja de personaje: se dibuja a ~1/4 del alto de una persona. */
-private const val ISO_CAT_SIZE = 0.3f
+private const val ISO_CAT_SIZE = 0.42f
 private const val ISO_MAX_SPRITE_BOOST = 2.5f
 
 // Hoja del jugador al estándar POW (tools/slice_iso_player.py): 5 direcciones x 8 cuadros.
