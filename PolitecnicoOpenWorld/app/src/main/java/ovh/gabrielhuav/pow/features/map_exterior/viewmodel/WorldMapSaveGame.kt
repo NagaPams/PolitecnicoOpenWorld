@@ -326,6 +326,7 @@ fun WorldMapViewModel.retryCampaignMission(context: Context) {
             ovh.gabrielhuav.pow.domain.models.campaign.mission3.Mission3.RETRY_SPAWN_LAT,
             ovh.gabrielhuav.pow.domain.models.campaign.mission3.Mission3.RETRY_SPAWN_LON
         )
+        prankedyCompanionActivated = true   // setStorySpawn lo re-arma y, al estar junto a la ENCB, pisaría el objetivo m3_*
         startMission3Story()
         playerHealth = maxPlayerHealth
     } else {
