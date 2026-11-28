@@ -7,7 +7,7 @@ import kotlin.math.floor
 // se recogieron (con enfriamiento). Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Tipo de botín. Los valores nuevos van AL FINAL. */
-enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA, VENDA, EDIFICIO, FOGATA, TRAMPA, COCHE, HUERTO }
+enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA, VENDA, EDIFICIO, FOGATA, TRAMPA, COCHE, HUERTO, BARRIL }
 
 /** [variant] (0..9) decide qué arma o munición exacta es, estable por celda. */
 data class LootPoint(val id: String, val kind: LootKind, val latitude: Double, val longitude: Double, val variant: Int = 0)

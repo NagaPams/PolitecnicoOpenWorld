@@ -558,4 +558,7 @@
     <string name="zinterior_key_discarded">🗑️ Key discarded. Look for another in Lab 1 (←).</string>
     <string name="survival_pack_full">🎒 Pack full: you can't carry more weight</string>
     <string name="survival_pack_trimmed">🎒 Your saved pack was too heavy: some items were left behind</string>
+    <string name="survival_barrel_built">🛢️ You built a barrel: it collects water when it rains</string>
+    <string name="survival_barrel_level">🛢️ It holds %1$d sips of water (rain fills it, or you are not thirsty)</string>
+    <string name="survival_barrel_drank">💧 You drank rainwater</string>
 </resources>

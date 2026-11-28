@@ -64,7 +64,12 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_bandage_dirty
 import ovh.gabrielhuav.pow.shared.recursos.survival_garden_growing
 import ovh.gabrielhuav.pow.shared.recursos.survival_garden_harvested
 import ovh.gabrielhuav.pow.shared.recursos.survival_garden_planted
+import ovh.gabrielhuav.pow.shared.recursos.survival_barrel_built
+import ovh.gabrielhuav.pow.shared.recursos.survival_barrel_level
+import ovh.gabrielhuav.pow.shared.recursos.survival_barrel_drank
 import ovh.gabrielhuav.pow.domain.models.survival.GardenRules
+import ovh.gabrielhuav.pow.domain.models.survival.BarrelRules
+import ovh.gabrielhuav.pow.domain.models.survival.Weather
 import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_filled
@@ -99,13 +104,14 @@ private const val BUILDING_VISIBLE_DEGREES = 0.001
 internal const val LOOT_FIRE_PREFIX = SurvivalLoot.ID_PREFIX + "fogata_"
 internal const val LOOT_TRAP_PREFIX = SurvivalLoot.ID_PREFIX + "trampa_"
 internal const val LOOT_PLOT_PREFIX = SurvivalLoot.ID_PREFIX + "huerto_"
+internal const val LOOT_BARREL_PREFIX = SurvivalLoot.ID_PREFIX + "barril_"
 
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -162,6 +168,10 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
     for ((id, plot) in plots) {
         if (abs(plot.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(plot.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
         anchored.add(LootPoint(id, LootKind.HUERTO, plot.first, plot.second))
+    }
+    for ((id, barrel) in barrels) {
+        if (abs(barrel.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(barrel.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        anchored.add(LootPoint(id, LootKind.BARRIL, barrel.first, barrel.second))
     }
     for ((id, fire) in campfires) {
         if (abs(fire.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fire.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
@@ -293,6 +303,23 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                     lootCellKey = Long.MIN_VALUE
                     taken = false
                     Res.string.survival_garden_harvested
+                }
+            }
+        }
+        point.kind == LootKind.BARRIL -> {
+            // X sobre un barril: bebe un trago si hay agua y sed; si no, dice cuánta tiene.
+            val barrel = barrels[point.id]
+            if (barrel == null) Res.string.survival_not_needed
+            else when (BarrelRules.check(barrel.third, current.needs.thirst)) {
+                TapResult.DRANK -> {
+                    survivalManager.setNeeds(WaterRules.drink(current.needs))
+                    barrels[point.id] = barrel.copy(third = BarrelRules.afterSip(barrel.third))
+                    taken = false
+                    Res.string.survival_barrel_drank
+                }
+                else -> {
+                    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_barrel_level, BarrelRules.sips(barrel.third))) }
+                    return
                 }
             }
         }
@@ -698,6 +725,28 @@ internal fun WorldMapViewModel.plantSeed() {
     toggleWorldInventory(false)
     soundManager.playItem()
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_garden_planted)) }
+}
+
+/** Arma un barril de lluvia (t87) en la posición del jugador con [BarrelRules.BOARD_COST] tablones. */
+internal fun WorldMapViewModel.buildBarrel() {
+    val state = survivalManager.state.value
+    val here = _uiState.value.currentLocation ?: return
+    if (!state.enabled || _uiState.value.isDriving || !BarrelRules.canBuild(state.boards)) return
+    survivalManager.addBoards(-BarrelRules.BOARD_COST)
+    if (barrels.size >= BarrelRules.MAX_BARRELS) barrels.remove(barrels.keys.first())
+    barrelCounter++
+    barrels["$LOOT_BARREL_PREFIX$barrelCounter"] = Triple(here.latitude, here.longitude, 0.0)
+    lootCellKey = Long.MIN_VALUE
+    toggleWorldInventory(false)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_barrel_built)) }
+}
+
+/** Los barriles juntan agua mientras llueve (cada segundo del bucle de supervivencia). */
+internal fun WorldMapViewModel.updateBarrels(seconds: Double) {
+    val weather = survivalManager.state.value.weather
+    if (weather != Weather.RAIN || barrels.isEmpty()) return
+    for ((id, b) in barrels.entries.toList()) barrels[id] = b.copy(third = BarrelRules.fill(b.third, weather, seconds))
 }
 
 /** Un paso del bucle de conducción: baja el tanque y avisa una vez al quedarse sin gasolina. */

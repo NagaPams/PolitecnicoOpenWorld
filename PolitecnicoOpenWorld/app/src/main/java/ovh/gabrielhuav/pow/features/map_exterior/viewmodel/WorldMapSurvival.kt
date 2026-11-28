@@ -219,6 +219,7 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     plots.clear()
+    barrels.clear()
     trainUntilMs = 0L
     grabbedUntilMs = 0L
     sleepUntilMs = 0L
@@ -813,6 +814,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val dressed = survivalManager.state.value
     val warm = updateCampfires(s)
     updateTraps(s)
+    updateBarrels(elapsed.coerceAtMost(1000L) / 1000.0)
     updateGroup(s)
     survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving || warm, elapsed.coerceAtMost(1000L) / 1000.0))
     announceBlackout()

@@ -459,6 +459,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Huertos plantados (t87): id -> (lat, lon, instante de siembra en elapsedRealtime). Solo memoria. */
     internal val plots = LinkedHashMap<String, Triple<Double, Double, Long>>()
     internal var plotCounter = 0
+    /** Barriles de lluvia (t87): id -> (lat, lon, nivel en tragos). Solo memoria. */
+    internal val barrels = LinkedHashMap<String, Triple<Double, Double, Double>>()
+    internal var barrelCounter = 0
     internal var trapCounter = 0
     /** t18: día de la última migración, zona destino de la horda y si ya se avisó (en memoria). */
     internal var hordeDay = 0

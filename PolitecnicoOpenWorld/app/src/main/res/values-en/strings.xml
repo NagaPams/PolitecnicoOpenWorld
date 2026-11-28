@@ -751,4 +751,5 @@
     <string name="door_action_barricade">Barricade (1 plank)</string>
     <string name="door_action_dismantle">Dismantle barricade</string>
     <string name="door_menu_cancel">Cancel</string>
+    <string name="pack_build_barrel">Build rain barrel (2 boards)</string>
 </resources>

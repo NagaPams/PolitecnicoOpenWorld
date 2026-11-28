@@ -390,6 +390,12 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > devuelve una semilla. Las ids de huerto, fogata y trampa ahora empiezan por `SurvivalLoot.ID_PREFIX`: antes las de fogata y trampa caían en el aviso
 > «Nuevo coleccionable» al pulsar X. NO se hizo la pesca: el mundo no tiene agua como dato (`FootprintKind` no la trae).
 
+> **Barril de lluvia (t87, paso 7, 2026-11-27):** con supervivencia, el botón «Armar barril de lluvia» de la mochila gasta 2 tablones y deja un barril
+> en tu posición (`barrels` en `WorldMapViewModel`, solo memoria como el huerto; máx. 3, el más viejo se pierde). Es un `LootKind.BARRIL` (valor nuevo al
+> final, id con `SurvivalLoot.ID_PREFIX`). Cada segundo del bucle de supervivencia `updateBarrels` suma `FILL_PER_SECOND` (0,05, un trago cada 20 s) solo
+> con `Weather.RAIN`, hasta 4 tragos (`BarrelRules` en `SurvivalRainBarrel.kt`). X sobre el barril da un trago (+25 de sed con `WaterRules.drink`) o, si
+> no hay trago entero o no tienes sed, dice cuántos tragos tiene. No se guarda en la partida.
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

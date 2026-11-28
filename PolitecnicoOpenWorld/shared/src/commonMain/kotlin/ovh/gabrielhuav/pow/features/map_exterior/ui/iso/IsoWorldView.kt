@@ -863,5 +863,6 @@ private fun isoLootColor(kind: LootKind): Color = when (kind) {
     LootKind.FOGATA -> Color(0xFFFF6A00)
     LootKind.TRAMPA -> Color(0xFF9E9E9E)
     LootKind.HUERTO -> Color(0xFF66BB6A)
+    LootKind.BARRIL -> Color(0xFF4FC3F7)
     LootKind.COCHE -> Color(0xFF90A4AE)
 }
