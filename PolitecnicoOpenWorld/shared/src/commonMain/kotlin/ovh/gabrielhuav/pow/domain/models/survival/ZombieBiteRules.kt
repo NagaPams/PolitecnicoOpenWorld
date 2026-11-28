@@ -7,8 +7,8 @@ package ovh.gabrielhuav.pow.domain.models.survival
 object ZombieBiteRules {
     /** Tiempo entre mordidas, sin importar cuántos zombis te rodeen. */
     const val INTERVAL_MS = 1_200L
-    /** Daño de cada mordida (~4 HP/s en total). */
-    const val DAMAGE = 5f
+    /** Daño de cada mordida (2,5 HP/s en total con INTERVAL_MS; antes 5 = ~4,2 HP/s, un agarrón de 10 s casi mataba). */
+    const val DAMAGE = 3f
     /** Aviso previo: desde que un zombi te alcanza hasta la primera mordida. */
     const val WINDUP_MS = 600L
     /** Si pasa más de esto sin contacto, el siguiente contacto vuelve a tener aviso previo. */
