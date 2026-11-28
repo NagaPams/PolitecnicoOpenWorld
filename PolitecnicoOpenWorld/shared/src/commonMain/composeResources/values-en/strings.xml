@@ -508,6 +508,7 @@
     <string name="zinterior_window_broken">🪟 You broke the window: the noise carries far</string>
     <string name="zinterior_window_boarded">🪵 You boarded the window up</string>
     <string name="zinterior_window_need_board">🪟 It is broken: you need a board to cover it</string>
+    <string name="zinterior_window_climbed">🪟 You climbed out through the broken window</string>
     <string name="zinterior_window_reinforced">🔩 You reinforced the window with a metal plate</string>
     <string name="zinterior_window_covered">🪵 The window is already boarded</string>
     <string name="survival_water_cut_started">🚰 The water was cut: taps no longer run</string>

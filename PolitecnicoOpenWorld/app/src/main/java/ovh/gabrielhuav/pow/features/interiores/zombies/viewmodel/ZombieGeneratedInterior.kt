@@ -40,6 +40,7 @@ import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_dry
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_tap_not_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_boarded
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_broken
+import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_climbed
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_covered
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_reinforced
 import ovh.gabrielhuav.pow.shared.recursos.zinterior_window_zombie
@@ -62,6 +63,8 @@ object InteriorLootBridge {
     @Volatile var sleepInBed: (() -> Boolean)? = null
     /** Rompe una ventana a mano: hace ruido y puede cortar (el mapa aplica el daño). */
     @Volatile var onWindowBroken: (() -> Unit)? = null
+    /** Trepa por una ventana rota para salir (t87): puede cortar; el mapa aplica el daño. */
+    @Volatile var onWindowClimbed: (() -> Unit)? = null
     /** Gasta [WindowRules.BOARDS_TO_COVER] tablones; false si no alcanzan. */
     @Volatile var spendBoards: ((Int) -> Boolean)? = null
     @Volatile var boardsCarried: (() -> Int)? = null
@@ -203,6 +206,12 @@ private fun ZombieInteriorViewModel.interactNearbyWindow(layout: ovh.gabrielhuav
             if (InteriorLootBridge.spendPlate?.invoke() != true) return true
             InteriorLootBridge.windowStates[key] = WindowRules.after(state, action)
             showKeyRes(Res.string.zinterior_window_reinforced)
+        }
+        WindowAction.TREPAR -> {
+            InteriorLootBridge.onWindowClimbed?.invoke()
+            showKeyRes(Res.string.zinterior_window_climbed)
+            exitToWorld()
+            return true
         }
         WindowAction.NINGUNA -> showKeyRes(if (state == WindowState.ROTA) Res.string.zinterior_window_need_board else Res.string.zinterior_window_covered)
     }

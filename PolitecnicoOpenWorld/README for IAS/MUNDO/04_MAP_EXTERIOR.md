@@ -365,6 +365,12 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > suciedad en 20 como máximo. Avisos con `NoticeLatch` al ensuciarse e infectarse, icono 🧫 en la barra, y `useBandage` avisa si la venda
 > se ensució. Botones y contador en la mochila (`WorldInventoryDialog`).
 
+> **Trepar por una ventana rota (t87, paso 3, 2026-11-27):** dentro de un interior generado, X junto a una ventana ya rota y sin tablones en
+> la mochila ya no avisa «necesitas un tablón»: `WindowRules.actionFor` devuelve `WindowAction.TREPAR` (valor nuevo al final del enum) y el
+> jugador sale al mapa por ella (`exitToWorld`). Trepar corta con un 35 % (`CLIMB_CUT_CHANCE`; romper la ventana sigue en 50 %): 6 de vida y
+> sangrado, como romperla (`InteriorLootBridge.onWindowClimbed` → `climbWindowByHand`). Con tablones, X sigue tapiando la ventana rota.
+> Saltar vallas en el exterior NO se hizo: el mundo no tiene vallas como dato (`exterior_collisions.json` solo trae 48 guías de carril).
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

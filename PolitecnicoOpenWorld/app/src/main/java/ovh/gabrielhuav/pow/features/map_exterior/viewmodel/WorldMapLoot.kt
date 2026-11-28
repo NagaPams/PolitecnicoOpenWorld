@@ -388,6 +388,7 @@ private fun WorldMapViewModel.enterBuildingInterior(point: LootPoint): Boolean {
     InteriorLootBridge.platesCarried = { survivalManager.state.value.pack.chapas }
     InteriorLootBridge.spendPlate = { val pack = survivalManager.state.value.pack; if (pack.chapas > 0) { survivalManager.setPack(pack.copy(chapas = pack.chapas - 1)); true } else false }
     InteriorLootBridge.onWindowBroken = { breakWindowByHand() }
+    InteriorLootBridge.onWindowClimbed = { climbWindowByHand() }
     InteriorLootBridge.markTaken = { key -> lootTaken[key] = SystemClock.elapsedRealtime() + InteriorLoot.COOLDOWN_MS }
     val roomId = GeneratedInteriors.idFor(building.id, building.profile, building.widthM, building.depthM)
     transitTeleportManager.beginEscomDoorFade("interiores_zombies?startRoom=$roomId")
@@ -427,6 +428,14 @@ private fun WorldMapViewModel.drinkFromTap(): TapResult {
         return TapResult.DIRTY
     }
     return result
+}
+
+/** Trepar por una ventana rota (t87): sin ruido de cristal nuevo, pero puede cortar (algo de vida y sangrado). */
+private fun WorldMapViewModel.climbWindowByHand() {
+    if (!WindowRules.cutsOnClimb(kotlin.random.Random.nextDouble())) return
+    combatManager.updateHealth { h -> CrashInjuryRules.healthAfter(h.toDouble(), WindowRules.CUT_DAMAGE).toFloat() }
+    survivalManager.setBleeding(true)
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_bleeding), ovh.gabrielhuav.pow.domain.models.survival.PromptPriority.HIGH) }
 }
 
 /** Romper una ventana a mano (t07): hace ruido de cristales y puede cortar (algo de vida y sangrado). */

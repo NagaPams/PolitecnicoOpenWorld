@@ -6,7 +6,7 @@ package ovh.gabrielhuav.pow.domain.models.interior
 /** Al final de la lista de valores: no insertar en medio. */
 enum class WindowState { CERRADA, ROTA, TAPIADA, REFORZADA }
 
-enum class WindowAction { ROMPER, TAPIAR, NINGUNA, REFORZAR }
+enum class WindowAction { ROMPER, TAPIAR, NINGUNA, REFORZAR, TREPAR }
 
 object WindowRules {
     const val BOARDS_TO_COVER = 1
@@ -21,7 +21,8 @@ object WindowRules {
     /** Qué hace X sobre una ventana en [state] con [boards] tablones en la mochila. */
     fun actionFor(state: WindowState, boards: Int, plates: Int = 0): WindowAction = when (state) {
         WindowState.CERRADA -> WindowAction.ROMPER
-        WindowState.ROTA -> if (boards >= BOARDS_TO_COVER) WindowAction.TAPIAR else WindowAction.NINGUNA
+        // t87: sin tablones para tapiarla, la ventana rota es una salida: se trepa por ella.
+        WindowState.ROTA -> if (boards >= BOARDS_TO_COVER) WindowAction.TAPIAR else WindowAction.TREPAR
         WindowState.TAPIADA -> if (plates >= PLATES_TO_REINFORCE) WindowAction.REFORZAR else WindowAction.NINGUNA
         WindowState.REFORZADA -> WindowAction.NINGUNA
     }
@@ -30,10 +31,15 @@ object WindowRules {
         WindowAction.ROMPER -> if (state == WindowState.CERRADA) WindowState.ROTA else state
         WindowAction.TAPIAR -> if (state == WindowState.ROTA) WindowState.TAPIADA else state
         WindowAction.REFORZAR -> if (state == WindowState.TAPIADA) WindowState.REFORZADA else state
-        WindowAction.NINGUNA -> state
+        WindowAction.NINGUNA, WindowAction.TREPAR -> state
     }
 
     fun cutsOnBreak(roll: Double): Boolean = roll < CUT_CHANCE
+
+    /** Probabilidad de que trepar por una ventana rota corte al jugador (menos que romperla: ya no hay cristal entero). */
+    const val CLIMB_CUT_CHANCE = 0.35
+
+    fun cutsOnClimb(roll: Double): Boolean = roll < CLIMB_CUT_CHANCE
 
     /** Cada cuánto entra un zombi por cada ventana rota mientras el jugador está dentro (ms). */
     const val PRESSURE_MS = 12_000L
