@@ -639,6 +639,10 @@ internal fun ZombieInteriorViewModel.stepAmbientNpcs(
     return result
 }
 
+/** Evacuación de la lata: un NPC que no avanza más de [EVAC_MIN_STEP] px durante [EVAC_STUCK_MS] ms se da por salido. */
+private const val EVAC_MIN_STEP = 0.4f
+private const val EVAC_STUCK_MS = 2500L
+
 /**
  * MISIÓN 2 · LATA APESTOSA (salón de la mochila): los NPCs ambientales CORREN hacia la puerta de
  * salida de la sala y DESAPARECEN al llegar (salieron del salón por el olor). Sustituye a
@@ -665,12 +669,18 @@ internal fun ZombieInteriorViewModel.evacuateAmbientNpcs(
         val d = hypot(ex - npc.x, ey - npc.y)
         if (d <= 46f) return@mapNotNull null   // llegó a la puerta → sale del salón
         val (rx, ry) = stepTowards(room, npc.x, npc.y, ex, ey, speed)
+        // Anti-atasco (t33): si contra un pupitre no avanza durante EVAC_STUCK_MS, se da por salido; si no, la mochila (que
+        // solo aparece con el salón vacío) nunca saldría y la misión quedaría bloqueada.
+        val moved = hypot(rx - npc.x, ry - npc.y) > EVAC_MIN_STEP
+        if (!moved && npc.stuckSinceMs != 0L && nowEvac - npc.stuckSinceMs > EVAC_STUCK_MS) return@mapNotNull null
         npc.copy(
             x = rx, y = ry,
             facingRight = if (abs(ex - npc.x) > 0.5f) ex >= npc.x else npc.facingRight,
             action = PlayerAction.RUN,
             // Huyendo nadie platica: se cancela pareja y burbuja.
-            mode = AmbientMode.WANDER, partnerId = null, speechRes = null
+            mode = AmbientMode.WANDER, partnerId = null, speechRes = null,
+            stuckX = rx, stuckY = ry,
+            stuckSinceMs = if (moved) 0L else if (npc.stuckSinceMs == 0L) nowEvac else npc.stuckSinceMs
         )
     }
 }

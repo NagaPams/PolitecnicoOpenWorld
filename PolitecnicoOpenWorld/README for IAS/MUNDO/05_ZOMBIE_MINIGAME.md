@@ -60,7 +60,7 @@ autoritativos del servidor** (`MultiplayerInteriores/`); **offline: simulación 
 > ÍTEM del inventario** (`KeyDrop.MISSION_2` + `M2_STINK_CAN`; la concede `grantMission2StinkCan` al
 > pasar a la fase MOCHILA, con salvaguarda en AppNavGraph para saves viejos): **X** la lanza solo si
 > la TIENES (la consume; `mission2StinkThrown`) → el tick usa `evacuateAmbientNpcs` (corren a la
-> puerta y desaparecen) en vez de `stepAmbientNpcs`; con el salón VACÍO aparece la **mochila** (asset
+> puerta y desaparecen; si uno no avanza durante `EVAC_STUCK_MS` (2,5 s) contra un pupitre se da por salido, 2026-11-28: antes se quedaban corriendo en el sitio y la mochila nunca aparecía) en vez de `stepAmbientNpcs`; con el salón VACÍO aparece la **mochila** (asset
 > `CAMPAIGN/MISSION2/mochila_prankedy.png` en `mission2BackpackX/Y`; la lata usa
 > `CAMPAIGN/MISSION2/lata_apestosa.png`, ambas vía `Mission2GroundSprite`); **X** cerca la recoge
 > (`mission2BackpackTaken`) → `ZombieGameScreen` dispara `onMission2BackpackRecovered` →
