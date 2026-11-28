@@ -335,9 +335,13 @@ fun WorldMapViewModel.retryCampaignMission(context: Context) {
         if (!loadGame(context, campaignSlot)) setCampaignObjective(MissionCatalog.ESCOLTAR_PRANKEDY)
     }
     // Prankedy DEBE estar contigo al reintentar (SOLO en la Misión 1: respawnPrankedyCompanionHere
-    // re-fija el objetivo ESCOLTAR_PRANKEDY — en la Misión 2 eso pisaría el objetivo del retry).
-    if (failedObjId?.startsWith(
-            ovh.gabrielhuav.pow.domain.models.campaign.mission2.Mission2.OBJECTIVE_ID_PREFIX) != true) {
+    // re-fija el objetivo ESCOLTAR_PRANKEDY — en las Misiones 2 y 3 eso pisaría el objetivo del retry:
+    // la M3 queda inactiva porque su tick exige el objetivo m3_*; la M3 ya trae su propia escolta).
+    val retriedOwnMission = failedObjId?.startsWith(
+            ovh.gabrielhuav.pow.domain.models.campaign.mission2.Mission2.OBJECTIVE_ID_PREFIX) == true ||
+        failedObjId?.startsWith(
+            ovh.gabrielhuav.pow.domain.models.campaign.mission3.Mission3.OBJECTIVE_ID_PREFIX) == true
+    if (!retriedOwnMission) {
         respawnPrankedyCompanionHere()
     }
     replayingMissionId = keepReplay   // el reintento continúa el replay (si lo había)
