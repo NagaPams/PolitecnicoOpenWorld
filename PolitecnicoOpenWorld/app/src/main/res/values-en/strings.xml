@@ -757,4 +757,5 @@
     <string name="pack_flashlight_on">Turn on flashlight · battery %1$d %%</string>
     <string name="pack_flashlight_off">Turn off flashlight · battery %1$d %%</string>
     <string name="pack_swap_batteries">Swap batteries (%1$d)</string>
+    <string name="pack_build_fence">Build fence (2 boards)</string>
 </resources>

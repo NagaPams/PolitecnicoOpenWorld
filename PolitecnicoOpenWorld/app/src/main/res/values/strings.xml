@@ -759,4 +759,5 @@
     <string name="pack_flashlight_on">Encender linterna · batería %1$d %%</string>
     <string name="pack_flashlight_off">Apagar linterna · batería %1$d %%</string>
     <string name="pack_swap_batteries">Cambiar pilas (%1$d)</string>
+    <string name="pack_build_fence">Armar valla (2 tablones)</string>
 </resources>

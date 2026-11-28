@@ -19,6 +19,7 @@ import ovh.gabrielhuav.pow.domain.models.map.obstacleAt
 import ovh.gabrielhuav.pow.domain.models.map.resolveCirclePath
 import ovh.gabrielhuav.pow.domain.models.map.resolveVehiclePath
 import ovh.gabrielhuav.pow.domain.models.map.usesVehicleFootprint
+import ovh.gabrielhuav.pow.domain.models.survival.FenceRules
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -76,6 +77,7 @@ private fun WorldMapViewModel.isFootMoveBlocked(from: GeoPoint, target: GeoPoint
         }
         return true
     }
+    if (fences.values.any { FenceRules.blocks(from.latitude, from.longitude, target.latitude, target.longitude, it.first, it.second) }) return true
     val contact = firstVehicleCircleContact(from, target, PLAYER_FOOT_COLLIDER.radiusMeters, worldVehicleColliders())
     if (contact != null) {
         if (BuildConfig.DEBUG) Log.d("WorldCollision", "actor=player-foot collider=circle reason=traffic id=${contact.id} blocked=$target")

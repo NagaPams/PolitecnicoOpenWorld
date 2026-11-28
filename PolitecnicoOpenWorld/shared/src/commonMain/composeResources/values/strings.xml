@@ -572,4 +572,6 @@
     <string name="survival_flashlight_swapped">🔋 Cambiaste las pilas de la linterna</string>
     <string name="survival_wood_chopped_one">🪓 Juntaste ramas: +1 tablón</string>
     <string name="survival_wood_chopped_two">🪓 Cortaste ramas con tu arma: +2 tablones</string>
+    <string name="survival_fence_built">🚧 Armaste una valla: te bloquea el paso; X cerca la trepa</string>
+    <string name="survival_fence_climbed">🚧 Trepaste la valla</string>
 </resources>

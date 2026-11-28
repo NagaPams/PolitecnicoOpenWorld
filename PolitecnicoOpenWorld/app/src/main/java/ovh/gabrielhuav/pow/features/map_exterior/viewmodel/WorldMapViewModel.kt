@@ -471,6 +471,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Cadáveres de zombis (t25): id -> (lat, lon, instante de la baja en elapsedRealtime). Solo memoria. */
     internal val corpses = LinkedHashMap<String, Triple<Double, Double, Long>>()
     internal var corpseCounter = 0
+    /** Vallas que arma el jugador (t25): id -> (lat, lon). Solo memoria; solo bloquean al jugador a pie. */
+    internal val fences = LinkedHashMap<String, Pair<Double, Double>>()
+    internal var fenceCounter = 0
     internal var lastStinkMs = 0L
     internal var trapCounter = 0
     /** t18: día de la última migración, zona destino de la horda y si ya se avisó (en memoria). */

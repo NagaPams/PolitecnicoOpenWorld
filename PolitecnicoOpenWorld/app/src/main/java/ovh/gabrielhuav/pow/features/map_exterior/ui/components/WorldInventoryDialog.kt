@@ -81,6 +81,7 @@ fun WorldInventoryDialog(
     onRepairWithPart: () -> Unit = {},
     onPlant: () -> Unit = {},
     onBuildBarrel: () -> Unit = {},
+    onBuildFence: () -> Unit = {},
     coatWear: Double = 0.0,
     flashlightOn: Boolean = false,
     flashlightCharge: Double = 0.0,
@@ -239,6 +240,11 @@ fun WorldInventoryDialog(
                         enabled = boards >= 2,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0277BD), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_build_barrel), fontSize = 12.sp) }
+                    Button(
+                        onClick = onBuildFence,
+                        enabled = boards >= ovh.gabrielhuav.pow.domain.models.survival.FenceRules.BOARD_COST,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D4C41), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_build_fence), fontSize = 12.sp) }
                     if (coat) {
                         Button(
                             onClick = onMendCoat,

@@ -221,6 +221,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     plots.clear()
     barrels.clear()
     corpses.clear()
+    fences.clear()
     torchUntilMs = 0L
     trainUntilMs = 0L
     grabbedUntilMs = 0L

@@ -572,4 +572,6 @@
     <string name="survival_flashlight_swapped">🔋 You swapped the flashlight batteries</string>
     <string name="survival_wood_chopped_one">🪓 You gathered branches: +1 board</string>
     <string name="survival_wood_chopped_two">🪓 You cut branches with your weapon: +2 boards</string>
+    <string name="survival_fence_built">🚧 You built a fence: it blocks your way; X next to it climbs it</string>
+    <string name="survival_fence_climbed">🚧 You climbed the fence</string>
 </resources>

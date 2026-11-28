@@ -71,6 +71,9 @@ import ovh.gabrielhuav.pow.domain.models.survival.GardenRules
 import ovh.gabrielhuav.pow.domain.models.survival.BarrelRules
 import ovh.gabrielhuav.pow.domain.models.survival.TorchRules
 import ovh.gabrielhuav.pow.domain.models.survival.ClothingRules
+import ovh.gabrielhuav.pow.domain.models.survival.FenceRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_fence_built
+import ovh.gabrielhuav.pow.shared.recursos.survival_fence_climbed
 import ovh.gabrielhuav.pow.domain.models.survival.WoodRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_wood_chopped_one
 import ovh.gabrielhuav.pow.shared.recursos.survival_wood_chopped_two
@@ -126,13 +129,14 @@ internal const val LOOT_TRAP_PREFIX = SurvivalLoot.ID_PREFIX + "trampa_"
 internal const val LOOT_PLOT_PREFIX = SurvivalLoot.ID_PREFIX + "huerto_"
 internal const val LOOT_BARREL_PREFIX = SurvivalLoot.ID_PREFIX + "barril_"
 internal const val LOOT_CORPSE_PREFIX = SurvivalLoot.ID_PREFIX + "cadaver_"
+internal const val LOOT_FENCE_PREFIX = SurvivalLoot.ID_PREFIX + "valla_"
 
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL, LootKind.CADAVER, LootKind.RAMAS -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL, LootKind.CADAVER, LootKind.RAMAS, LootKind.VALLA -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -197,6 +201,10 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
     for ((id, corpse) in corpses) {
         if (abs(corpse.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(corpse.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
         anchored.add(LootPoint(id, LootKind.CADAVER, corpse.first, corpse.second))
+    }
+    for ((id, fence) in fences) {
+        if (abs(fence.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fence.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        anchored.add(LootPoint(id, LootKind.VALLA, fence.first, fence.second))
     }
     for ((id, fire) in campfires) {
         if (abs(fire.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fire.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
@@ -363,6 +371,19 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                     Res.string.survival_corpse_buried
                 }
                 CorpseAction.NONE -> Res.string.survival_corpse_need
+            }
+        }
+        point.kind == LootKind.VALLA -> {
+            // X sobre una valla propia: se trepa y se cae al otro lado; puede cortar (algo de vida y sangrado).
+            val fence = fences[point.id]
+            val here = _uiState.value.currentLocation
+            if (fence == null || here == null || !FenceRules.canClimb(here.latitude, here.longitude, fence.first, fence.second)) Res.string.survival_not_needed
+            else {
+                val exit = FenceRules.climbExit(here.latitude, here.longitude, fence.first, fence.second)
+                _uiState.update { it.copy(currentLocation = GeoPoint(exit.first, exit.second)) }
+                climbWindowByHand()
+                taken = false
+                Res.string.survival_fence_climbed
             }
         }
         point.kind == LootKind.FOGATA -> {
@@ -824,6 +845,22 @@ internal fun WorldMapViewModel.updateCorpses(night: Boolean) {
     for (corpse in corpses.values) {
         if (CorpseRules.stinks(nowMs, corpse.third)) npcAiManager.queueSurvivalNoise(NoiseEvent(corpse.first, corpse.second, NoiseSource.PESTE, night, rain))
     }
+}
+
+/** Arma una valla (t25) en la posición del jugador con [FenceRules.BOARD_COST] tablones. */
+internal fun WorldMapViewModel.buildFence() {
+    val state = survivalManager.state.value
+    val here = _uiState.value.currentLocation ?: return
+    if (!state.enabled || _uiState.value.isDriving || !FenceRules.canBuild(state.boards)) return
+    survivalManager.addBoards(-FenceRules.BOARD_COST)
+    if (fences.size >= FenceRules.MAX_FENCES) fences.remove(fences.keys.first())
+    fenceCounter++
+    fences["$LOOT_FENCE_PREFIX$fenceCounter"] = Pair(here.latitude, here.longitude)
+    lootCellKey = Long.MIN_VALUE
+    toggleWorldInventory(false)
+    soundManager.playItem()
+    onSkillUse(Skill.CARPINTERIA, 1)
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_fence_built)) }
 }
 
 /** Enciende o apaga la linterna (t25); necesita batería. */
