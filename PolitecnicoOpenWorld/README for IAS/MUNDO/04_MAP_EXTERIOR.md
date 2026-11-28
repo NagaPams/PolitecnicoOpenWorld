@@ -349,6 +349,11 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > fog (antes hasta 85 m → "veo NPCs fuera del fog"). Policía fuera del fog = waypoint 🚓 (`wantedLevel>0`),
 > Prankedy = render propio sin culling → **ambos siempre visibles**. Ver 09.
 
+> **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
+> `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
+> aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)
+> toca la de otro coche ya colocado.
+
 ### `NativeOsmMap.kt` (osmdroid)
 - **`FogOverlay`** anclado al jugador cada frame; rect del tamaño de pantalla siempre (cámara norte-arriba:
   `mapOrientation = 0f`, ya no se sobredimensiona por rotación). `FogOverlay.rotated` quedó sin uso (siempre `false`). Evita rellenar ~10× el área cada frame.

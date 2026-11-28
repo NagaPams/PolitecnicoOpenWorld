@@ -246,6 +246,7 @@ fun IsoWorldView(
     fogVisionMeters: Double,
     /** Tope del radio de la niebla como fracción del lado menor de la pantalla (t60: más amplio al conducir). */
     fogMaxFraction: Float = 0.40f,
+    fogStrength: Float = 1f,
     /** t21: sin adornos (manchas de suelo) cuando hay poca memoria. */
     lowDetail: Boolean = false,
     modifier: Modifier = Modifier,
@@ -608,6 +609,10 @@ fun IsoWorldView(
                 while (actorIndex < actors.size) {
                     drawIsoActor(actors, actorIndex++, projection.pixelsPerMeter.toFloat(), drivingState, playerMirror, personBoost, playerFrame)
                 }
+                if (IsoDebugOverlay.collisionBoxes) drawIsoCollisionBoxes(
+                    projection, npcState, drivingState, player, vehicleHeadingState,
+                    ovh.gabrielhuav.pow.domain.models.map.CarVariantRules.dimensionsFor(vehicleModel ?: CarModel.SEDAN, vehicleId.orEmpty()),
+                )
                 if (drivingState && SmokeRules.smokes(vehicleHealthState)) {
                     // Humo del motor: bocanadas grises que suben y se ensanchan (sin asignaciones: solo círculos).
                     val ppm = projection.pixelsPerMeter.toFloat()
@@ -632,7 +637,7 @@ fun IsoWorldView(
             }
             fogBrush?.let { brush ->
                 withTransform({ scale(1f, 0.5f, pivot = Offset(size.width / 2f, size.height / 2f)) }) {
-                    drawRect(brush, topLeft = Offset(0f, -size.height / 2f), size = Size(size.width, size.height * 2f))
+                    drawRect(brush, topLeft = Offset(0f, -size.height / 2f), size = Size(size.width, size.height * 2f), alpha = fogStrength)
                 }
             }
             // Indicador de amenaza (t32): una flecha roja alrededor del jugador hacia cada zombi a menos de ~12 m.

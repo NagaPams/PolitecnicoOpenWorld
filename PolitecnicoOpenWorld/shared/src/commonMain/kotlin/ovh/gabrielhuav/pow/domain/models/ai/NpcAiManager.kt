@@ -568,7 +568,7 @@ class NpcAiManager {
                     if (numToSpawn > 0) {
                         var timerOffset = Random.nextLong(PARKING_WAKE_MIN_MS, PARKING_WAKE_MAX_MS)
                         availableSlots.shuffled().take(numToSpawn).forEach { slot ->
-                            spawnParkedCar(landmark, slot.first, slot.second, timerOffset, playerLocation)?.let {
+                            spawnParkedCar(landmark, slot.first, slot.second, timerOffset, playerLocation, serverNpcs)?.let {
                                 serverNpcs.add(it)
                                 dbgSpawned++
                             }
@@ -905,6 +905,7 @@ class NpcAiManager {
         node: ovh.gabrielhuav.pow.domain.models.ai.LocalNode,
         delayMs: Long,
         playerLocation: GeoPoint,
+        others: List<Npc>,
     ): Npc? {
         val globalPos = landmark.toGlobalGeoPoint(node.localX, node.localY)
         // t28: sin coches nuevos a menos de ~12 m del jugador (nacer dentro de un lote lleno tapaba los controles).
@@ -925,6 +926,13 @@ class NpcAiManager {
                 dimensions = carModel.collisionDimensions,
                 occupiedPoint = playerLocation,
             )
+        ) return null
+        // h45: no aparcar encima de otro coche ya colocado (las plazas del navGraph pueden quedar más juntas que un coche).
+        val candidate = ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint(globalPos, (angle + 90f) % 360f, carModel.collisionDimensions)
+        if (others.any { o ->
+                o.type == NpcType.CAR && o.carModel != null &&
+                    candidate.intersects(ovh.gabrielhuav.pow.domain.models.map.VehicleFootprint(o.location, (o.rotationAngle + 90f) % 360f, o.carModel.collisionDimensions))
+            }
         ) return null
 
         parkedTimers[newCarId] = ahoraMs() + delayMs

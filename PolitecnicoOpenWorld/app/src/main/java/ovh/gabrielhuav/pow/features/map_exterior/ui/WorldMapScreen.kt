@@ -169,6 +169,7 @@ internal const val NPC_CULL_MARGIN_M = 0.0
 internal const val NPC_FOG_VISION_METERS = 70.0
 private const val FOG_DRIVING_FACTOR = 1.5
 private const val FOG_DRIVING_MAX_FRACTION = 0.58f
+private const val DAY_FOG_STRENGTH = 0.4f
 // ══════════════════════════════════════════════════════════════════════════
 
 /** Radio de culling de NPCs: fijo en metros, independiente del zoom. */
@@ -602,6 +603,8 @@ fun WorldMapScreen(
                     // t58: en coche se va más rápido, así que se ve más lejos (la cámara también se aleja).
                     fogVisionMeters = if (uiState.isDriving) NPC_FOG_VISION_METERS * FOG_DRIVING_FACTOR else NPC_FOG_VISION_METERS,
                     fogMaxFraction = if (uiState.isDriving) FOG_DRIVING_MAX_FRACTION else 0.40f,
+                    // h44: de día la niebla de visión es ligera; de noche vuelve a ser casi opaca.
+                    fogStrength = DAY_FOG_STRENGTH + (1f - DAY_FOG_STRENGTH) * (uiState.nightAlpha / ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MAX_NIGHT_ALPHA).coerceIn(0f, 1f),
                     lowDetail = uiState.lowDetailMode,
                     playerMoveAngle = uiState.playerMoveAngle,
                     playerAction = uiState.playerAction,
@@ -1426,7 +1429,8 @@ fun WorldMapScreen(
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(androidx.compose.ui.res.stringResource(ovh.gabrielhuav.pow.R.string.wm_tp_subtitle), fontSize = 14.sp)
-                        LazyColumn(modifier = Modifier.fillMaxHeight(0.5f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // h46: en horizontal el diálogo es bajo; la lista toma el alto que sobra en vez de un 50 % fijo.
+                        LazyColumn(modifier = Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Primera opción: tu ubicación REAL (GPS del dispositivo, p. ej. volver a
                             // casa). Movida aquí desde el antiguo submenú "Ir a…".
                             item {
