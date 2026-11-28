@@ -4,16 +4,17 @@ package ovh.gabrielhuav.pow.domain.models.survival
 // elige una vez y da un punto de partida. Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Los valores nuevos van AL FINAL (viajan por nombre en el guardado). */
-enum class Skill { COMBATE, PUNTERIA, CARPINTERIA }
+enum class Skill { COMBATE, PUNTERIA, CARPINTERIA, FITNESS }
 
 enum class Occupation { NINGUNO, BOXEADOR, SOLDADO, CARPINTERO }
 
 /** XP acumulada por habilidad. */
-data class SurvivalSkills(val combate: Int = 0, val punteria: Int = 0, val carpinteria: Int = 0) {
+data class SurvivalSkills(val combate: Int = 0, val punteria: Int = 0, val carpinteria: Int = 0, val fitness: Int = 0) {
     fun xpOf(skill: Skill): Int = when (skill) {
         Skill.COMBATE -> combate
         Skill.PUNTERIA -> punteria
         Skill.CARPINTERIA -> carpinteria
+        Skill.FITNESS -> fitness
     }
 }
 
@@ -47,6 +48,7 @@ object SkillRules {
             Skill.COMBATE -> skills.copy(combate = next)
             Skill.PUNTERIA -> skills.copy(punteria = next)
             Skill.CARPINTERIA -> skills.copy(carpinteria = next)
+            Skill.FITNESS -> skills.copy(fitness = next)
         }
         val after = level(next)
         return SkillGain(updated, if (after > before) after else null)
@@ -75,13 +77,17 @@ object SkillRules {
         return if (missing > 0) gain(skills, skill, missing).skills else skills
     }
 
-    fun encode(skills: SurvivalSkills): String = "${skills.combate},${skills.punteria},${skills.carpinteria}"
+    fun encode(skills: SurvivalSkills): String = "${skills.combate},${skills.punteria},${skills.carpinteria},${skills.fitness}"
 
     /** Nunca lanza: lo ilegible vuelve a cero. */
     fun decode(text: String): SurvivalSkills {
         val parts = text.split(',').map { it.trim().toIntOrNull() }
-        if (parts.size != 3 || parts.any { it == null }) return SurvivalSkills()
-        return SurvivalSkills(parts[0]!!.coerceIn(0, MAX_XP), parts[1]!!.coerceIn(0, MAX_XP), parts[2]!!.coerceIn(0, MAX_XP))
+        // Un guardado anterior a fitness trae 3 valores; el cuarto vale 0.
+        if ((parts.size != 3 && parts.size != 4) || parts.any { it == null }) return SurvivalSkills()
+        return SurvivalSkills(
+            parts[0]!!.coerceIn(0, MAX_XP), parts[1]!!.coerceIn(0, MAX_XP), parts[2]!!.coerceIn(0, MAX_XP),
+            (parts.getOrNull(3) ?: 0).coerceIn(0, MAX_XP),
+        )
     }
 
     fun occupationOf(name: String): Occupation = Occupation.entries.firstOrNull { it.name == name } ?: Occupation.NINGUNO

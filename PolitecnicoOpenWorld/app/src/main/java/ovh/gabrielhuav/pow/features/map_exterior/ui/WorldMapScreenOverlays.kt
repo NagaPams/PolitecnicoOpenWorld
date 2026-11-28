@@ -44,6 +44,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useBandage
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.chooseSurvivalOccupation
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startCraft
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startSleep
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.startTraining
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
@@ -267,6 +268,9 @@ fun WorldMapOverlays(
             onRepairCar = { viewModel.repairVehicle() },
             energy = uiState.survivalNeeds.energy,
             onSleep = { viewModel.startSleep() },
+            onRest = { viewModel.startTraining(ovh.gabrielhuav.pow.domain.models.survival.TrainKind.REST) },
+            onTrain = { viewModel.startTraining(ovh.gabrielhuav.pow.domain.models.survival.TrainKind.FITNESS) },
+            onReadBook = { viewModel.startTraining(ovh.gabrielhuav.pow.domain.models.survival.TrainKind.BOOK) },
             skills = uiState.survivalSkills,
             occupation = uiState.survivalOccupation,
             onChooseOccupation = { viewModel.chooseSurvivalOccupation(it) },

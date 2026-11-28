@@ -349,6 +349,14 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > fog (antes hasta 85 m → "veo NPCs fuera del fog"). Policía fuera del fog = waypoint 🚓 (`wantedLevel>0`),
 > Prankedy = render propio sin culling → **ambos siempre visibles**. Ver 09.
 
+> **Descansar, entrenar y leer (t87, paso 1, 2026-11-27):** tres botones nuevos en la mochila con supervivencia encendida, a pie y quieto
+> unos segundos (`TrainRules` en `SurvivalTraining.kt`, estado `trainUntilMs`/`trainKind` en el ViewModel, `startTraining`/`updateTraining`
+> en `WorldMapSurvival.kt`). **Descansar** (3 s) da +12 de energía sin cama a casi nada de hambre y sed (dormir da más). **Entrenar** (4 s)
+> gasta 40 de aliento y algo de hambre y sed, y da 4 XP de la habilidad nueva `Skill.FITNESS` (al final del enum; `SurvivalSkills.fitness`,
+> el guardado de habilidades acepta 3 o 4 valores); cada nivel baja un 6 % el gasto de aliento al correr (`StaminaRules.step(drainFactor)`).
+> **Leer libro** (4 s) gasta un libro (`SurvivalPack.libros`, guardado `survivalLibros` con default 0, botín `SearchGain.LIBRO` en casas y
+> escuelas, peso 0,8) y da 15 XP a la habilidad con menos XP. Con un zombi a 25 m o menos no empieza y, si llega durante la acción, la corta.
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

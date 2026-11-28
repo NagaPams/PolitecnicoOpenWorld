@@ -17,9 +17,9 @@ object StaminaRules {
     const val RECOVER_AT = 25.0
 
     /** Un paso a pie; [running] = el jugador mantiene el botón de correr. */
-    fun step(state: StaminaState, running: Boolean): StaminaState {
+    fun step(state: StaminaState, running: Boolean, drainFactor: Double = 1.0): StaminaState {
         if (running && !state.exhausted) {
-            val next = (state.value - DRAIN_PER_STEP).coerceAtLeast(0.0)
+            val next = (state.value - DRAIN_PER_STEP * drainFactor.coerceIn(0.0, 1.0)).coerceAtLeast(0.0)
             return StaminaState(next, next <= 0.0)
         }
         val regen = (state.value + WALK_REGEN_PER_STEP).coerceAtMost(MAX)

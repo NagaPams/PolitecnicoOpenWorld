@@ -16,7 +16,7 @@ import ovh.gabrielhuav.pow.domain.models.map.edgeLengthMeters
 enum class SearchProfile { TIENDA, GASOLINERA, CLINICA, ESCUELA, ESTABLO, GENERICO, CASA, TALLER }
 
 /** Qué puede dar un registro. */
-enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO, CRUDA, CHAPA, LLAVE }
+enum class SearchGain { PIZZA, REFRESCO, SUERO, TABLON, VENDA, BIDON, BALAS, ABRIGO, CRUDA, CHAPA, LLAVE, LIBRO }
 
 /** Un edificio registrable con el punto (afuera de su pared) donde se registra. */
 data class SearchableBuilding(
@@ -81,9 +81,9 @@ object BuildingSearchRules {
         SearchProfile.TIENDA -> listOf(SearchGain.PIZZA, SearchGain.REFRESCO, SearchGain.REFRESCO, SearchGain.ABRIGO)
         SearchProfile.GASOLINERA -> listOf(SearchGain.BIDON, SearchGain.REFRESCO, SearchGain.LLAVE)
         SearchProfile.CLINICA -> listOf(SearchGain.VENDA, SearchGain.VENDA, SearchGain.SUERO)
-        SearchProfile.ESCUELA -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.PIZZA)
+        SearchProfile.ESCUELA -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.PIZZA, SearchGain.LIBRO)
         SearchProfile.ESTABLO -> listOf(SearchGain.TABLON, SearchGain.VENDA)
-        SearchProfile.CASA -> listOf(SearchGain.PIZZA, SearchGain.ABRIGO, SearchGain.VENDA, SearchGain.LLAVE)
+        SearchProfile.CASA -> listOf(SearchGain.PIZZA, SearchGain.ABRIGO, SearchGain.VENDA, SearchGain.LLAVE, SearchGain.LIBRO)
         SearchProfile.TALLER -> listOf(SearchGain.TABLON, SearchGain.TABLON, SearchGain.BIDON, SearchGain.CHAPA, SearchGain.LLAVE)
         SearchProfile.GENERICO -> listOf(
             SearchGain.TABLON,

@@ -57,6 +57,9 @@ import ovh.gabrielhuav.pow.domain.models.survival.SleepRules
 import ovh.gabrielhuav.pow.domain.models.map.NpcType
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaRules
 import ovh.gabrielhuav.pow.domain.models.survival.StaminaState
+import ovh.gabrielhuav.pow.domain.models.survival.TrainCheck
+import ovh.gabrielhuav.pow.domain.models.survival.TrainKind
+import ovh.gabrielhuav.pow.domain.models.survival.TrainRules
 import ovh.gabrielhuav.pow.domain.models.survival.NoiseSource
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalActivity
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalItem
@@ -94,6 +97,19 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_very_hungry
 import ovh.gabrielhuav.pow.shared.recursos.survival_very_thirsty
 import ovh.gabrielhuav.pow.shared.recursos.survival_very_tired
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_carpinteria
+import ovh.gabrielhuav.pow.shared.recursos.survival_skill_fitness
+import ovh.gabrielhuav.pow.shared.recursos.survival_rest_done
+import ovh.gabrielhuav.pow.shared.recursos.survival_rest_rested
+import ovh.gabrielhuav.pow.shared.recursos.survival_rest_started
+import ovh.gabrielhuav.pow.shared.recursos.survival_train_done
+import ovh.gabrielhuav.pow.shared.recursos.survival_train_started
+import ovh.gabrielhuav.pow.shared.recursos.survival_train_zombies
+import ovh.gabrielhuav.pow.shared.recursos.survival_train_woken
+import ovh.gabrielhuav.pow.shared.recursos.survival_train_tired
+import ovh.gabrielhuav.pow.shared.recursos.survival_train_need
+import ovh.gabrielhuav.pow.shared.recursos.survival_book_none
+import ovh.gabrielhuav.pow.shared.recursos.survival_book_started
+import ovh.gabrielhuav.pow.shared.recursos.survival_book_done
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_combate
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_punteria
 import ovh.gabrielhuav.pow.shared.recursos.survival_skill_up
@@ -126,7 +142,7 @@ internal fun WorldMapViewModel.playerRunsThisStep(): Boolean {
     val wantsRun = _uiState.value.isRunning
     if (!survivalManager.state.value.enabled) return wantsRun
     val before = staminaState
-    staminaState = StaminaRules.step(before, wantsRun)
+    staminaState = StaminaRules.step(before, wantsRun, TrainRules.drainFactor(skillLevel(Skill.FITNESS)))
     staminaMovedThisSecond = true
     if (staminaState.exhausted && !before.exhausted) {
         viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_out_of_breath)) }
@@ -189,7 +205,7 @@ internal fun WorldMapViewModel.onCarDoor(boarding: Boolean, firstTime: Boolean =
 /** Largo del paso a pie: caminar o correr (aliento) y más lento mientras un zombi te sujeta (t02). */
 internal fun WorldMapViewModel.playerStepSize(): Double {
     val clock = System.currentTimeMillis()
-    if (SleepRules.isSleeping(clock, sleepUntilMs) || RecipeRules.isCrafting(clock, craftUntilMs)) return 0.0
+    if (SleepRules.isSleeping(clock, sleepUntilMs) || RecipeRules.isCrafting(clock, craftUntilMs) || TrainRules.isBusy(clock, trainUntilMs)) return 0.0
     val running = playerRunsThisStep()
     val sv = survivalManager.state.value
     val load = if (sv.enabled) SurvivalCrafting.speedFactor(SurvivalCrafting.weightOf(sv.pack)) * FractureRules.speedFactor(sv.activeMs, sv.fractureHealsAtMs) * ConditionSpeedRules.factor(sv.needs.energy, playerHealth.toDouble()) else 1.0
@@ -198,6 +214,7 @@ internal fun WorldMapViewModel.playerStepSize(): Double {
 
 fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
+    trainUntilMs = 0L
     grabbedUntilMs = 0L
     sleepUntilMs = 0L
     cancelCraft(announce = false)
@@ -438,6 +455,7 @@ internal fun WorldMapViewModel.onSkillUse(skill: Skill, amount: Int = 1) {
                 Skill.COMBATE -> Res.string.survival_skill_combate
                 Skill.PUNTERIA -> Res.string.survival_skill_punteria
                 Skill.CARPINTERIA -> Res.string.survival_skill_carpinteria
+                Skill.FITNESS -> Res.string.survival_skill_fitness
             },
         )
         showSurvivalPrompt(getString(Res.string.survival_skill_up, name, level))
@@ -465,7 +483,7 @@ internal fun WorldMapViewModel.startCraft(recipe: Recipe) {
     val state = survivalManager.state.value
     val now = System.currentTimeMillis()
     if (!state.enabled || survivalPaused() || _uiState.value.isDriving) return
-    if (RecipeRules.isCrafting(now, craftUntilMs) || SleepRules.isSleeping(now, sleepUntilMs)) return
+    if (RecipeRules.isCrafting(now, craftUntilMs) || SleepRules.isSleeping(now, sleepUntilMs) || TrainRules.isBusy(now, trainUntilMs)) return
     if (!RecipeRules.canCraft(recipe, CraftInventory(state.pack, state.boards, state.arsenal))) return
     if (recipe == Recipe.FERULA && !FractureRules.isFractured(state.activeMs, state.fractureHealsAtMs)) return
     if (RecipeRules.shouldInterrupt(nearestZombieMeters())) {
@@ -536,7 +554,7 @@ private fun WorldMapViewModel.nearestZombieMeters(): Double {
 internal fun WorldMapViewModel.startSleep() {
     val state = survivalManager.state.value
     val now = System.currentTimeMillis()
-    if (!state.enabled || survivalPaused() || _uiState.value.isDriving || SleepRules.isSleeping(now, sleepUntilMs)) return
+    if (!state.enabled || survivalPaused() || _uiState.value.isDriving || SleepRules.isSleeping(now, sleepUntilMs) || TrainRules.isBusy(now, trainUntilMs)) return
     when (SleepRules.check(state.needs.energy, nearestZombieMeters())) {
         SleepCheck.TOO_RESTED -> viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_rested)) }
         SleepCheck.ZOMBIES_NEAR -> viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_zombies)) }
@@ -570,6 +588,76 @@ private fun WorldMapViewModel.updateSleep() {
     val night = _uiState.value.nightAlpha > 0.05f
     survivalManager.setNeeds(SleepRules.rested(sv.needs, night, TemperatureRules.coldLevel(sv.weather, night, sv.coat, soaked = WetnessRules.isSoaked(sv.wetness))))
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_sleep_done)) }
+}
+
+/** Nombre (texto) de una habilidad para los avisos. */
+private fun skillNameRes(skill: Skill) = when (skill) {
+    Skill.COMBATE -> Res.string.survival_skill_combate
+    Skill.PUNTERIA -> Res.string.survival_skill_punteria
+    Skill.CARPINTERIA -> Res.string.survival_skill_carpinteria
+    Skill.FITNESS -> Res.string.survival_skill_fitness
+}
+
+/** Descansar sin cama, entrenar o leer un libro (t87): a pie y quieto unos segundos; un zombi cerca lo impide o lo corta. */
+internal fun WorldMapViewModel.startTraining(kind: TrainKind) {
+    val state = survivalManager.state.value
+    val now = System.currentTimeMillis()
+    if (!state.enabled || survivalPaused() || _uiState.value.isDriving) return
+    if (SleepRules.isSleeping(now, sleepUntilMs) || RecipeRules.isCrafting(now, craftUntilMs) || TrainRules.isBusy(now, trainUntilMs)) return
+    val blocked = when (TrainRules.check(kind, state.needs, staminaState, state.pack, nearestZombieMeters())) {
+        TrainCheck.OK -> null
+        TrainCheck.ZOMBIES_NEAR -> Res.string.survival_train_zombies
+        TrainCheck.TOO_RESTED -> Res.string.survival_rest_rested
+        TrainCheck.TOO_TIRED -> Res.string.survival_train_tired
+        TrainCheck.HUNGRY_OR_THIRSTY -> Res.string.survival_train_need
+        TrainCheck.NO_BOOK -> Res.string.survival_book_none
+    }
+    if (blocked != null) {
+        viewModelScope.launch { showSurvivalPrompt(getString(blocked)) }
+        return
+    }
+    trainKind = kind
+    trainUntilMs = TrainRules.until(now, kind)
+    toggleWorldInventory(false)
+    val started = when (kind) {
+        TrainKind.REST -> Res.string.survival_rest_started
+        TrainKind.FITNESS -> Res.string.survival_train_started
+        TrainKind.BOOK -> Res.string.survival_book_started
+    }
+    viewModelScope.launch { showSurvivalPrompt(getString(started)) }
+}
+
+/** Una vez por segundo mientras dura la acción: un zombi cerca la corta; al terminar aplica el efecto. */
+private fun WorldMapViewModel.updateTraining() {
+    if (trainUntilMs == 0L) return
+    if (nearestZombieMeters() <= TrainRules.ZOMBIE_METERS) {
+        trainUntilMs = 0L
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_train_woken)) }
+        return
+    }
+    if (TrainRules.isBusy(System.currentTimeMillis(), trainUntilMs)) return
+    trainUntilMs = 0L
+    val kind = trainKind
+    val sv = survivalManager.state.value
+    when (kind) {
+        TrainKind.REST -> {
+            survivalManager.setNeeds(TrainRules.applyNeeds(kind, sv.needs))
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_rest_done)) }
+        }
+        TrainKind.FITNESS -> {
+            survivalManager.setNeeds(TrainRules.applyNeeds(kind, sv.needs))
+            staminaState = TrainRules.applyStamina(staminaState)
+            onSkillUse(Skill.FITNESS, TrainRules.FITNESS_XP)
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_train_done)) }
+        }
+        TrainKind.BOOK -> {
+            val pack = TrainRules.readBook(sv.pack) ?: return
+            survivalManager.setPack(pack)
+            val target = TrainRules.bookTarget(sv.skills)
+            onSkillUse(target, TrainRules.BOOK_XP)
+            viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_book_done, getString(skillNameRes(target)))) }
+        }
+    }
 }
 
 /** Compra en la tienda del campus con modo supervivencia: cobra solo si el consumible sirve. */
@@ -701,6 +789,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     lastSurvivalUpdateMs = now
     refreshSurvivalLoot()
     updateSleep()
+    updateTraining()
     updateCraft()
     val clockNow = System.currentTimeMillis()
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))

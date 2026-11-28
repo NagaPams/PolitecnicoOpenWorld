@@ -77,6 +77,9 @@ fun WorldInventoryDialog(
     onRepairCar: () -> Unit = {},
     energy: Double = 100.0,
     onSleep: () -> Unit = {},
+    onRest: () -> Unit = {},
+    onTrain: () -> Unit = {},
+    onReadBook: () -> Unit = {},
     skills: SurvivalSkills = SurvivalSkills(),
     occupation: Occupation = Occupation.NINGUNO,
     onChooseOccupation: (Occupation) -> Unit = {},
@@ -226,6 +229,25 @@ fun WorldInventoryDialog(
                         enabled = energy < SleepRules.TOO_RESTED_AT,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF283593), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_sleep), fontSize = 12.sp) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Button(
+                            onClick = onRest,
+                            enabled = energy < SleepRules.TOO_RESTED_AT,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3949AB), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_rest), fontSize = 12.sp) }
+                        Button(
+                            onClick = onTrain,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_train), fontSize = 12.sp) }
+                        Button(
+                            onClick = onReadBook,
+                            enabled = survivalPack.libros > 0,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D4C41), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_read_book, survivalPack.libros), fontSize = 12.sp) }
+                    }
                     // Habilidades y oficio (t15): suben con el uso; el oficio se elige una sola vez.
                     Text(stringResource(R.string.skills_title), color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     for (skill in Skill.entries) {
@@ -234,6 +256,7 @@ fun WorldInventoryDialog(
                                 Skill.COMBATE -> R.string.skill_combate
                                 Skill.PUNTERIA -> R.string.skill_punteria
                                 Skill.CARPINTERIA -> R.string.skill_carpinteria
+                                Skill.FITNESS -> R.string.skill_fitness
                             },
                         )
                         Text(

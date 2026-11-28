@@ -437,6 +437,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     @Volatile internal var grabbedUntilMs = 0L
     /** Hasta cuándo el jugador duerme (t12); mientras tanto no se mueve. */
     @Volatile internal var sleepUntilMs = 0L
+    /** Acción con barra de espera en curso (descansar, entrenar, leer; t87) y hasta cuándo dura. */
+    @Volatile internal var trainUntilMs = 0L
+    @Volatile internal var trainKind = ovh.gabrielhuav.pow.domain.models.survival.TrainKind.REST
     /** Crafteo con tiempo (t16): hasta cuándo dura y la corrutina que lo termina. */
     @Volatile internal var craftUntilMs = 0L
     internal var craftJob: kotlinx.coroutines.Job? = null

@@ -711,6 +711,7 @@
     <string name="skill_combate">Combate</string>
     <string name="skill_punteria">Puntería</string>
     <string name="skill_carpinteria">Carpintería</string>
+    <string name="skill_fitness">Condición física</string>
     <string name="occupation_pick">Elige tu oficio (una sola vez):</string>
     <string name="occupation_current">Oficio: %1$s</string>
     <string name="occupation_none">Ninguno</string>
@@ -720,6 +721,9 @@
     <string name="pack_craft_nailbat">Palo con clavos (2 tablones)</string>
     <string name="weapon_palo_clavos">Palo con clavos</string>
     <string name="pack_sleep">Dormir (+energía)</string>
+    <string name="pack_rest">Descansar</string>
+    <string name="pack_train">Entrenar</string>
+    <string name="pack_read_book">Leer libro (%1$d)</string>
     <string name="wm_survival_fuel">Gasolina</string>
     <string name="wm_survival_bleeding">Sangrado</string>
     <string name="bandage_counts">🩹 Vendas %1$d</string>

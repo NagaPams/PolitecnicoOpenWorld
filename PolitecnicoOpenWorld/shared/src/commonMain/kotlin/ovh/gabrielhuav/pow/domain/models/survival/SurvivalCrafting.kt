@@ -17,6 +17,8 @@ data class SurvivalPack(
     val chapas: Int = 0,
     /** Llaves de coche (t80): abren un coche ajeno sin hacerle el puente. */
     val llaves: Int = 0,
+    /** Libros de habilidad (t87): al leerlos dan XP a la habilidad más floja. */
+    val libros: Int = 0,
 )
 
 object SurvivalCrafting {
@@ -36,11 +38,12 @@ object SurvivalCrafting {
     const val WEIGHT_SUCIA = 1.0
     const val WEIGHT_CHAPA = 1.5
     const val WEIGHT_LLAVE = 0.2
+    const val WEIGHT_LIBRO = 0.8
 
     fun weightOf(pack: SurvivalPack): Double =
         pack.pizza * WEIGHT_PIZZA + pack.refresco * WEIGHT_REFRESCO + pack.botiquin * WEIGHT_BOTIQUIN +
             pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA + pack.cruda * WEIGHT_CRUDA + pack.sucia * WEIGHT_SUCIA +
-            pack.chapas * WEIGHT_CHAPA + pack.llaves * WEIGHT_LLAVE
+            pack.chapas * WEIGHT_CHAPA + pack.llaves * WEIGHT_LLAVE + pack.libros * WEIGHT_LIBRO
 
     /** t67: hasta este peso (60 % del máximo) se camina normal; de ahí al máximo se frena hasta [MIN_SPEED_FACTOR]. */
     const val SLOW_FROM_WEIGHT = 9.6
@@ -73,6 +76,8 @@ object SurvivalCrafting {
     fun canAddChapa(pack: SurvivalPack): Boolean = pack.chapas < MAX_PER_ITEM && fits(pack, WEIGHT_CHAPA)
 
     fun canAddLlave(pack: SurvivalPack): Boolean = pack.llaves < MAX_PER_ITEM && fits(pack, WEIGHT_LLAVE)
+
+    fun canAddLibro(pack: SurvivalPack): Boolean = pack.libros < MAX_PER_ITEM && fits(pack, WEIGHT_LIBRO)
 
     /** Hambre o sed en este valor o menos: el botín se consume al recogerlo; si no, va a la mochila. */
     const val USE_NOW_THRESHOLD = 60.0
@@ -120,6 +125,7 @@ object SurvivalCrafting {
             if (p.bidones > 0) options.add(WEIGHT_BIDON to p.copy(bidones = p.bidones - 1))
             if (p.cruda > 0) options.add(WEIGHT_CRUDA to p.copy(cruda = p.cruda - 1))
             if (p.sucia > 0) options.add(WEIGHT_SUCIA to p.copy(sucia = p.sucia - 1))
+            if (p.libros > 0) options.add(WEIGHT_LIBRO to p.copy(libros = p.libros - 1))
             if (options.isEmpty()) return p
             val enough = options.filter { it.first >= excess }.minByOrNull { it.first }
             p = (enough ?: options.maxByOrNull { it.first }!!).second
@@ -131,6 +137,6 @@ object SurvivalCrafting {
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
         pack.bidones.coerceIn(0, FuelRules.MAX_CANS), pack.vendas.coerceIn(0, MAX_PER_ITEM),
         pack.cruda.coerceIn(0, MAX_PER_ITEM), pack.sucia.coerceIn(0, MAX_PER_ITEM), pack.chapas.coerceIn(0, MAX_PER_ITEM),
-        pack.llaves.coerceIn(0, MAX_PER_ITEM),
+        pack.llaves.coerceIn(0, MAX_PER_ITEM), pack.libros.coerceIn(0, MAX_PER_ITEM),
     ))
 }
