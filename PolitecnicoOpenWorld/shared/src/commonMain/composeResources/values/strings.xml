@@ -561,4 +561,6 @@
     <string name="survival_barrel_built">🛢️ Armaste un barril: junta agua cuando llueve</string>
     <string name="survival_barrel_level">🛢️ Tiene %1$d tragos de agua (llueve para llenarlo o ya no tienes sed)</string>
     <string name="survival_barrel_drank">💧 Bebiste agua de lluvia</string>
+    <string name="survival_torch_lit">🔥 Encendiste una antorcha: alumbra unos 3 minutos</string>
+    <string name="survival_torch_out">🔥 Se apagó la antorcha</string>
 </resources>

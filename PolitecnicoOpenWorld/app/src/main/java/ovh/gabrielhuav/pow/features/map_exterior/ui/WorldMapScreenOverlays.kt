@@ -50,6 +50,7 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.sutureWound
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicleWithPart
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.plantSeed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.buildBarrel
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.lightTorch
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
@@ -277,6 +278,8 @@ fun WorldMapOverlays(
             onRepairWithPart = { viewModel.repairVehicleWithPart() },
             onPlant = { viewModel.plantSeed() },
             onBuildBarrel = { viewModel.buildBarrel() },
+            torchLit = uiState.survivalTorch,
+            onLightTorch = { viewModel.lightTorch() },
             energy = uiState.survivalNeeds.energy,
             onSleep = { viewModel.startSleep() },
             onRest = { viewModel.startTraining(ovh.gabrielhuav.pow.domain.models.survival.TrainKind.REST) },

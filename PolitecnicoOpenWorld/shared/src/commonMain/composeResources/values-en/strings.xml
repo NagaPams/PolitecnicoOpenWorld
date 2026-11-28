@@ -561,4 +561,6 @@
     <string name="survival_barrel_built">🛢️ You built a barrel: it collects water when it rains</string>
     <string name="survival_barrel_level">🛢️ It holds %1$d sips of water (rain fills it, or you are not thirsty)</string>
     <string name="survival_barrel_drank">💧 You drank rainwater</string>
+    <string name="survival_torch_lit">🔥 You lit a torch: it burns for about 3 minutes</string>
+    <string name="survival_torch_out">🔥 The torch went out</string>
 </resources>

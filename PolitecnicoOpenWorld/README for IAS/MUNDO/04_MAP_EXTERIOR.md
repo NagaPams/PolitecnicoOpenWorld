@@ -396,6 +396,11 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > con `Weather.RAIN`, hasta 4 tragos (`BarrelRules` en `SurvivalRainBarrel.kt`). X sobre el barril da un trago (+25 de sed con `WaterRules.drink`) o, si
 > no hay trago entero o no tienes sed, dice cuántos tragos tiene. No se guarda en la partida.
 
+> **Antorcha (t87, paso 8, 2026-11-27):** con supervivencia, el botón «Encender antorcha» de la mochila gasta 1 tablón y aclara el velo de la noche
+> durante 3 min reales. `TorchRules` (`SurvivalTorch.kt`): `VEIL_FACTOR` 0,45 multiplica el alpha que da `BlackoutRules.veilAlpha`, así que sirve sobre todo en
+> el apagón y el día sigue sin oscurecer. Estado `SurvivalState.torch` (no se guarda) y `WorldMapViewModel.torchUntilMs`; `updateTorch` la apaga cada segundo del
+> bucle de supervivencia con aviso. Solo una a la vez. No es una luz que se mueva por el mapa: solo cambia el velo de pantalla.
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

@@ -220,6 +220,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     plots.clear()
     barrels.clear()
+    torchUntilMs = 0L
     trainUntilMs = 0L
     grabbedUntilMs = 0L
     sleepUntilMs = 0L
@@ -807,6 +808,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     refreshSurvivalLoot()
     updateSleep()
     updateTraining()
+    updateTorch()
     updateCraft()
     val clockNow = System.currentTimeMillis()
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))

@@ -754,4 +754,5 @@
     <string name="door_action_dismantle">Desmontar barricada</string>
     <string name="door_menu_cancel">Cancelar</string>
     <string name="pack_build_barrel">Armar barril de lluvia (2 tablones)</string>
+    <string name="pack_light_torch">Encender antorcha (1 tablón)</string>
 </resources>

@@ -81,6 +81,8 @@ fun WorldInventoryDialog(
     onRepairWithPart: () -> Unit = {},
     onPlant: () -> Unit = {},
     onBuildBarrel: () -> Unit = {},
+    torchLit: Boolean = false,
+    onLightTorch: () -> Unit = {},
     energy: Double = 100.0,
     onSleep: () -> Unit = {},
     onRest: () -> Unit = {},
@@ -231,6 +233,11 @@ fun WorldInventoryDialog(
                         enabled = boards >= 2,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0277BD), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_build_barrel), fontSize = 12.sp) }
+                    Button(
+                        onClick = onLightTorch,
+                        enabled = boards >= 1 && !torchLit,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF6C00), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_light_torch), fontSize = 12.sp) }
                     Text(stringResource(R.string.bandage_counts, survivalPack.vendas), color = Color.White, fontSize = 14.sp)
                     Button(
                         onClick = onUseBandage,

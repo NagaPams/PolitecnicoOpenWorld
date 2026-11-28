@@ -44,6 +44,8 @@ data class SurvivalSubState(
     val bleeding: Boolean = false,
     /** Suciedad de la herida (0-100, t87): sube sangrando o con la venda sucia; al tope se infecta. */
     val woundDirt: Double = 0.0,
+    /** Antorcha encendida (t87): aclara el velo de la noche. No se guarda. */
+    val torch: Boolean = false,
     /** Lleva un abrigo puesto (t12): resta un nivel de frío. */
     val coat: Boolean = false,
     /** Humedad de la ropa (0-100, t11): la lluvia la sube y el tiempo o el coche la bajan. */
@@ -142,6 +144,10 @@ class SurvivalManager(enabled: Boolean = false) {
     /** Morir y reaparecer quita la infección y el sangrado (t32): no se revive para morir otra vez de inmediato. */
     fun clearConditions() {
         mutableState.update { it.copy(bleeding = false, woundDirt = 0.0, fractureHealsAtMs = 0L, infection = InfectionState()) }
+    }
+
+    fun setTorch(lit: Boolean) {
+        if (mutableState.value.torch != lit) mutableState.update { it.copy(torch = lit) }
     }
 
     fun setWoundDirt(dirt: Double) {

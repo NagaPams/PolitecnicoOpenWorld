@@ -815,7 +815,7 @@ fun WorldMapScreen(
         if (uiState.nightAlpha > 0.01f) {
             ovh.gabrielhuav.pow.features.map_exterior.ui.components.EdgeVeil(
                 color = Color(0xFF091126),
-                alpha = if (uiState.survivalMode) ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.veilAlpha(uiState.nightAlpha, uiState.survivalDay) else uiState.nightAlpha,
+                alpha = if (uiState.survivalMode) ovh.gabrielhuav.pow.domain.models.survival.TorchRules.veil(ovh.gabrielhuav.pow.domain.models.survival.BlackoutRules.veilAlpha(uiState.nightAlpha, uiState.survivalDay), uiState.survivalTorch) else uiState.nightAlpha,
             )
         }
 

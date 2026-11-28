@@ -204,6 +204,7 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalFuel = survival.fuel,
                 survivalBleeding = survival.bleeding,
                 survivalWoundDirt = survival.woundDirt,
+                survivalTorch = survival.torch,
                 survivalCoat = survival.coat,
                 survivalWetness = survival.wetness,
                 survivalFractured = ovh.gabrielhuav.pow.domain.models.survival.FractureRules.isFractured(survival.activeMs, survival.fractureHealsAtMs),
@@ -440,6 +441,8 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     @Volatile internal var sleepUntilMs = 0L
     /** Acción con barra de espera en curso (descansar, entrenar, leer; t87) y hasta cuándo dura. */
     @Volatile internal var trainUntilMs = 0L
+    /** Instante (elapsedRealtime) en que se apaga la antorcha encendida (t87); 0 = apagada. */
+    @Volatile internal var torchUntilMs = 0L
     @Volatile internal var trainKind = ovh.gabrielhuav.pow.domain.models.survival.TrainKind.REST
     /** Crafteo con tiempo (t16): hasta cuándo dura y la corrutina que lo termina. */
     @Volatile internal var craftUntilMs = 0L

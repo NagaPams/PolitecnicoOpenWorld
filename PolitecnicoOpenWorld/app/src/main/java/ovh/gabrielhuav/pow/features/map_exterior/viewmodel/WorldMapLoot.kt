@@ -69,6 +69,9 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_barrel_level
 import ovh.gabrielhuav.pow.shared.recursos.survival_barrel_drank
 import ovh.gabrielhuav.pow.domain.models.survival.GardenRules
 import ovh.gabrielhuav.pow.domain.models.survival.BarrelRules
+import ovh.gabrielhuav.pow.domain.models.survival.TorchRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_torch_lit
+import ovh.gabrielhuav.pow.shared.recursos.survival_torch_out
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
 import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.shared.recursos.survival_fuel_empty
@@ -740,6 +743,26 @@ internal fun WorldMapViewModel.buildBarrel() {
     toggleWorldInventory(false)
     soundManager.playItem()
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_barrel_built)) }
+}
+
+/** Enciende una antorcha (t87): gasta [TorchRules.BOARD_COST] tablón y aclara el velo de la noche [TorchRules.BURN_MS]. */
+internal fun WorldMapViewModel.lightTorch() {
+    val state = survivalManager.state.value
+    if (!state.enabled || !TorchRules.canLight(state.boards, state.torch)) return
+    survivalManager.addBoards(-TorchRules.BOARD_COST)
+    torchUntilMs = SystemClock.elapsedRealtime() + TorchRules.BURN_MS
+    survivalManager.setTorch(true)
+    toggleWorldInventory(false)
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_torch_lit)) }
+}
+
+/** Apaga la antorcha cuando se acaba el tiempo (cada segundo del bucle de supervivencia). */
+internal fun WorldMapViewModel.updateTorch() {
+    if (!survivalManager.state.value.torch) return
+    if (TorchRules.isLit(SystemClock.elapsedRealtime(), torchUntilMs)) return
+    survivalManager.setTorch(false)
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_torch_out)) }
 }
 
 /** Los barriles juntan agua mientras llueve (cada segundo del bucle de supervivencia). */
