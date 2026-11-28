@@ -27,6 +27,8 @@ data class SurvivalPack(
     val refacciones: Int = 0,
     /** Semillas (t87, paso 6): se plantan en un huerto que da comida cruda. */
     val semillas: Int = 0,
+    /** Pilas (t25, pieza 3): recargan la linterna. */
+    val pilas: Int = 0,
 )
 
 object SurvivalCrafting {
@@ -51,11 +53,12 @@ object SurvivalCrafting {
     const val WEIGHT_CANDADO = 0.6
     const val WEIGHT_REFACCION = 1.2
     const val WEIGHT_SEMILLA = 0.1
+    const val WEIGHT_PILA = 0.1
 
     fun weightOf(pack: SurvivalPack): Double =
         pack.pizza * WEIGHT_PIZZA + pack.refresco * WEIGHT_REFRESCO + pack.botiquin * WEIGHT_BOTIQUIN +
             pack.bidones * WEIGHT_BIDON + pack.vendas * WEIGHT_VENDA + pack.cruda * WEIGHT_CRUDA + pack.sucia * WEIGHT_SUCIA +
-            pack.chapas * WEIGHT_CHAPA + pack.llaves * WEIGHT_LLAVE + pack.libros * WEIGHT_LIBRO + pack.antisepticos * WEIGHT_ANTISEPTICO + pack.candados * WEIGHT_CANDADO + pack.refacciones * WEIGHT_REFACCION + pack.semillas * WEIGHT_SEMILLA
+            pack.chapas * WEIGHT_CHAPA + pack.llaves * WEIGHT_LLAVE + pack.libros * WEIGHT_LIBRO + pack.antisepticos * WEIGHT_ANTISEPTICO + pack.candados * WEIGHT_CANDADO + pack.refacciones * WEIGHT_REFACCION + pack.semillas * WEIGHT_SEMILLA + pack.pilas * WEIGHT_PILA
 
     /** t67: hasta este peso (60 % del máximo) se camina normal; de ahí al máximo se frena hasta [MIN_SPEED_FACTOR]. */
     const val SLOW_FROM_WEIGHT = 9.6
@@ -98,6 +101,8 @@ object SurvivalCrafting {
     fun canAddRefaccion(pack: SurvivalPack): Boolean = pack.refacciones < MAX_PER_ITEM && fits(pack, WEIGHT_REFACCION)
 
     fun canAddSemilla(pack: SurvivalPack): Boolean = pack.semillas < MAX_PER_ITEM && fits(pack, WEIGHT_SEMILLA)
+
+    fun canAddPila(pack: SurvivalPack): Boolean = pack.pilas < MAX_PER_ITEM && fits(pack, WEIGHT_PILA)
 
     /** Hambre o sed en este valor o menos: el botín se consume al recogerlo; si no, va a la mochila. */
     const val USE_NOW_THRESHOLD = 60.0
@@ -150,6 +155,7 @@ object SurvivalCrafting {
             if (p.candados > 0) options.add(WEIGHT_CANDADO to p.copy(candados = p.candados - 1))
             if (p.refacciones > 0) options.add(WEIGHT_REFACCION to p.copy(refacciones = p.refacciones - 1))
             if (p.semillas > 0) options.add(WEIGHT_SEMILLA to p.copy(semillas = p.semillas - 1))
+            if (p.pilas > 0) options.add(WEIGHT_PILA to p.copy(pilas = p.pilas - 1))
             if (options.isEmpty()) return p
             val enough = options.filter { it.first >= excess }.minByOrNull { it.first }
             p = (enough ?: options.maxByOrNull { it.first }!!).second
@@ -161,6 +167,6 @@ object SurvivalCrafting {
         pack.pizza.coerceIn(0, MAX_PER_ITEM), pack.refresco.coerceIn(0, MAX_PER_ITEM), pack.botiquin.coerceIn(0, MAX_PER_ITEM),
         pack.bidones.coerceIn(0, FuelRules.MAX_CANS), pack.vendas.coerceIn(0, MAX_PER_ITEM),
         pack.cruda.coerceIn(0, MAX_PER_ITEM), pack.sucia.coerceIn(0, MAX_PER_ITEM), pack.chapas.coerceIn(0, MAX_PER_ITEM),
-        pack.llaves.coerceIn(0, MAX_PER_ITEM), pack.libros.coerceIn(0, MAX_PER_ITEM), pack.antisepticos.coerceIn(0, MAX_PER_ITEM), pack.candados.coerceIn(0, MAX_PER_ITEM), pack.refacciones.coerceIn(0, MAX_PER_ITEM), pack.semillas.coerceIn(0, MAX_PER_ITEM),
+        pack.llaves.coerceIn(0, MAX_PER_ITEM), pack.libros.coerceIn(0, MAX_PER_ITEM), pack.antisepticos.coerceIn(0, MAX_PER_ITEM), pack.candados.coerceIn(0, MAX_PER_ITEM), pack.refacciones.coerceIn(0, MAX_PER_ITEM), pack.semillas.coerceIn(0, MAX_PER_ITEM), pack.pilas.coerceIn(0, MAX_PER_ITEM),
     ))
 }

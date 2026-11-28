@@ -563,4 +563,13 @@
     <string name="survival_barrel_drank">💧 You drank rainwater</string>
     <string name="survival_torch_lit">🔥 You lit a torch: it burns for about 3 minutes</string>
     <string name="survival_torch_out">🔥 The torch went out</string>
+    <string name="survival_corpse_burned">🔥 You burned the body</string>
+    <string name="survival_corpse_buried">⚰️ You buried the body (1 board)</string>
+    <string name="survival_corpse_need">🧟 A body stinks and draws zombies: burn it next to a lit campfire or carry a board to bury it</string>
+    <string name="survival_coat_mended">🧵 You mended your coat</string>
+    <string name="survival_coat_worn_out">🧥 Your coat is worn out: it no longer keeps you warm. Find another</string>
+    <string name="survival_flashlight_dead">🔦 The flashlight is out of battery: swap the batteries</string>
+    <string name="survival_flashlight_swapped">🔋 You swapped the flashlight batteries</string>
+    <string name="survival_wood_chopped_one">🪓 You gathered branches: +1 board</string>
+    <string name="survival_wood_chopped_two">🪓 You cut branches with your weapon: +2 boards</string>
 </resources>

@@ -1,6 +1,6 @@
 package ovh.gabrielhuav.pow.domain.models.survival
 
-enum class NoiseSource { WALKING, RUNNING, MELEE, GUNSHOT, ENGINE, HORN, DOOR, CRISTAL, LATAS }
+enum class NoiseSource { WALKING, RUNNING, MELEE, GUNSHOT, ENGINE, HORN, DOOR, CRISTAL, LATAS, PESTE }
 
 data class NoiseEvent(
     val latitude: Double, val longitude: Double, val source: NoiseSource, val night: Boolean,
@@ -30,6 +30,7 @@ object NoiseRules {
             NoiseSource.DOOR -> 25.0
             NoiseSource.CRISTAL -> 70.0
             NoiseSource.LATAS -> 90.0
+            NoiseSource.PESTE -> 40.0
         }
         return if (night) radius * 1.2 else radius
     }

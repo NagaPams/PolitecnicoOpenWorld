@@ -401,6 +401,19 @@ usa para Google nativo** (OSM nativo y web tienen su propio fog). / Compose `Can
 > el apagón y el día sigue sin oscurecer. Estado `SurvivalState.torch` (no se guarda) y `WorldMapViewModel.torchUntilMs`; `updateTorch` la apaga cada segundo del
 > bucle de supervivencia con aviso. Solo una a la vez. No es una luz que se mueva por el mapa: solo cambia el velo de pantalla.
 
+> **Cuatro piezas hacia el sandbox (t25, 2026-11-28):**
+> **Cadáveres** (`SurvivalCorpse.kt`, `CorpseRules`): al matar un zombi `onZombieKilled` anota su cuerpo en `corpses` (solo memoria, máx. 8, `LootKind.CADAVER`
+> con id `SurvivalLoot.ID_PREFIX + "cadaver_"`). A los 60 s apesta: cada 20 s suena `NoiseSource.PESTE` (valor nuevo al final, radio 40 m) y atrae zombis. X sobre el
+> cuerpo lo quema si hay una fogata encendida a ≤ 4 m (`CampfireRules.COOK_DEG`) o, si no, lo entierra gastando 1 tablón; da 3 XP de Condición física.
+> **Remendar ropa** (`SurvivalClothing.kt`, `ClothingRules`): `SurvivalState.coatWear` (0-100, guardado `survivalCoatWear` con default 0) sube a la intemperie con
+> lluvia (0,2/s) o frío nocturno (0,05/s); a 100 el abrigo se rompe (`setCoat(false)`). El botón «Remendar abrigo» gasta 1 venda y quita 40.
+> **Linterna y pilas** (`SurvivalFlashlight.kt`, `FlashlightRules`): botón de encender/apagar con batería 0-100 (guardado `survivalFlashlightCharge`, default 60), gasta 0,5/s
+> y se apaga sola; encendida multiplica por 1,7 el radio de la niebla de visión y sube su tope a 0,6 de la pantalla (`WorldMapScreen`). Las pilas son un objeto nuevo de
+> la mochila (`SurvivalPack.pilas`, guardado `survivalPilas`, `SearchGain.PILA` en casas, tiendas y talleres); cada una devuelve 60 de batería.
+> **Madera** (`SurvivalWood.kt`, `WoodRules`): el mapa no trae árboles, así que un tercio de los puntos de tablones de la cuadrícula son `LootKind.RAMAS` (ramas y troncos):
+> dan 1 tablón a mano o 2 con palo, bate, cuchillo o palo con clavos, y suben Carpintería. NO se hicieron las vallas (el mundo no las trae; generarlas alrededor de las
+> huellas arriesga la colisión) ni la segunda tanda (pesca y agua, desarmar objetos, mapa leíble).
+
 > **Vista isométrica (h44/h45):** la niebla de visión de `IsoWorldView` se modula con `fogStrength` (de día
 > `DAY_FOG_STRENGTH`=0.4, de noche 1.0 según `nightAlpha`; antes era igual de opaca a las 12:00). Los coches
 > aparcados del campus se descartan en `spawnParkedCar` si su huella orientada (`VehicleFootprint.intersects`)

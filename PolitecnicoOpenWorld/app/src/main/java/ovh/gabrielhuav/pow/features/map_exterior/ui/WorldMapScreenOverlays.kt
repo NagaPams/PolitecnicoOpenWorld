@@ -51,6 +51,9 @@ import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.repairVehicleWithPart
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.plantSeed
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.buildBarrel
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.lightTorch
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.mendCoat
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.swapBatteries
+import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleFlashlight
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useFuelCan
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.toggleWorldInventory
 import ovh.gabrielhuav.pow.features.map_exterior.viewmodel.useSurvivalKit
@@ -280,6 +283,12 @@ fun WorldMapOverlays(
             onBuildBarrel = { viewModel.buildBarrel() },
             torchLit = uiState.survivalTorch,
             onLightTorch = { viewModel.lightTorch() },
+            coatWear = uiState.survivalCoatWear,
+            onMendCoat = { viewModel.mendCoat() },
+            flashlightOn = uiState.survivalFlashlight,
+            flashlightCharge = uiState.survivalFlashlightCharge,
+            onToggleFlashlight = { viewModel.toggleFlashlight() },
+            onSwapBatteries = { viewModel.swapBatteries() },
             energy = uiState.survivalNeeds.energy,
             onSleep = { viewModel.startSleep() },
             onRest = { viewModel.startTraining(ovh.gabrielhuav.pow.domain.models.survival.TrainKind.REST) },

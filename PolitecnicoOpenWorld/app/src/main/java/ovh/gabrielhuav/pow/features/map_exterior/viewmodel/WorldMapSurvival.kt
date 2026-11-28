@@ -220,6 +220,7 @@ fun WorldMapViewModel.resetSurvivalForNewGame() {
     staminaState = StaminaState()
     plots.clear()
     barrels.clear()
+    corpses.clear()
     torchUntilMs = 0L
     trainUntilMs = 0L
     grabbedUntilMs = 0L
@@ -446,6 +447,7 @@ private fun WorldMapViewModel.updateHordeMigration(day: Int) {
 /** Un zombi murió a manos del jugador (t18): se anota en su zona y, al despejarla, se avisa. */
 internal fun WorldMapViewModel.onZombieKilled(at: GeoPoint) {
     if (!survivalManager.state.value.enabled) return
+    registerCorpse(at)
     val result = ZoneKillRules.record(zoneKills, at.latitude, at.longitude)
     zoneKills = result.kills
     npcAiManager.zoneKills = result.kills
@@ -809,6 +811,7 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     updateSleep()
     updateTraining()
     updateTorch()
+    updateFlashlight(elapsed.coerceAtMost(1000L) / 1000.0)
     updateCraft()
     val clockNow = System.currentTimeMillis()
     survivalManager.setWeather(WeatherRules.at(clockNow / DAY_NIGHT_CYCLE_MS, currentGameHour(clockNow)))
@@ -817,8 +820,10 @@ internal fun WorldMapViewModel.updateSurvivalTick() {
     val warm = updateCampfires(s)
     updateTraps(s)
     updateBarrels(elapsed.coerceAtMost(1000L) / 1000.0)
+    updateCorpses(s.nightAlpha > 0.05f)
     updateGroup(s)
     survivalManager.setWetness(WetnessRules.step(dressed.wetness, dressed.weather, dressed.coat, s.isDriving || warm, elapsed.coerceAtMost(1000L) / 1000.0))
+    updateCoatWear(s.nightAlpha > 0.05f, !(s.isDriving || warm), elapsed.coerceAtMost(1000L) / 1000.0)
     announceBlackout()
     val activity = when {
         s.isDriving -> SurvivalActivity.DRIVING

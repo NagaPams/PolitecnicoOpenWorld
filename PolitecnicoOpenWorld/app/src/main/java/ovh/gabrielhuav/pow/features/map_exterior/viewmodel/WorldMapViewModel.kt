@@ -206,6 +206,9 @@ class WorldMapViewModel @javax.inject.Inject constructor(
                 survivalWoundDirt = survival.woundDirt,
                 survivalTorch = survival.torch,
                 survivalCoat = survival.coat,
+                survivalCoatWear = survival.coatWear,
+                survivalFlashlight = survival.flashlightOn,
+                survivalFlashlightCharge = survival.flashlightCharge,
                 survivalWetness = survival.wetness,
                 survivalFractured = ovh.gabrielhuav.pow.domain.models.survival.FractureRules.isFractured(survival.activeMs, survival.fractureHealsAtMs),
                 survivalStamina = survival.stamina,
@@ -465,6 +468,10 @@ class WorldMapViewModel @javax.inject.Inject constructor(
     /** Barriles de lluvia (t87): id -> (lat, lon, nivel en tragos). Solo memoria. */
     internal val barrels = LinkedHashMap<String, Triple<Double, Double, Double>>()
     internal var barrelCounter = 0
+    /** Cadáveres de zombis (t25): id -> (lat, lon, instante de la baja en elapsedRealtime). Solo memoria. */
+    internal val corpses = LinkedHashMap<String, Triple<Double, Double, Long>>()
+    internal var corpseCounter = 0
+    internal var lastStinkMs = 0L
     internal var trapCounter = 0
     /** t18: día de la última migración, zona destino de la horda y si ya se avisó (en memoria). */
     internal var hordeDay = 0

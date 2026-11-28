@@ -81,6 +81,12 @@ fun WorldInventoryDialog(
     onRepairWithPart: () -> Unit = {},
     onPlant: () -> Unit = {},
     onBuildBarrel: () -> Unit = {},
+    coatWear: Double = 0.0,
+    flashlightOn: Boolean = false,
+    flashlightCharge: Double = 0.0,
+    onToggleFlashlight: () -> Unit = {},
+    onSwapBatteries: () -> Unit = {},
+    onMendCoat: () -> Unit = {},
     torchLit: Boolean = false,
     onLightTorch: () -> Unit = {},
     energy: Double = 100.0,
@@ -233,6 +239,22 @@ fun WorldInventoryDialog(
                         enabled = boards >= 2,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0277BD), contentColor = Color.White),
                     ) { Text(stringResource(R.string.pack_build_barrel), fontSize = 12.sp) }
+                    if (coat) {
+                        Button(
+                            onClick = onMendCoat,
+                            enabled = ovh.gabrielhuav.pow.domain.models.survival.ClothingRules.canMend(coat, coatWear, survivalPack.vendas),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B), contentColor = Color.White),
+                        ) { Text(stringResource(R.string.pack_mend_coat, coatWear.toInt()), fontSize = 12.sp) }
+                    }
+                    Button(
+                        onClick = onToggleFlashlight,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF455A64), contentColor = Color.White),
+                    ) { Text(stringResource(if (flashlightOn) R.string.pack_flashlight_off else R.string.pack_flashlight_on, flashlightCharge.toInt()), fontSize = 12.sp) }
+                    Button(
+                        onClick = onSwapBatteries,
+                        enabled = ovh.gabrielhuav.pow.domain.models.survival.FlashlightRules.canSwap(survivalPack.pilas, flashlightCharge),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF37474F), contentColor = Color.White),
+                    ) { Text(stringResource(R.string.pack_swap_batteries, survivalPack.pilas), fontSize = 12.sp) }
                     Button(
                         onClick = onLightTorch,
                         enabled = boards >= 1 && !torchLit,

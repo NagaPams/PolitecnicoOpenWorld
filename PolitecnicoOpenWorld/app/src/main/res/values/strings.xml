@@ -755,4 +755,8 @@
     <string name="door_menu_cancel">Cancelar</string>
     <string name="pack_build_barrel">Armar barril de lluvia (2 tablones)</string>
     <string name="pack_light_torch">Encender antorcha (1 tablón)</string>
+    <string name="pack_mend_coat">Remendar abrigo (1 venda) · desgaste %1$d %%</string>
+    <string name="pack_flashlight_on">Encender linterna · batería %1$d %%</string>
+    <string name="pack_flashlight_off">Apagar linterna · batería %1$d %%</string>
+    <string name="pack_swap_batteries">Cambiar pilas (%1$d)</string>
 </resources>

@@ -70,6 +70,23 @@ import ovh.gabrielhuav.pow.shared.recursos.survival_barrel_drank
 import ovh.gabrielhuav.pow.domain.models.survival.GardenRules
 import ovh.gabrielhuav.pow.domain.models.survival.BarrelRules
 import ovh.gabrielhuav.pow.domain.models.survival.TorchRules
+import ovh.gabrielhuav.pow.domain.models.survival.ClothingRules
+import ovh.gabrielhuav.pow.domain.models.survival.WoodRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_wood_chopped_one
+import ovh.gabrielhuav.pow.shared.recursos.survival_wood_chopped_two
+import ovh.gabrielhuav.pow.domain.models.survival.FlashlightRules
+import ovh.gabrielhuav.pow.shared.recursos.survival_flashlight_dead
+import ovh.gabrielhuav.pow.shared.recursos.survival_flashlight_swapped
+import ovh.gabrielhuav.pow.domain.models.survival.CorpseAction
+import ovh.gabrielhuav.pow.shared.recursos.survival_coat_mended
+import ovh.gabrielhuav.pow.shared.recursos.survival_coat_worn_out
+import ovh.gabrielhuav.pow.domain.models.survival.CorpseRules
+import ovh.gabrielhuav.pow.domain.models.survival.NoiseEvent
+import ovh.gabrielhuav.pow.domain.models.survival.Skill
+import ovh.gabrielhuav.pow.domain.models.ai.queueSurvivalNoise
+import ovh.gabrielhuav.pow.shared.recursos.survival_corpse_burned
+import ovh.gabrielhuav.pow.shared.recursos.survival_corpse_buried
+import ovh.gabrielhuav.pow.shared.recursos.survival_corpse_need
 import ovh.gabrielhuav.pow.shared.recursos.survival_torch_lit
 import ovh.gabrielhuav.pow.shared.recursos.survival_torch_out
 import ovh.gabrielhuav.pow.domain.models.survival.Weather
@@ -108,13 +125,14 @@ internal const val LOOT_FIRE_PREFIX = SurvivalLoot.ID_PREFIX + "fogata_"
 internal const val LOOT_TRAP_PREFIX = SurvivalLoot.ID_PREFIX + "trampa_"
 internal const val LOOT_PLOT_PREFIX = SurvivalLoot.ID_PREFIX + "huerto_"
 internal const val LOOT_BARREL_PREFIX = SurvivalLoot.ID_PREFIX + "barril_"
+internal const val LOOT_CORPSE_PREFIX = SurvivalLoot.ID_PREFIX + "cadaver_"
 
 private fun LootKind.survivalItem(): SurvivalItem = when (this) {
     LootKind.PIZZA -> SurvivalItem.PIZZA
     LootKind.REFRESCO -> SurvivalItem.REFRESCO
     LootKind.SUERO -> SurvivalItem.SUERO
     LootKind.TABLONES, LootKind.CONTENEDOR, LootKind.ARMA_BLANCA, LootKind.ARMA_FUEGO, LootKind.MUNICION,
-    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL -> SurvivalItem.TABLONES
+    LootKind.GASOLINA, LootKind.VENDA, LootKind.EDIFICIO, LootKind.FOGATA, LootKind.TRAMPA, LootKind.COCHE, LootKind.HUERTO, LootKind.BARRIL, LootKind.CADAVER, LootKind.RAMAS -> SurvivalItem.TABLONES
 }
 
 private fun cellKey(latitude: Double, longitude: Double): Long =
@@ -175,6 +193,10 @@ internal fun WorldMapViewModel.refreshSurvivalLoot() {
     for ((id, barrel) in barrels) {
         if (abs(barrel.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(barrel.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
         anchored.add(LootPoint(id, LootKind.BARRIL, barrel.first, barrel.second))
+    }
+    for ((id, corpse) in corpses) {
+        if (abs(corpse.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(corpse.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
+        anchored.add(LootPoint(id, LootKind.CADAVER, corpse.first, corpse.second))
     }
     for ((id, fire) in campfires) {
         if (abs(fire.first - location.latitude) > BUILDING_VISIBLE_DEGREES || abs(fire.second - location.longitude) > BUILDING_VISIBLE_DEGREES) continue
@@ -326,6 +348,23 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
                 }
             }
         }
+        point.kind == LootKind.CADAVER -> {
+            // X sobre un cadáver: lo quema si hay una fogata encendida cerca; si no, lo entierra con un tablón.
+            val corpse = corpses[point.id]
+            val nowMs = SystemClock.elapsedRealtime()
+            val fireLit = corpse != null && campfires.values.any { CampfireRules.isLit(nowMs, it.third) && CorpseRules.nearFire(corpse.first, corpse.second, it.first, it.second) }
+            if (corpse == null) Res.string.survival_not_needed
+            else when (CorpseRules.action(fireLit, current.boards)) {
+                CorpseAction.BURN -> removeCorpse(point.id).let { taken = false; Res.string.survival_corpse_burned }
+                CorpseAction.BURY -> {
+                    survivalManager.addBoards(-CorpseRules.BURY_BOARDS)
+                    removeCorpse(point.id)
+                    taken = false
+                    Res.string.survival_corpse_buried
+                }
+                CorpseAction.NONE -> Res.string.survival_corpse_need
+            }
+        }
         point.kind == LootKind.FOGATA -> {
             // X junto a la fogata cocina lo que lleves (sin gastar la fogata, que se apaga sola).
             val near = campfires[point.id]?.let { CampfireRules.warms(_uiState.value.currentLocation?.latitude ?: 0.0, _uiState.value.currentLocation?.longitude ?: 0.0, it.first, it.second) } == true
@@ -345,6 +384,16 @@ internal fun WorldMapViewModel.pickUpSurvivalLoot(id: String) {
         point.kind == LootKind.CONTENEDOR -> {
             taken = lootContainer()
             if (taken) Res.string.survival_container_looted else emptyHandedMessage(current)
+        }
+        point.kind == LootKind.RAMAS -> if (current.boards >= MAX_BOARDS_CARRIED) {
+            Res.string.survival_boards_full
+        } else {
+            // Ramas y troncos (t25): con un arma cortante o un palo se sacan dos tablones; a mano, uno. Sube Carpintería.
+            val planks = WoodRules.boardsFor(current.arsenal.equipped)
+            survivalManager.addBoards(planks)
+            onSkillUse(Skill.CARPINTERIA, WoodRules.XP)
+            taken = true
+            if (planks >= 2) Res.string.survival_wood_chopped_two else Res.string.survival_wood_chopped_one
         }
         item == SurvivalItem.TABLONES -> if (current.boards >= MAX_BOARDS_CARRIED) {
             Res.string.survival_boards_full
@@ -562,6 +611,10 @@ internal fun WorldMapViewModel.giveSearchGains(gains: List<SearchGain>): SearchO
                 survivalManager.setPack(current.pack.copy(refacciones = current.pack.refacciones + 1))
                 gave = true
             }
+            SearchGain.PILA -> if (SurvivalCrafting.canAddPila(current.pack)) {
+                survivalManager.setPack(current.pack.copy(pilas = current.pack.pilas + 1))
+                gave = true
+            }
             SearchGain.SEMILLA -> if (SurvivalCrafting.canAddSemilla(current.pack)) {
                 survivalManager.setPack(current.pack.copy(semillas = current.pack.semillas + 1))
                 gave = true
@@ -743,6 +796,89 @@ internal fun WorldMapViewModel.buildBarrel() {
     toggleWorldInventory(false)
     soundManager.playItem()
     viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_barrel_built)) }
+}
+
+/** Quita un cadáver (quemado o enterrado) y da XP de Condición física. */
+internal fun WorldMapViewModel.removeCorpse(id: String) {
+    corpses.remove(id)
+    lootCellKey = Long.MIN_VALUE
+    soundManager.playItem()
+    onSkillUse(Skill.FITNESS, CorpseRules.XP)
+}
+
+/** Anota el cuerpo de un zombi que murió a manos del jugador (el más viejo se pierde al pasar de [CorpseRules.MAX_CORPSES]). */
+internal fun WorldMapViewModel.registerCorpse(at: GeoPoint) {
+    if (corpses.size >= CorpseRules.MAX_CORPSES) corpses.remove(corpses.keys.first())
+    corpseCounter++
+    corpses["$LOOT_CORPSE_PREFIX$corpseCounter"] = Triple(at.latitude, at.longitude, SystemClock.elapsedRealtime())
+    lootCellKey = Long.MIN_VALUE
+}
+
+/** Los cuerpos viejos apestan: cada [CorpseRules.STINK_PERIOD_MS] suena una peste que atrae zombis. */
+internal fun WorldMapViewModel.updateCorpses(night: Boolean) {
+    if (corpses.isEmpty()) return
+    val nowMs = SystemClock.elapsedRealtime()
+    if (!CorpseRules.dueToStink(nowMs, lastStinkMs)) return
+    lastStinkMs = nowMs
+    val rain = survivalManager.state.value.weather == Weather.RAIN
+    for (corpse in corpses.values) {
+        if (CorpseRules.stinks(nowMs, corpse.third)) npcAiManager.queueSurvivalNoise(NoiseEvent(corpse.first, corpse.second, NoiseSource.PESTE, night, rain))
+    }
+}
+
+/** Enciende o apaga la linterna (t25); necesita batería. */
+internal fun WorldMapViewModel.toggleFlashlight() {
+    val state = survivalManager.state.value
+    if (!state.enabled) return
+    if (state.flashlightOn) survivalManager.setFlashlight(false)
+    else if (FlashlightRules.canTurnOn(state.flashlightCharge)) survivalManager.setFlashlight(true)
+    else viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_flashlight_dead)) }
+    soundManager.playItem()
+}
+
+/** Cambia las pilas: gasta una y devuelve [FlashlightRules.BATTERY_CHARGE] de batería. */
+internal fun WorldMapViewModel.swapBatteries() {
+    val state = survivalManager.state.value
+    if (!state.enabled || !FlashlightRules.canSwap(state.pack.pilas, state.flashlightCharge)) return
+    survivalManager.setPack(state.pack.copy(pilas = state.pack.pilas - 1))
+    survivalManager.setFlashlightCharge(FlashlightRules.swap(state.flashlightCharge))
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_flashlight_swapped)) }
+}
+
+/** La linterna gasta batería encendida y se apaga sola al llegar a 0 (cada segundo de supervivencia). */
+internal fun WorldMapViewModel.updateFlashlight(seconds: Double) {
+    val state = survivalManager.state.value
+    if (!state.flashlightOn) return
+    val charge = FlashlightRules.drain(state.flashlightCharge, true, seconds)
+    survivalManager.setFlashlightCharge(charge)
+    if (charge <= 0.0) {
+        survivalManager.setFlashlight(false)
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_flashlight_dead)) }
+    }
+}
+
+/** Remienda el abrigo gastando una venda (t25): quita [ClothingRules.MEND_AMOUNT] de desgaste. */
+internal fun WorldMapViewModel.mendCoat() {
+    val state = survivalManager.state.value
+    if (!state.enabled || !ClothingRules.canMend(state.coat, state.coatWear, state.pack.vendas)) return
+    survivalManager.setPack(state.pack.copy(vendas = state.pack.vendas - ClothingRules.MEND_BANDAGES))
+    survivalManager.setCoatWear(ClothingRules.mend(state.coatWear))
+    soundManager.playItem()
+    viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_coat_mended)) }
+}
+
+/** El abrigo se desgasta a la intemperie con lluvia o frío nocturno y se rompe al llegar a 100 (cada segundo de supervivencia). */
+internal fun WorldMapViewModel.updateCoatWear(night: Boolean, exposed: Boolean, seconds: Double) {
+    val state = survivalManager.state.value
+    if (!state.coat) return
+    val rain = exposed && state.weather == Weather.RAIN
+    val wear = ClothingRules.wearStep(state.coatWear, rain, exposed && night, seconds)
+    survivalManager.setCoatWear(wear)
+    if (ClothingRules.isWornOut(wear)) {
+        survivalManager.setCoat(false)
+        viewModelScope.launch { showSurvivalPrompt(getString(Res.string.survival_coat_worn_out)) }
+    }
 }
 
 /** Enciende una antorcha (t87): gasta [TorchRules.BOARD_COST] tablón y aclara el velo de la noche [TorchRules.BURN_MS]. */

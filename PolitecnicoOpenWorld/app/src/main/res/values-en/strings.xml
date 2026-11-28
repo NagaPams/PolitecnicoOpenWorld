@@ -753,4 +753,8 @@
     <string name="door_menu_cancel">Cancel</string>
     <string name="pack_build_barrel">Build rain barrel (2 boards)</string>
     <string name="pack_light_torch">Light a torch (1 board)</string>
+    <string name="pack_mend_coat">Mend coat (1 bandage) · wear %1$d %%</string>
+    <string name="pack_flashlight_on">Turn on flashlight · battery %1$d %%</string>
+    <string name="pack_flashlight_off">Turn off flashlight · battery %1$d %%</string>
+    <string name="pack_swap_batteries">Swap batteries (%1$d)</string>
 </resources>

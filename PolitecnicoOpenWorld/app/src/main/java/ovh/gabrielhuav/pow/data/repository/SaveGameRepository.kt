@@ -82,6 +82,8 @@ data class GameSaveData(
     val survivalBandages: Int = 0,
     // Abrigo puesto (resta un nivel de frío).
     val survivalCoat: Boolean = false,
+    // Desgaste del abrigo (0-100).
+    val survivalCoatWear: Double = 0.0,
     // Gasolina y salud de los coches estacionados (`CarStateRules.encode`).
     val survivalCarStates: String = "",
     // Comida cruda y agua sucia de la mochila.
@@ -105,6 +107,9 @@ data class GameSaveData(
     // Refacciones y semillas de la mochila (t87, paso 6).
     val survivalRefacciones: Int = 0,
     val survivalSemillas: Int = 0,
+    // Pilas de la mochila y batería de la linterna (t25).
+    val survivalPilas: Int = 0,
+    val survivalFlashlightCharge: Double = 60.0,
     val survivalWoundDirt: Double = 0.0,
     val survivalPowered: String = "",
     // Humedad de la ropa (0-100).

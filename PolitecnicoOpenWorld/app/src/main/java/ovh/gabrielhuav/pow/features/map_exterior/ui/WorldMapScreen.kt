@@ -601,8 +601,8 @@ fun WorldMapScreen(
                     isDriving = uiState.isDriving,
                     vehicleHeading = uiState.vehicleRotation,
                     // t58: en coche se va más rápido, así que se ve más lejos (la cámara también se aleja).
-                    fogVisionMeters = if (uiState.isDriving) NPC_FOG_VISION_METERS * FOG_DRIVING_FACTOR else NPC_FOG_VISION_METERS,
-                    fogMaxFraction = if (uiState.isDriving) FOG_DRIVING_MAX_FRACTION else 0.40f,
+                    fogVisionMeters = (if (uiState.isDriving) NPC_FOG_VISION_METERS * FOG_DRIVING_FACTOR else NPC_FOG_VISION_METERS) * ovh.gabrielhuav.pow.domain.models.survival.FlashlightRules.visionFactor(uiState.survivalMode && uiState.survivalFlashlight),
+                    fogMaxFraction = if (uiState.isDriving) FOG_DRIVING_MAX_FRACTION else if (uiState.survivalMode && uiState.survivalFlashlight) ovh.gabrielhuav.pow.domain.models.survival.FlashlightRules.MAX_FRACTION_LIT else 0.40f,
                     // h44: de día la niebla de visión es ligera; de noche vuelve a ser casi opaca.
                     fogStrength = DAY_FOG_STRENGTH + (1f - DAY_FOG_STRENGTH) * (uiState.nightAlpha / ovh.gabrielhuav.pow.features.map_exterior.viewmodel.MAX_NIGHT_ALPHA).coerceIn(0f, 1f),
                     lowDetail = uiState.lowDetailMode,

@@ -78,6 +78,9 @@ data class WorldMapState(
     /** t20: hay un coche al alcance de Y (subir); lo calcula `updateContextActionTick` a ~4 Hz. */
     val nearCar: Boolean = false,
     val survivalCoat: Boolean = false,
+    val survivalCoatWear: Double = 0.0,
+    val survivalFlashlight: Boolean = false,
+    val survivalFlashlightCharge: Double = 60.0,
     /** t14: está al calor de una fogata (cuenta como estar a cubierto del frío). */
     val survivalWarm: Boolean = false,
     /** t05: supervivientes rescatados que viajan contigo (0..3). */

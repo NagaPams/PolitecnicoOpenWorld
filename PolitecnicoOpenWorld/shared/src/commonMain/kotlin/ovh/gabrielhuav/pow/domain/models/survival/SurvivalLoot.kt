@@ -7,7 +7,7 @@ import kotlin.math.floor
 // se recogieron (con enfriamiento). Ver README for IAS/MUNDO/04_MAP_EXTERIOR.md.
 
 /** Tipo de botín. Los valores nuevos van AL FINAL. */
-enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA, VENDA, EDIFICIO, FOGATA, TRAMPA, COCHE, HUERTO, BARRIL }
+enum class LootKind { PIZZA, REFRESCO, SUERO, TABLONES, CONTENEDOR, ARMA_BLANCA, ARMA_FUEGO, MUNICION, GASOLINA, VENDA, EDIFICIO, FOGATA, TRAMPA, COCHE, HUERTO, BARRIL, CADAVER, RAMAS }
 
 /** [variant] (0..9) decide qué arma o munición exacta es, estable por celda. */
 data class LootPoint(val id: String, val kind: LootKind, val latitude: Double, val longitude: Double, val variant: Int = 0)
@@ -43,7 +43,7 @@ object SurvivalLoot {
         return when {
             roll < PIZZA_UPTO -> LootKind.PIZZA
             roll < REFRESCO_UPTO -> LootKind.REFRESCO
-            roll < TABLONES_UPTO -> LootKind.TABLONES
+            roll < TABLONES_UPTO -> if ((h / (DENSITY * ROLL_RANGE)) % 3 == 0) LootKind.RAMAS else LootKind.TABLONES
             roll < SUERO_UPTO -> LootKind.SUERO
             roll < VENDA_UPTO -> LootKind.VENDA
             roll < CONTENEDOR_UPTO -> LootKind.CONTENEDOR

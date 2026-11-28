@@ -13,6 +13,8 @@ import ovh.gabrielhuav.pow.domain.models.survival.SurvivalCrafting
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalPack
 import ovh.gabrielhuav.pow.domain.models.survival.SurvivalRules
 import ovh.gabrielhuav.pow.domain.models.survival.BleedingRules
+import ovh.gabrielhuav.pow.domain.models.survival.ClothingRules
+import ovh.gabrielhuav.pow.domain.models.survival.FlashlightRules
 import ovh.gabrielhuav.pow.domain.models.survival.WoundRules
 import ovh.gabrielhuav.pow.domain.models.survival.TemperatureRules
 import ovh.gabrielhuav.pow.domain.models.survival.FuelRules
@@ -46,6 +48,11 @@ data class SurvivalSubState(
     val woundDirt: Double = 0.0,
     /** Antorcha encendida (t87): aclara el velo de la noche. No se guarda. */
     val torch: Boolean = false,
+    /** Desgaste del abrigo (0-100, t25): a 100 se rompe. */
+    val coatWear: Double = 0.0,
+    /** Linterna (t25): encendida y batería (0-100). La batería se guarda. */
+    val flashlightOn: Boolean = false,
+    val flashlightCharge: Double = FlashlightRules.START_CHARGE,
     /** Lleva un abrigo puesto (t12): resta un nivel de frío. */
     val coat: Boolean = false,
     /** Humedad de la ropa (0-100, t11): la lluvia la sube y el tiempo o el coche la bajan. */
@@ -170,7 +177,21 @@ class SurvivalManager(enabled: Boolean = false) {
     }
 
     fun setCoat(coat: Boolean) {
-        if (mutableState.value.coat != coat) mutableState.update { it.copy(coat = coat) }
+        if (mutableState.value.coat != coat) mutableState.update { it.copy(coat = coat, coatWear = 0.0) }
+    }
+
+    fun setFlashlight(on: Boolean) {
+        if (mutableState.value.flashlightOn != on) mutableState.update { it.copy(flashlightOn = on) }
+    }
+
+    fun setFlashlightCharge(charge: Double) {
+        val value = FlashlightRules.sanitized(charge)
+        if (mutableState.value.flashlightCharge != value) mutableState.update { it.copy(flashlightCharge = value) }
+    }
+
+    fun setCoatWear(wear: Double) {
+        val value = ClothingRules.sanitized(wear)
+        if (mutableState.value.coatWear != value) mutableState.update { it.copy(coatWear = value) }
     }
 
     fun setFuel(fuel: Double) {
@@ -189,6 +210,7 @@ class SurvivalManager(enabled: Boolean = false) {
         bleeding: Boolean = false, vehicleHealth: Double = VehicleHealthRules.MAX, activeMs: Long = 0L,
         skills: SurvivalSkills = SurvivalSkills(), occupation: Occupation = Occupation.NINGUNO,
         fractureHealsAtMs: Long = 0L, coat: Boolean = false, wetness: Double = 0.0, woundDirt: Double = 0.0,
+        coatWear: Double = 0.0, flashlightCharge: Double = FlashlightRules.START_CHARGE,
     ) {
         mutableState.value = SurvivalSubState(
             arsenal = WeaponRules.sanitized(arsenal),
@@ -196,6 +218,8 @@ class SurvivalManager(enabled: Boolean = false) {
             bleeding = bleeding,
             woundDirt = WoundRules.sanitized(woundDirt),
             coat = coat,
+            coatWear = ClothingRules.sanitized(coatWear),
+            flashlightCharge = FlashlightRules.sanitized(flashlightCharge),
             wetness = WetnessRules.sanitized(wetness),
             fractureHealsAtMs = fractureHealsAtMs.coerceAtLeast(0L),
             vehicleHealth = VehicleHealthRules.sanitized(vehicleHealth),

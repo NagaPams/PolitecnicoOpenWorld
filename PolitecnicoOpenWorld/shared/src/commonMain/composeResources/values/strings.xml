@@ -563,4 +563,13 @@
     <string name="survival_barrel_drank">💧 Bebiste agua de lluvia</string>
     <string name="survival_torch_lit">🔥 Encendiste una antorcha: alumbra unos 3 minutos</string>
     <string name="survival_torch_out">🔥 Se apagó la antorcha</string>
+    <string name="survival_corpse_burned">🔥 Quemaste el cuerpo</string>
+    <string name="survival_corpse_buried">⚰️ Enterraste el cuerpo (1 tablón)</string>
+    <string name="survival_corpse_need">🧟 Un cuerpo apesta y atrae zombis: quémalo junto a una fogata encendida o ten un tablón para enterrarlo</string>
+    <string name="survival_coat_mended">🧵 Remendaste el abrigo</string>
+    <string name="survival_coat_worn_out">🧥 Tu abrigo se rompió: ya no abriga. Busca otro</string>
+    <string name="survival_flashlight_dead">🔦 La linterna no tiene batería: cambia las pilas</string>
+    <string name="survival_flashlight_swapped">🔋 Cambiaste las pilas de la linterna</string>
+    <string name="survival_wood_chopped_one">🪓 Juntaste ramas: +1 tablón</string>
+    <string name="survival_wood_chopped_two">🪓 Cortaste ramas con tu arma: +2 tablones</string>
 </resources>
